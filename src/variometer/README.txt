@@ -1,1 +1,1 @@
-Set Arduio SkechBook path to here
+Set SketchBook path to here
