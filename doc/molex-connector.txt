@@ -1,0 +1,8 @@
+53047 1.25 pitch Vertical
+53047 1.25 pitch Right Angle
+
+51021 1.25 pitch Wire-to-Wire & Wire-to-Board Housing, Female
+
+53398 1.25 pitch Surface Mount, Vertical
+53262 1.25 pitch Surface Mount, Right Angle
+
