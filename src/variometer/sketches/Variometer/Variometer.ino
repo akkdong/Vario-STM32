@@ -5,8 +5,10 @@
 #include <VarioSettings.h>
 #include <VertVelocity.h>
 
-//#include <IMU.h>
+#include <inv_mpu.h>
+#include <inv_mpu_dmp_motion_driver.h>
 
+//#include <IMU.h>
 
 
 VertVelocity  vertVel;
@@ -15,6 +17,7 @@ VertVelocity  vertVel;
 void setup()
 {
 	//
+	mpu_init(NULL);
 	
 	//
 	// imu.init();

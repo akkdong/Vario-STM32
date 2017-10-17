@@ -1,1 +1,1 @@
-Set SketchBook path to here
+Set SketchBook path of Arudino IDE to here

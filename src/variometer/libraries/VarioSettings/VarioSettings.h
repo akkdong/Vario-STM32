@@ -7,22 +7,21 @@
 /*                            */
 /*----------------------------*/
 
-/* Set your personnal info here and launch */
-/* the SetVarioParameters Sketch to store  */
-/* them in EEPROM.                         */
-#define VARIOMETER_MODEL "STM32Vario"
-#define VARIOMETER_PILOT_NAME "akkdong"
-#define VARIOMETER_GLIDER_NAME "IcePeak 6"
+/* Set your personnal info here and launch                  */
+/* the SetVarioParameters Sketch to store them in EEPROM.   */
+#define VARIOMETER_MODEL 			"STM32Vario"
+#define VARIOMETER_PILOT_NAME 		"akkdong"
+#define VARIOMETER_GLIDER_NAME 		"IcePeak 6"
 
-/* time zone relative to UTC */
-#define VARIOMETER_TIME_ZONE (+9) 
+/* time zone relative to UTC : default time zone            */
+#define VARIOMETER_TIME_ZONE 		(+9) 
 
 /*********/
 /* Beeps */
 /*********/
 
 /* The volume of the beeps, max = 10 */
-#define VARIOMETER_BEEP_VOLUME 10
+#define VARIOMETER_BEEP_VOLUME 		(10)
 
 /* The variometer react like this according to vertical speed in m/s :        */
 /* (near climbing beep is not enabled by default)                             */
