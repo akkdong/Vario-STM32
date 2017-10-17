@@ -6,12 +6,14 @@
 #include <SPI.h>
 #include <VarioSettings.h>
 #include <VertVelocity.h>
-
+#include <I2CDevice.h>
+#include <IMUSensor.h>
 
 #define BAUDRATE_DEBUG		115200
 #define BAUDRATE_BT			9600
 #define BAUDRATE_GPS		9600
 
+/*
 #define PIN_ADC_BATTERY		PA0		// adc
 #define PIN_PWM_L			PA7		// output
 #define PIN_SD_CS			PA4		// output, active low
@@ -78,6 +80,23 @@ void board_init()
 		pinMode(btn_state[i].pin, btn_state[i].mode);
 	}
 }
+*/
+
+SensorMPU6050 &	mpu6050 = SensorMPU6050::GetInstance();
+SensorMS5611 &	ms5611 = SensorMS5611::GetInstance();
+
+void board_init()
+{
+	// Initialize Serials
+	Serial.begin(BAUDRATE_DEBUG);  	// Serial(USB2Serial) : for debugging
+	while (! Serial);
+	
+	// Initialize I2C
+	Wire.begin();
+	Wire.setClock(400000); // 400KHz
+	
+	I2CDevice::cbUnlock = SensorMS5611::UnlockI2C;
+}
 
 void setup()
 {
@@ -86,7 +105,10 @@ void setup()
 	
 	
 	//
-	//mpu_init(NULL);
+	mpu6050.initSensor();
+	ms5611.initSensor();
+	
+	while (! mpu6050.dataReady() && ! ms5611.dataReady());
 	
 	//
 	// imu.init();
@@ -98,4 +120,50 @@ void setup()
 
 void loop()
 {
+	// mpu6050 normal test
+	/*
+	if (mpu6050.dataReady())
+	{
+		mpu6050.updateData();
+		Serial.println(mpu6050.getVelocity());
+	}
+	*/
+	
+	// mpu6050 raw-data test : it's used by calibration
+	//
+	double accel[3], uv[3], va[3];
+	
+	if (mpu6050.rawReady(accel, uv, va))
+	{
+		mpu6050.updateData();
+		
+		Serial.print(accel[0]); Serial.print(", ");
+		Serial.print(accel[1]); Serial.print(", ");
+		Serial.print(accel[2]); Serial.print(", ");
+		
+		Serial.print(uv[0]); Serial.print(", ");
+		Serial.print(uv[1]); Serial.print(", ");
+		Serial.print(uv[2]); Serial.print(", ");
+		
+		Serial.print(va[0]); Serial.print(", ");
+		Serial.print(va[1]); Serial.print(", ");
+		Serial.print(va[2]); 
+		
+		Serial.println("");
+	}
+	//
+	
+	// ms5611 test
+	double p, t, h;
+	
+	if (ms5611.dataReady())
+	{
+		ms5611.updateData();
+		
+		Serial.print(ms5611.getPressure()); Serial.print(", ");
+		Serial.print(ms5611.getTemperature()); Serial.print(", ");
+		Serial.print(ms5611.getAltitude()); 
+		
+		Serial.println("");		
+	}
 }
