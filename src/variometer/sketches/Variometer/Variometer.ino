@@ -4,10 +4,10 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <SPI.h>
+#include <I2CDevice.h>
 #include <VarioSettings.h>
 #include <VertVelocity.h>
-#include <I2CDevice.h>
-#include <IMUSensor.h>
+#include <IMUModule.h>
 
 #define BAUDRATE_DEBUG		115200
 #define BAUDRATE_BT			9600
@@ -82,8 +82,24 @@ void board_init()
 }
 */
 
-SensorMPU6050 &	mpu6050 = SensorMPU6050::GetInstance();
-SensorMS5611 &	ms5611 = SensorMS5611::GetInstance();
+//
+//
+//
+
+InertialMeasurementUnit imu;
+
+//
+//
+//
+
+#define POSITION_MEASURE_STANDARD_DEVIATION 		(0.1)
+#define ACCELERATION_MEASURE_STANDARD_DEVIATION 	(0.3)
+
+VertVelocity  	vertVel;
+
+//
+//
+//
 
 void board_init()
 {
@@ -98,28 +114,51 @@ void board_init()
 	I2CDevice::cbUnlock = SensorMS5611::UnlockI2C;
 }
 
+//
+//
+//
+
 void setup()
 {
 	//
 	board_init();
 	
 	
-	//
-	mpu6050.initSensor();
-	ms5611.initSensor();
+	// initialize imu module & measure first data
+	imu.init();
+	while (! imu.dataReady());
 	
-	while (! mpu6050.dataReady() && ! ms5611.dataReady());
-	
-	//
-	// imu.init();
+	// initialize kalman filtered vertical velocity calculator
+	vertVel.init(imu.getAltitude(), 
+				imu.getVelocity(),
+				POSITION_MEASURE_STANDARD_DEVIATION,
+				ACCELERATION_MEASURE_STANDARD_DEVIATION,
+				millis());
+
 	
 	// imu.update()
 	// imu.get();
 	// ...
 }
 
+//
+//
+//
+
 void loop()
 {
+	//
+	if (imu.dataReady())
+	{
+		imu.updateData();
+		vertVel.update(imu.getAltitude(), imu.getVelocity(), millis());
+		
+		//Serial.print(imu.getAltitude()); Serial.print(", ");
+		//Serial.print(imu.getVelocity()); Serial.print(", ");
+		Serial.print(vertVel.getVelocity());
+		Serial.println("");
+	}
+	
 	// mpu6050 normal test
 	/*
 	if (mpu6050.dataReady())
@@ -130,7 +169,7 @@ void loop()
 	*/
 	
 	// mpu6050 raw-data test : it's used by calibration
-	//
+	/*
 	double accel[3], uv[3], va[3];
 	
 	if (mpu6050.rawReady(accel, uv, va))
@@ -151,9 +190,10 @@ void loop()
 		
 		Serial.println("");
 	}
-	//
+	*/
 	
 	// ms5611 test
+	/*
 	double p, t, h;
 	
 	if (ms5611.dataReady())
@@ -166,4 +206,5 @@ void loop()
 		
 		Serial.println("");		
 	}
+	*/
 }
