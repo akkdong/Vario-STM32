@@ -1,0 +1,3 @@
+[submodule "src/variometer/libraries/SdFat"]
+	path = src/variometer/libraries/SdFat
+	url = https://github.com/greiman/SdFat.git

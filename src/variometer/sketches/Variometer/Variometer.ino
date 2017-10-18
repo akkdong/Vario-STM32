@@ -10,6 +10,9 @@
 #include <VertVelocity.h>
 #include <IMUModule.h>
 
+#include <SdFat.h>
+#include <FreeStack.h>
+
 #define BAUDRATE_DEBUG		115200
 #define BAUDRATE_BT			9600
 #define BAUDRATE_GPS		9600
@@ -105,13 +108,31 @@ VertVelocity  	vertVel;
 HardWire Wire1(1);
 HardWire Wire2(2);
 
-// initialize some static member of I2CDevice
+// initialize some static member of I2CDevice(I2C1)
+//
+
 // set wire reference member to I2C1
 HardWire & I2CDevice::Wire = Wire1;
+
 // set unlock callback function
 UnlockCallback I2CDevice::cbUnlock = SensorMS5611::UnlockI2C;
 
+// declare EEPROMDriver(it's use I2C2)
 EEPROMDriver	eeprom(Wire2);
+
+
+//
+// just for test
+//
+
+SdFat sd1(1);
+
+const uint8_t SD1_CS = PA4;
+
+
+//
+//
+//
 
 void board_init()
 {
@@ -200,8 +221,8 @@ void setup()
 {
 	//
 	board_init();
-	
-	
+
+  
 	// initialize imu module & measure first data
 	imu.init();
 	while (! imu.dataReady());
@@ -212,11 +233,27 @@ void setup()
 				POSITION_MEASURE_STANDARD_DEVIATION,
 				ACCELERATION_MEASURE_STANDARD_DEVIATION,
 				millis());
-
 	
-	// imu.update()
-	// imu.get();
-	// ...
+
+	// SdFat test...
+	Serial.print(F("FreeStack: "));
+	Serial.println(FreeStack());
+
+	// initialize the first card
+	if (!sd1.begin(SD1_CS, SD_SCK_MHZ(18))) {
+		Serial.println("sd1.initError(\"sd1:\");");
+		return;
+	}
+	// create Dir1 on sd1 if it does not exist
+	if (!sd1.exists("/Dir1")) {
+		if (!sd1.mkdir("/Dir1")) {
+			Serial.println("sd1.errorExit(\"sd1.mkdir\");");
+			return;
+		}
+	}
+	// list root directory on both cards
+	Serial.println(F("------sd1 root-------"));
+	sd1.ls();	
 }
 
 //
