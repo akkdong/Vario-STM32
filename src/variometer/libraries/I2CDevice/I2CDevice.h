@@ -52,6 +52,8 @@ public:
 	static volatile boolean		locked;
 	
 	static UnlockCallback		cbUnlock;
+	
+	static HardWire &			Wire;
 };
 
 

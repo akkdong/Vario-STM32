@@ -37,9 +37,13 @@
 	#define MS5611_INTERRUPT_COMPARE 	(78)
 	#endif
 #elif defined ARDUINO_ARCH_STM32F1
-	#error What is proper MS5611_INTERRUPT_COMPARE on this architecture?
+	// F_CPU : 72MHz
+	#define MS5611_INTERRUPT_COMPARE	(590)
+	
+	#define MS5611_TIMER_PRESCALER		(1024)
+	#define MS5611_TIMER_CHANNEL		(1)
 #else // no supported architecture
-	#error This architecture is not supported!
+	//#error This architecture is not supported!
 #endif
 
 #define MS5611_INTERRUPT_START_DELAY (1000)
@@ -77,7 +81,16 @@ void SensorMS5611::initSensor()
 		c5 = getPROMValue(4);
 		c6 = getPROMValue(5);
 
-		deviceReset = true;		
+		#if 0
+		Serial.print("c1 = "); Serial.println(c1);
+		Serial.print("c2 = "); Serial.println(c2);
+		Serial.print("c3 = "); Serial.println(c3);
+		Serial.print("c4 = "); Serial.println(c4);
+		Serial.print("c5 = "); Serial.println(c5);
+		Serial.print("c6 = "); Serial.println(c6);
+		#endif
+
+		deviceReset = true;
 	}
 
 	// initialize interrupt variables
@@ -353,18 +366,16 @@ void SensorMS5611::startTimer()
 		OCR3A = MS5611_INTERRUPT_COMPARE;
 	#endif
 #elif defined ARDUINO_ARCH_STM32F1
-	// below code does not work yet : it's just.....
-	Timer2.setMode(0, TIMER_OUTPUT_COMPARE); //set mode, the channel is not used when in this mode. 
-	Timer2.pause(); //stop... 
-	Timer2.setPrescaleFactor(1); //normal for encoder to have the lowest or no prescaler. 
-	Timer2.setOverflow(1023);    //use this to match the number of pulse per revolution of the encoder. Most industrial use 1024 single channel steps. 
-	Timer2.setCompare(2, 1023);
-	Timer2.setCount(0);          //reset the counter. 
-	Timer2.setEdgeCounting(TIMER_SMCR_SMS_ENCODER3); //or TIMER_SMCR_SMS_ENCODER1 or TIMER_SMCR_SMS_ENCODER2. This uses both channels to count and ascertain direction. 
-	Timer2.attachInterrupt(0, TimerProc); //channel doesn't mean much here either.  
-	Timer2.resume();                 //start the encoder... 
+	Timer2.pause();
+	Timer2.setMode(MS5611_TIMER_CHANNEL, TIMER_OUTPUT_COMPARE);
+	Timer2.setPrescaleFactor(MS5611_TIMER_PRESCALER);
+	Timer2.setOverflow(MS5611_INTERRUPT_COMPARE);
+	Timer2.setCompare(MS5611_TIMER_CHANNEL, MS5611_INTERRUPT_COMPARE);
+	Timer2.setCount(0);
+	Timer2.attachInterrupt(MS5611_TIMER_CHANNEL, TimerProc);
+	Timer2.resume();
 #else
-	#error This architecture is not supported!
+	//#error This architecture is not supported!
 #endif
 
 	interrupts();
@@ -382,6 +393,6 @@ void SensorMS5611::restartTimer()
 #elif defined ARDUINO_ARCH_STM32F1
 	Timer2.setCount(0);
 #else
-	#error This architecture is not supported!
+	//#error This architecture is not supported!
 #endif 
 }

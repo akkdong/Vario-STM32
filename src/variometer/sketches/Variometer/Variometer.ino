@@ -4,10 +4,11 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <SPI.h>
+#include <I2CDevice.h>
+#include <EEPROMDriver.h>
 #include <VarioSettings.h>
 #include <VertVelocity.h>
-#include <I2CDevice.h>
-#include <IMUSensor.h>
+#include <IMUModule.h>
 
 #define BAUDRATE_DEBUG		115200
 #define BAUDRATE_BT			9600
@@ -82,8 +83,35 @@ void board_init()
 }
 */
 
-SensorMPU6050 &	mpu6050 = SensorMPU6050::GetInstance();
-SensorMS5611 &	ms5611 = SensorMS5611::GetInstance();
+//
+//
+//
+
+InertialMeasurementUnit imu;
+
+//
+//
+//
+
+#define POSITION_MEASURE_STANDARD_DEVIATION 		(0.1)
+#define ACCELERATION_MEASURE_STANDARD_DEVIATION 	(0.3)
+
+VertVelocity  	vertVel;
+
+//
+//
+//
+
+HardWire Wire1(1);
+HardWire Wire2(2);
+
+// initialize some static member of I2CDevice
+// set wire reference member to I2C1
+HardWire & I2CDevice::Wire = Wire1;
+// set unlock callback function
+UnlockCallback I2CDevice::cbUnlock = SensorMS5611::UnlockI2C;
+
+EEPROMDriver	eeprom(Wire2);
 
 void board_init()
 {
@@ -92,11 +120,81 @@ void board_init()
 	while (! Serial);
 	
 	// Initialize I2C
-	Wire.begin();
-	Wire.setClock(400000); // 400KHz
+	Wire1.begin();
+	Wire1.setClock(400000); // 400KHz
 	
-	I2CDevice::cbUnlock = SensorMS5611::UnlockI2C;
+	Wire2.begin();
+	Wire2.setClock(400000); // 400KHz
 }
+
+/*
+GlobalConfig config;
+
+struct eeprom_block
+{
+	unsigned short address;
+	unsigned short mask;
+
+	unsigned char length;
+	unsigned char data[1];
+};
+
+typedef struct tagGlobalConfig
+{
+	char	name[];
+	char 	pilot[];
+	char	glider[];
+	
+	unsigned char timeZone; // GMT+9
+	
+	char	vario_volume;
+	float	vario_sinkThreshold;
+	float	vario_climbThreshold;
+	float	vario_velocitySensitivity;
+	
+	vario_tone_table 
+	
+	float	kalman_sigmaP;
+	float	kalman_sigmaA;
+	
+	float	accel[3]; // accel calibration data
+	
+} GlobalConfig;
+
+//
+// EEPROM block map
+//
+
+0x0000 0x1234 32
+0x0020 0x3251 64
+0x0040 0x6324 32
+....
+
+unsigned char eeprom_buf[MAX_EEPROM_BUF];
+
+eeprom_block * block = (eeprom_block *)&eeprom_buf[0];
+
+eeprom_read_block(block_map, block);
+switch(block_type)
+{
+case vario_setting :
+    eeprom_block_vario_setting * p = block;
+	config.vario_volume = p->volmume;
+	....
+	break;
+case xxxx :
+	break;
+}
+
+
+eeprom_write(block(block_map, block);
+
+
+*/
+
+//
+//
+//
 
 void setup()
 {
@@ -104,22 +202,41 @@ void setup()
 	board_init();
 	
 	
-	//
-	mpu6050.initSensor();
-	ms5611.initSensor();
+	// initialize imu module & measure first data
+	imu.init();
+	while (! imu.dataReady());
 	
-	while (! mpu6050.dataReady() && ! ms5611.dataReady());
-	
-	//
-	// imu.init();
+	// initialize kalman filtered vertical velocity calculator
+	vertVel.init(imu.getAltitude(), 
+				imu.getVelocity(),
+				POSITION_MEASURE_STANDARD_DEVIATION,
+				ACCELERATION_MEASURE_STANDARD_DEVIATION,
+				millis());
+
 	
 	// imu.update()
 	// imu.get();
 	// ...
 }
 
+//
+//
+//
+
 void loop()
 {
+	//
+	if (imu.dataReady())
+	{
+		imu.updateData();
+		vertVel.update(imu.getAltitude(), imu.getVelocity(), millis());
+		
+		//Serial.print(imu.getAltitude()); Serial.print(", ");
+		//Serial.print(imu.getVelocity()); Serial.print(", ");
+		Serial.print(vertVel.getVelocity());
+		Serial.println("");
+	}
+	
 	// mpu6050 normal test
 	/*
 	if (mpu6050.dataReady())
@@ -130,7 +247,7 @@ void loop()
 	*/
 	
 	// mpu6050 raw-data test : it's used by calibration
-	//
+	/*
 	double accel[3], uv[3], va[3];
 	
 	if (mpu6050.rawReady(accel, uv, va))
@@ -151,9 +268,10 @@ void loop()
 		
 		Serial.println("");
 	}
-	//
+	*/
 	
 	// ms5611 test
+	/*
 	double p, t, h;
 	
 	if (ms5611.dataReady())
@@ -166,4 +284,5 @@ void loop()
 		
 		Serial.println("");		
 	}
+	*/
 }
