@@ -13,13 +13,11 @@ uint16_t I2CDevice::readTimeout = I2CDEV_DEFAULT_READ_TIMEOUT;
 // lock status
 volatile boolean I2CDevice::locked = false;
 
-// unlock callback function
-UnlockCallback I2CDevice::cbUnlock = NULL;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // 
-	
+
 int8_t I2CDevice::readByte(uint8_t devAddr, uint8_t regAddr, uint8_t *data, uint16_t timeout)
 {
 	return readBytes(devAddr, regAddr, 1, data, timeout);

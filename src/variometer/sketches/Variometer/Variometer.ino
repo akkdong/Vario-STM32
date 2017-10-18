@@ -5,6 +5,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <I2CDevice.h>
+#include <EEPROMDriver.h>
 #include <VarioSettings.h>
 #include <VertVelocity.h>
 #include <IMUModule.h>
@@ -101,6 +102,17 @@ VertVelocity  	vertVel;
 //
 //
 
+HardWire Wire1(1);
+HardWire Wire2(2);
+
+// initialize some static member of I2CDevice
+// set wire reference member to I2C1
+HardWire & I2CDevice::Wire = Wire1;
+// set unlock callback function
+UnlockCallback I2CDevice::cbUnlock = SensorMS5611::UnlockI2C;
+
+EEPROMDriver	eeprom(Wire2);
+
 void board_init()
 {
 	// Initialize Serials
@@ -108,11 +120,77 @@ void board_init()
 	while (! Serial);
 	
 	// Initialize I2C
-	Wire.begin();
-	Wire.setClock(400000); // 400KHz
+	Wire1.begin();
+	Wire1.setClock(400000); // 400KHz
 	
-	I2CDevice::cbUnlock = SensorMS5611::UnlockI2C;
+	Wire2.begin();
+	Wire2.setClock(400000); // 400KHz
 }
+
+/*
+GlobalConfig config;
+
+struct eeprom_block
+{
+	unsigned short address;
+	unsigned short mask;
+
+	unsigned char length;
+	unsigned char data[1];
+};
+
+typedef struct tagGlobalConfig
+{
+	char	name[];
+	char 	pilot[];
+	char	glider[];
+	
+	unsigned char timeZone; // GMT+9
+	
+	char	vario_volume;
+	float	vario_sinkThreshold;
+	float	vario_climbThreshold;
+	float	vario_velocitySensitivity;
+	
+	vario_tone_table 
+	
+	float	kalman_sigmaP;
+	float	kalman_sigmaA;
+	
+	float	accel[3]; // accel calibration data
+	
+} GlobalConfig;
+
+//
+// EEPROM block map
+//
+
+0x0000 0x1234 32
+0x0020 0x3251 64
+0x0040 0x6324 32
+....
+
+unsigned char eeprom_buf[MAX_EEPROM_BUF];
+
+eeprom_block * block = (eeprom_block *)&eeprom_buf[0];
+
+eeprom_read_block(block_map, block);
+switch(block_type)
+{
+case vario_setting :
+    eeprom_block_vario_setting * p = block;
+	config.vario_volume = p->volmume;
+	....
+	break;
+case xxxx :
+	break;
+}
+
+
+eeprom_write(block(block_map, block);
+
+
+*/
 
 //
 //
