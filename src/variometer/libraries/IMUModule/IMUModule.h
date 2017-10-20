@@ -10,10 +10,10 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-class InertialMeasurementUnit
+class IMUModule
 {
 public:
-	InertialMeasurementUnit();
+	IMUModule();
 	
 public:
 	void				init(boolean calibrateGyro = true);

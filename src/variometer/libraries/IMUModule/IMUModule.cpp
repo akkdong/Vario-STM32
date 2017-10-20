@@ -7,40 +7,40 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-InertialMeasurementUnit::InertialMeasurementUnit() :
+IMUModule::IMUModule() :
 	mpu6050(SensorMPU6050::GetInstance()),
 	ms5611(SensorMS5611::GetInstance())
 {
 }
 
-void InertialMeasurementUnit::init(boolean calibrateGyro)
+void IMUModule::init(boolean calibrateGyro)
 {
 	mpu6050.initSensor(calibrateGyro);
 	ms5611.initSensor();
 }
 
-boolean InertialMeasurementUnit::dataReady()
+boolean IMUModule::dataReady()
 {
 	return ms5611.dataReady() && mpu6050.dataReady();
 }
 
-void InertialMeasurementUnit::updateData()
+void IMUModule::updateData()
 {
 	mpu6050.updateData();
 	ms5611.updateData();
 }
 
-double InertialMeasurementUnit::getAltitude()
+double IMUModule::getAltitude()
 {
 	return ms5611.getAltitude();
 }
 
-double InertialMeasurementUnit::getTemperature()
+double IMUModule::getTemperature()
 {
 	return ms5611.getTemperature();
 }
 
-double InertialMeasurementUnit::getVelocity()
+double IMUModule::getVelocity()
 {
 	return mpu6050.getVelocity();
 }
