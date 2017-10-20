@@ -9,6 +9,7 @@
 #include <VarioSettings.h>
 #include <VertVelocity.h>
 #include <IMUModule.h>
+#include <NmeaParserEx.h>
 
 #include <SdFat.h>
 #include <FreeStack.h>
@@ -86,12 +87,9 @@ void board_init()
 }
 */
 
-//
-//
-//
 
-InertialMeasurementUnit imu;
-
+//
+// Kalman Filter based Vertical Velocity Calculator
 //
 //
 //
@@ -102,7 +100,19 @@ InertialMeasurementUnit imu;
 VertVelocity  	vertVel;
 
 //
+// InertialMeasurementUnit Module : measure accelerometer & gyro & do calibration for accelerometer
+//    It internally uses I2CDevice 
 //
+
+IMUModule imu;
+
+
+
+//
+// declare I2C instance
+//
+// I2C1 is used by IMU : I2CDevice is proxy interface of I2C1
+// I2C2 is used by EEPROM
 //
 
 HardWire Wire1(1);
@@ -117,8 +127,18 @@ HardWire & I2CDevice::Wire = Wire1;
 // set unlock callback function
 UnlockCallback I2CDevice::cbUnlock = SensorMS5611::UnlockI2C;
 
-// declare EEPROMDriver(it's use I2C2)
+// declare EEPROMDriver
 EEPROMDriver	eeprom(Wire2);
+
+
+//
+// declare Serial relative instance
+//
+// BT uses Serial1
+// GPS uses Serial2
+
+// SerialBT	serialBT(Serail1);
+NmeaParserEx nmeaParserEx(Serial2);
 
 
 //
@@ -322,4 +342,14 @@ void loop()
 		Serial.println("");		
 	}
 	*/
+	
+	// read & prase gps sentence & route it to BT
+	//
+	//nmeaParserEx.update();
+	//
+	//if (nmeaParserEx.available())
+	//{
+	//	while (nmeaParserEx.available())
+	//		serialBT.write(nmeaParserEx.read());
+	//}	
 }
