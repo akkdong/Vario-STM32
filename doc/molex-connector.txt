@@ -1,5 +1,5 @@
 53047 1.25 pitch Vertical
-53047 1.25 pitch Right Angle
+53048 1.25 pitch Right Angle
 
 51021 1.25 pitch Wire-to-Wire & Wire-to-Board Housing, Female
 
