@@ -10,6 +10,8 @@
 #include <VertVelocity.h>
 #include <IMUModule.h>
 #include <NmeaParserEx.h>
+#include <DigitalInput.h>
+#include <GlobalConfig.h>
 
 #include <SdFat.h>
 #include <FreeStack.h>
@@ -18,74 +20,61 @@
 #define BAUDRATE_BT			9600
 #define BAUDRATE_GPS		9600
 
-/*
-#define PIN_ADC_BATTERY		PA0		// adc
-#define PIN_PWM_L			PA7		// output
-#define PIN_SD_CS			PA4		// output, active low
-#define PIN_USB_EN			PB0		// output
-#define PIN_POWER_CTRL		PB1		// output
-#define PIN_EE_CS			PB12	// output, active low
-#define PIN_PWM_H			PA8		// output
-#define PIN_FUNC_INPUT		PB5		// input
-#define PIN_BT_EN			PB8		// output
-#define PIN_GPS_EN			PB9		// output, active low
-#define PIN_MCU_STATE		PC13	// output, active low
-#define PIN_USB_DETECT		PC14	// input
+#define PIN_ADC_BATTERY		PA0		// ADC
+#define PIN_EMPTY_1			PA1		// empty
+#define PIN_USART2_TX		PA2		// USART2
+#define PIN_USART2_RX		PA3		// USART2
+#define PIN_SD_CS			PA4		// GPIO : output, active low
+#define PIN_SD_SCLK			PA5		// SD
+#define PIN_SD_MISO			PA6		// SD
+#define PIN_SD_MOSI			PA7		// SD
+#define PIN_PWM_H			PA8		// PWM
+#define PIN_USART1_TX		PA9		// USART1
+#define PIN_USART1_RX		PA10	// USART1
+#define PIN_USB_DM			PA11	// USB
+#define PIN_USB_DP			PA12	// USB
+#define PIN_JTAG_JTMS		PA13	// JTAG
+#define PIN_JTAG_JTCK		PA14	// JTAG
+#define PIN_JTAG_JTDI		PA15	// JTAG
+#define PIN_BT_EN			PB0		// GPIO : output, active low
+#define PIN_GPS_EN			PB1		// GPIO : output, active low
+#define PIN_BOOT1			PB2		// boot
+#define PIN_JTAG_JTDO		PB3		// JTAG
+#define PIN_JTAG_JNTRST		PB4		// JTAG
+#define PIN_FUNC_INPUT		PB5		// GPIO : input, active low
+#define PIN_I2C1_SCL		PB6		// I2C1
+#define PIN_I2C1_SDA		PB7		// I2C1
+#define PIN_USB_DETECT		PB8		// GPIO : input, active high
+#define PIN_USB_EN			PB9		// GPIO : output,	active high
+#define PIN_I2C2_SCL		PB10	// I2C2
+#define PIN_I2C2_SDA		PB11	// I2C2
+#define PIN_EMPTY_2			PB12	// empty
+#define PIN_EMPTY_3			PB13	// empty
+#define PIN_KILL_PWR		PB14	// GPIO : input, active low
+#define PIN_SHDN_INT		PB15	// GPIO : input, active low
+#define PIN_MCU_STATE		PC13	// GPIO : output, active low(led on)
 
-struct BTN_STATE {
-	uint8 pin;
-	WiringPinMode mode;
+
+
+struct GPIO_PINMODE {
+	uint8 			pin;
+	WiringPinMode 	mode;
+	uint8			state; // output default state : HIGH or LOW
 };
 
-BTN_STATE btn_state[] = 
+GPIO_PINMODE gpio_mode[] = 
 {
-//	{ PIN_ADC_BATTERY	, OUTPUT },
-//	{ PIN_PWM_L			, OUTPUT },
-	{ PIN_SD_CS			, OUTPUT },
-	{ PIN_USB_EN		, OUTPUT },
-	{ PIN_POWER_CTRL	, OUTPUT },
-	{ PIN_EE_CS			, OUTPUT },
-//	{ PIN_PWM_H			, OUTPUT },
-	{ PIN_FUNC_INPUT	, INPUT },
-	{ PIN_BT_EN			, OUTPUT },
-	{ PIN_GPS_EN		, OUTPUT },
-	{ PIN_MCU_STATE		, OUTPUT },
-	{ PIN_USB_DETECT	, INPUT },
+	{ PIN_SD_CS			, OUTPUT, HIGH }, // PA4	output, active low
+	{ PIN_BT_EN			, OUTPUT, HIGH }, // PB0	output, active low
+	{ PIN_GPS_EN		, OUTPUT, HIGH }, // PB1	output, active low
+	{ PIN_FUNC_INPUT	, INPUT,  LOW  }, // PB5	input, active low
+	{ PIN_USB_DETECT	, INPUT,  HIGH }, // PB8	input, active high
+	{ PIN_USB_EN		, OUTPUT, LOW  }, // PB9	output,	active high
+	{ PIN_KILL_PWR		, INPUT,  LOW  }, // PB14	input, active low
+	{ PIN_SHDN_INT		, INPUT,  LOW  }, // PB15	input, active low
+	{ PIN_MCU_STATE		, OUTPUT, HIGH }, // PC13	output, active low(led on)
 };
 
-
-SPIClass		spi(2);
-VertVelocity  	vertVel;
-
-
-void board_init()
-{
-	// Initialize Serials
-	Serial.begin(BAUDRATE_DEBUG);  	// Serial(USB2Serial) : for debugging
-	//while (! Serial);
-	
-	Serial1.begin(BAUDRATE_BT); 	// Serial1(USART1) : for BT
-	while (! Serial1);
-	
-	Serial2.begin(BAUDRATE_GPS);	// Serial2(USART2) : for GPS
-	while (! Serial2);
-	
-	// Initialize I2C
-	Wire.begin();
-	Wire.setClock(400000); // 400KHz
-	
-	// Initialize SPI
-	spi.setBitOrder(MSBFIRST); 			// Set the SPI_2 bit order
-	spi.setDataMode(SPI_MODE0); 			// Set the  SPI_2 data mode 0
-	spi.setClockDivider(SPI_CLOCK_DIV16);	// 72 / 16 = 4.5 MHz
-  
-	// Initialize GPIO
-	for (int i = 0; i < sizeof(btn_state)/sizeof(btn_state[0]); i++)
-	{
-		pinMode(btn_state[i].pin, btn_state[i].mode);
-	}
-}
-*/
 
 
 //
@@ -142,12 +131,34 @@ NmeaParserEx nmeaParserEx(Serial2);
 
 
 //
-// just for test
+// SD-Card instance
 //
 
-SdFat sd1(1);
+#define SDCARD_CHANNEL			(1)
+#define SDCARD_CS				(PIN_SD_CS)
+#define SDCARD_CLOCK			(18)
 
-const uint8_t SD1_CS = PA4;
+SdFat sd(SDCARD_CHANNEL);
+
+
+//
+//
+//
+
+DigitalInput	funcInput;
+
+
+//
+//
+//
+
+#define EEPROM_TOTAL_SIZE		(64*1024)
+#define EEPROM_PAGE_SIZE		(16)
+
+#define EEPROM_ADDRESS			(0x50)
+
+
+GlobalConfig	Config(eeprom, EEPROM_ADDRESS);
 
 
 //
@@ -160,78 +171,33 @@ void board_init()
 	Serial.begin(BAUDRATE_DEBUG);  	// Serial(USB2Serial) : for debugging
 	while (! Serial);
 	
+	Serial1.begin(BAUDRATE_BT); 	// Serial1(USART1) : for BT
+	while (! Serial1);
+	
+	Serial2.begin(BAUDRATE_GPS);	// Serial2(USART2) : for GPS
+	while (! Serial2);
+	
 	// Initialize I2C
 	Wire1.begin();
 	Wire1.setClock(400000); // 400KHz
 	
 	Wire2.begin();
 	Wire2.setClock(400000); // 400KHz
-}
-
-/*
-GlobalConfig config;
-
-struct eeprom_block
-{
-	unsigned short address;
-	unsigned short mask;
-
-	unsigned char length;
-	unsigned char data[1];
-};
-
-typedef struct tagGlobalConfig
-{
-	char	name[];
-	char 	pilot[];
-	char	glider[];
 	
-	unsigned char timeZone; // GMT+9
+	// Initialize SD-Card 
+	sd.begin(SDCARD_CS, SD_SCK_MHZ(SDCARD_CLOCK));
 	
-	char	vario_volume;
-	float	vario_sinkThreshold;
-	float	vario_climbThreshold;
-	float	vario_velocitySensitivity;
-	
-	vario_tone_table 
-	
-	float	kalman_sigmaP;
-	float	kalman_sigmaA;
-	
-	float	accel[3]; // accel calibration data
-	
-} GlobalConfig;
-
-//
-// EEPROM block map
-//
-
-0x0000 0x1234 32
-0x0020 0x3251 64
-0x0040 0x6324 32
-....
-
-unsigned char eeprom_buf[MAX_EEPROM_BUF];
-
-eeprom_block * block = (eeprom_block *)&eeprom_buf[0];
-
-eeprom_read_block(block_map, block);
-switch(block_type)
-{
-case vario_setting :
-    eeprom_block_vario_setting * p = block;
-	config.vario_volume = p->volmume;
-	....
-	break;
-case xxxx :
-	break;
+	// Initialize GPIO
+	for (int i = 0; i < sizeof(gpio_mode)/sizeof(gpio_mode[0]); i++)
+	{
+		pinMode(gpio_mode[i].pin, gpio_mode[i].mode);
+		
+		if (gpio_mode[i].mode == OUTPUT)
+			digitalWrite(gpio_mode[i].pin, gpio_mode[i].state);
+	}
 }
 
 
-eeprom_write(block(block_map, block);
-
-
-*/
 
 //
 //
@@ -241,6 +207,9 @@ void setup()
 {
 	//
 	board_init();
+	
+	//
+	Config.readAll();
 
   
 	// initialize imu module & measure first data
@@ -250,12 +219,13 @@ void setup()
 	// initialize kalman filtered vertical velocity calculator
 	vertVel.init(imu.getAltitude(), 
 				imu.getVelocity(),
-				POSITION_MEASURE_STANDARD_DEVIATION,
-				ACCELERATION_MEASURE_STANDARD_DEVIATION,
+				Config.kalman_sigmaP, // POSITION_MEASURE_STANDARD_DEVIATION,
+				Config.kalman_sigmaA, // ACCELERATION_MEASURE_STANDARD_DEVIATION,
 				millis());
-	
+
 
 	// SdFat test...
+	#if 0
 	Serial.print(F("FreeStack: "));
 	Serial.println(FreeStack());
 
@@ -274,6 +244,10 @@ void setup()
 	// list root directory on both cards
 	Serial.println(F("------sd1 root-------"));
 	sd1.ls();	
+	#endif
+	
+	//
+	funcInput.begin(PIN_FUNC_INPUT);
 }
 
 //
@@ -352,4 +326,21 @@ void loop()
 	//	while (nmeaParserEx.available())
 	//		serialBT.write(nmeaParserEx.read());
 	//}	
+	
+	funcInput.update();
+
+	if (funcInput.fired())
+	{
+		// value format :
+		// b7 b6 b5 b4 b3 b2 b1 b0
+		// C2 C1 C0 I4 I3 I2 I1 I0
+		//
+		// Cx : count of bits (valid: 1~5, forbidden(ignore): 0, 6, 7)
+		// Ix : input value
+		//      each bit represents LONG(1) or SHORT(0) input, default is SHORT
+		//		MSB first, RIGHT aligned
+		//
+		
+		uint8_t value = funcInput.getValue();
+	}
 }

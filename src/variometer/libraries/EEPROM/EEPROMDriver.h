@@ -7,11 +7,6 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#define EEPROM_TOTAL_SIZE		(64*1024)
-#define EEPROM_PAGE_SIZE		(16)
-
-#define EEPROM_ADDRESS			(0x50)
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // class EEPROMDriver
