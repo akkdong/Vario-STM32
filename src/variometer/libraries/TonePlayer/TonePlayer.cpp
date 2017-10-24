@@ -108,8 +108,11 @@ void TonePlayer::setTone(int freq, int vol)
 	
 	if (freq > 0)
 	{
-		Timer.pause();
 		//
+		pinMode(PA8, PWM);
+		//
+		Timer.pause();
+		Timer.setMode(timerCh, TIMER_PWM);
 		Timer.setPeriod(1000000.0/freq); // 50Hz -> 1/50 period(s) -> 1/50*1000000 period(us)
 		Timer.setCompare(timerCh, Timer.getOverflow() * 200.0 / volume); // 100% volume -> 50% duty cycle : overflow * 100 / (volume / 2)
 		Timer.refresh();
@@ -117,7 +120,13 @@ void TonePlayer::setTone(int freq, int vol)
 	}
 	else
 	{
-		Timer.pause();
+		//
+		pinMode(PA8, INPUT);
+		//
+		//Timer.pause();
+		Timer.setMode(timerCh, TIMER_DISABLED);
+		//Timer.resume();
+		
 	}
 }
 
