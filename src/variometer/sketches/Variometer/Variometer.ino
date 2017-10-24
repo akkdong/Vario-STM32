@@ -12,6 +12,8 @@
 #include <NmeaParserEx.h>
 #include <DigitalInput.h>
 #include <GlobalConfig.h>
+#include <TonePlayer.h>
+#include <VarioBeeper.h>
 
 #include <SdFat.h>
 #include <FreeStack.h>
@@ -152,6 +154,29 @@ DigitalInput	funcInput;
 //
 //
 
+#define PLAYER_TIMER_ID		(1)
+#define PLAYER_TIMER_CH		(1)
+
+static Tone startTone[] = {
+	{ 262, 1000 / 4 }, 
+	{ 196, 1000 / 8 }, 
+	{ 196, 1000 / 8 }, 
+	{ 220, 1000 / 4 }, 
+	{ 196, 1000 / 4 }, 
+	{   0, 1000 / 4 }, 
+	{ 247, 1000 / 4 }, 
+	{ 262, 1000 / 4 },
+	{   0, 1000 / 8 }, 
+};
+
+TonePlayer	tonePlayer(PLAYER_TIMER_ID, PLAYER_TIMER_CH);
+VarioBeeper	varioBeeper(tonePlayer);
+
+
+//
+//
+//
+
 #define EEPROM_TOTAL_SIZE		(64*1024)
 #define EEPROM_PAGE_SIZE		(16)
 
@@ -248,6 +273,11 @@ void setup()
 	
 	//
 	funcInput.begin(PIN_FUNC_INPUT);
+	
+	
+	//
+	tonePlayer.setVolume(Config.vario_volume);
+	tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, 0);	
 }
 
 //
@@ -266,7 +296,13 @@ void loop()
 		//Serial.print(imu.getVelocity()); Serial.print(", ");
 		Serial.print(vertVel.getVelocity());
 		Serial.println("");
+		
+		//
+		varioBeeper.setVelocity(vertVel.getVelocity());
 	}
+	
+	//
+	tonePlayer.update();
 	
 	// mpu6050 normal test
 	/*
