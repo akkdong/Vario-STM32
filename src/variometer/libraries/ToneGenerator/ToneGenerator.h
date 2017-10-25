@@ -23,6 +23,7 @@ public:
 	void			setTone(uint16 hz, uint8 volume = 100);
 	
 private:
+	uint8			tonePin;
 };
 
 

@@ -28,7 +28,7 @@ static Tone beepToneNext[] =
 ////////////////////////////////////////////////////////////////////////////////////
 //
 
-TonePlayer::TonePlayer(int id, int ch) : Timer(id), timerCh(ch)
+TonePlayer::TonePlayer(ToneGenerator & gen) : toneGen(gen)
 {
 	playCurr.playType	= PLAY_NONE;
 	playNext.playType	= PLAY_NONE;
@@ -55,7 +55,7 @@ TonePlayer::TonePlayer(int id, int ch) : Timer(id), timerCh(ch)
 	volume			= 100;
 	
 	//
-	Timer.pause();
+	//Timer.pause();
 	//Timer.setMode(timerCh, TIMER_OUTPUT_PWM);
 	//Timer.setPeriod(1000000)
 	//Timer.setCompare(timerCh, 0); // always LOW
@@ -108,25 +108,32 @@ void TonePlayer::setTone(int freq, int vol)
 	
 	if (freq > 0)
 	{
+		/*
 		//
 		pinMode(PA8, PWM);
 		//
 		Timer.pause();
 		Timer.setMode(timerCh, TIMER_PWM);
 		Timer.setPeriod(1000000.0/freq); // 50Hz -> 1/50 period(s) -> 1/50*1000000 period(us)
-		Timer.setCompare(timerCh, Timer.getOverflow() * 200.0 / volume); // 100% volume -> 50% duty cycle : overflow * 100 / (volume / 2)
+		Timer.setCompare(timerCh, Timer.getOverflow() * volume / 200.0); // 100% volume -> 50% duty cycle : overflow * 100 / (volume / 2)
 		Timer.refresh();
 		Timer.resume();
+		*/
+		
+		toneGen.setTone(freq, volume);
 	}
 	else
 	{
+		/*
 		//
 		pinMode(PA8, INPUT);
 		//
 		//Timer.pause();
 		Timer.setMode(timerCh, TIMER_DISABLED);
 		//Timer.resume();
+		*/
 		
+		toneGen.setTone(0);
 	}
 }
 

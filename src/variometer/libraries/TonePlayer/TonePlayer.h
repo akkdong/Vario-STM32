@@ -5,7 +5,7 @@
 #define __TONEPLAYER_H__
 
 #include <Arduino.h>
-#include <HardwareTimer.h>
+#include <ToneGenerator.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -53,7 +53,7 @@ struct PlayContext
 class TonePlayer 
 {
 public:
-	TonePlayer(int id, int ch);
+	TonePlayer(ToneGenerator & gen);
 	
 public:	
 	void			setMelody(Tone * tonePtr, int toneCount, int repeat = 1, int instant = 1);
@@ -96,8 +96,7 @@ public:
 	int				volume;
 	
 	//
-	HardwareTimer	Timer;
-	int				timerCh;
+	ToneGenerator &	toneGen;
 };
 
 #endif // __TONEPLAYER_H__
