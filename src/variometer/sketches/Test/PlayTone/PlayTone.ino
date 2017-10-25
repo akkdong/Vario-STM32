@@ -20,11 +20,11 @@ static Tone startTone[] = {
 	{   0, 1000 / 8 }, 
 };
 
-TonePlayer	tonePlayer(PLAYER_TIMER_ID, PLAYER_TIMER_CH);
+//TonePlayer	tonePlayer(PLAYER_TIMER_ID, PLAYER_TIMER_CH);
 //VarioBeeper	varioBeeper(tonePlayer);
 
 unsigned long lastTick;
-int playType = -1;
+int playType = 0;
 
 
 void setup()
@@ -36,8 +36,8 @@ void setup()
 	Serial.begin(115200);
 	Serial.println("Tone Test!!!");
 	
-	tonePlayer.setTone(1000, 100);
-	delay(2000);
+	//tonePlayer.setTone(1000, 100);
+	//delay(2000);
 	
 	lastTick = millis();
 	
@@ -62,47 +62,39 @@ void setup()
 	Timer2.resume();
 	*/	
 	
-	/*
+	pinMode(PA8, PWM);
+	
 	Timer1.pause();
 	Timer1.setMode(1, TIMER_PWM);
-	Timer1.setPeriod(1000000);
-	Timer1.setCompare(1, Timer1.getOverflow() / 2);
+	Timer1.setPrescaleFactor(72); // 72MHz / 72 = 1MHz
+	Timer1.setOverflow(5000);	  // 1MHz / 5000 = 200Hz
+//	Timer1.setPeriod(100000);
+	Timer1.setCompare(1, 0);
 	Timer1.refresh();
 	Timer1.resume();
-	*/
+	
+	lastTick = millis();
 }
 
 void loop()
 {
-	if (playType < 0 || (millis() - lastTick > 5000))
+	static int percent = 0;
+	
+	if (millis() - lastTick > 100)
 	{
-		if (playType < 1)
-		{
-			playType = 1;
-			tonePlayer.setVolume(100);
-			Serial.println("100%");
-		}
-		else
-		{
-			playType = 0;
-			tonePlayer.setVolume(10);
-			Serial.println("10%");
-		}
+		//
+		Timer1.setCompare(1, Timer1.getOverflow() * percent / 100);
 		
-		tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, 0);
+		if (percent == 0)
+			Serial.println("0%");
+		
+		//
+		percent += 1;
+		
+		if( percent > 50)
+			percent = 0;
+		
+		//
 		lastTick = millis();
 	}
-	
-	//
-	tonePlayer.update();
-	
-	/*
-	Serial.println("Play with Maximum Volume");
-	delay(5000);
-	
-	Serial.println("Play with 30% Volume");
-	tonePlayer.setVolume(30);
-	tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, 0);
-	delay(5000);
-	*/
 }

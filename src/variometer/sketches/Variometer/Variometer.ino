@@ -14,6 +14,9 @@
 #include <GlobalConfig.h>
 #include <TonePlayer.h>
 #include <VarioBeeper.h>
+#include <SerialEx.h>
+#include <VarioSentence.h>
+#include <BluetoothMan.h>
 
 #include <SdFat.h>
 #include <FreeStack.h>
@@ -128,9 +131,21 @@ EEPROMDriver	eeprom(Wire2);
 // BT uses Serial1
 // GPS uses Serial2
 
-// SerialBT	serialBT(Serail1);
-NmeaParserEx nmeaParserEx(Serial2);
+NmeaParserEx nmeaParser(SerialEx2);
 
+
+//
+//
+//
+
+VarioSentence varioNmea(USE_LK8_SENTENCE);
+
+
+//
+//
+//
+
+BluetoothMan	btMan(SerialEx1, nmeaParser, varioNmea);
 
 //
 // SD-Card instance
@@ -301,68 +316,58 @@ void loop()
 		varioBeeper.setVelocity(vertVel.getVelocity());
 	}
 	
-	//
+	// read & prase gps sentence
+	nmeaParser.update();
+	// update vario sentence at periodic period
+	//if (varioNmea.checkInterval())
+	//	varioNmea.update(vertVel.getVelocity(), imu.getAltitude(), imu.getTemperature());
+	// send any prepared sentence to BT
+	btMan.update();
+	
+	// we can change global configuration by BT communication
+	//  and execute some command also
+	if (btMan.available())
+	{
+		//
+		int c = btMan.read();
+		
+		//
+		// execute(c);
+	}
+
+	// nmeaParser parse GPS sentence and convert it to IGC sentence
+	#if 0
+	if (is_logging)
+	{
+		static unsigned long tick = millis();
+		static int index = 0;
+		
+		if ((millis()-tick) > time_interval)
+		{		
+			if (nmeaParser.availableIGC())
+			{
+				// save it to file
+				if (IGC_OFFSET_PRESS_ALT <= index && index < IGC_OFFSET_GPS_ALT)
+				{
+					file.write(imu.getAltitude());
+				}
+				else
+				{
+					file.write(nmeaParser.readIGC());
+				}
+			}
+			else
+			{
+				index = 0;
+			}
+		}
+	}
+	#endif
+	
+	// beep beep beep!
 	tonePlayer.update();
 	
-	// mpu6050 normal test
-	/*
-	if (mpu6050.dataReady())
-	{
-		mpu6050.updateData();
-		Serial.println(mpu6050.getVelocity());
-	}
-	*/
-	
-	// mpu6050 raw-data test : it's used by calibration
-	/*
-	double accel[3], uv[3], va[3];
-	
-	if (mpu6050.rawReady(accel, uv, va))
-	{
-		mpu6050.updateData();
-		
-		Serial.print(accel[0]); Serial.print(", ");
-		Serial.print(accel[1]); Serial.print(", ");
-		Serial.print(accel[2]); Serial.print(", ");
-		
-		Serial.print(uv[0]); Serial.print(", ");
-		Serial.print(uv[1]); Serial.print(", ");
-		Serial.print(uv[2]); Serial.print(", ");
-		
-		Serial.print(va[0]); Serial.print(", ");
-		Serial.print(va[1]); Serial.print(", ");
-		Serial.print(va[2]); 
-		
-		Serial.println("");
-	}
-	*/
-	
-	// ms5611 test
-	/*
-	double p, t, h;
-	
-	if (ms5611.dataReady())
-	{
-		ms5611.updateData();
-		
-		Serial.print(ms5611.getPressure()); Serial.print(", ");
-		Serial.print(ms5611.getTemperature()); Serial.print(", ");
-		Serial.print(ms5611.getAltitude()); 
-		
-		Serial.println("");		
-	}
-	*/
-	
-	// read & prase gps sentence & route it to BT
-	//
-	//nmeaParserEx.update();
-	//
-	//if (nmeaParserEx.available())
-	//{
-	//	while (nmeaParserEx.available())
-	//		serialBT.write(nmeaParserEx.read());
-	//}	
-	
+	// process key-input
 	funcInput.update();
 
 	if (funcInput.fired())
