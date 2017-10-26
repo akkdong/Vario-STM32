@@ -19,6 +19,7 @@
 #include <VarioSentence.h>
 #include <BluetoothMan.h>
 #include <IGCLogger.h>
+#include <BatteryVoltage.h>
 
 #define BAUDRATE_DEBUG		115200
 #define BAUDRATE_BT			9600
@@ -163,7 +164,7 @@ DigitalInput	funcInput;
 //
 //
 
-//AnalogInput		voltInput;
+BatteryVoltage & batVolt = BatteryVoltage::getInst();
 
 
 //
@@ -268,6 +269,9 @@ void setup()
 	logger.init();
 	
 	//
+	batVolt.begin();
+	
+	//
 	funcInput.begin(PIN_FUNC_INPUT);
 	
 	// ToneGenerator uses PIN_PWM_H(PA8 : Timer1, Channel1)
@@ -305,7 +309,7 @@ void loop()
 	nmeaParser.update();
 	// update vario sentence at periodic period
 	if (varioNmea.checkInterval())
-		varioNmea.begin(vertVel.getPosition(), vertVel.getVelocity(), imu.getTemperature(), 0.0 /*voltInput.getVoltage*/);
+		varioNmea.begin(vertVel.getPosition(), vertVel.getVelocity(), imu.getTemperature(), batVolt.getVoltage);
 	// send any prepared sentence to BT
 	btMan.update();
 	
@@ -344,6 +348,9 @@ void loop()
 	
 	// beep beep beep!
 	tonePlayer.update();
+	
+	//
+	batVolt.update();
 	
 	// process key-input
 	funcInput.update();

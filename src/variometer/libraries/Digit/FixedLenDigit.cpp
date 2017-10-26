@@ -8,6 +8,8 @@
 /////////////////////////////////////////////////////////////////////////////
 // class FixedLenDigit
 
+uint32_t FixedLenDigit::powTable[] = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000 };
+
 FixedLenDigit::FixedLenDigit() : value(0), pos(0), length(-1)
 {
 }
@@ -18,7 +20,7 @@ int32_t	FixedLenDigit::begin(uint32_t v, int32_t n)
 		return 0;
 	
 	// truncate if value is too big
-	uint32_t div = powi(10, n);
+	uint32_t div = powTable[n]; // powi(10, n);
 	if (div < v)
 		v = v - (v / div * div);
 	
@@ -37,7 +39,7 @@ int32_t	FixedLenDigit::read()
 	if (pos >= length)
 		return -1;
 	
-	int div = powi(10, length - pos - 1);
+	int div = powTable[length - pos - 1]; // powi(10, length - pos - 1);
 	int num = value / div;
 	
 	value = value - (value / div * div);

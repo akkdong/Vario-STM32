@@ -13,18 +13,20 @@ public:
 	FixedLenDigit();
 	
 public:
-	int32_t		begin(uint32_t v, int32_t n);
+	int32_t			begin(uint32_t v, int32_t n);
 	
-	int32_t		available();
-	int32_t		read();
+	int32_t			available();
+	int32_t			read();
 
 private:
-	uint32_t	powi(uint32_t base, int32_t exp);
+	uint32_t		powi(uint32_t base, int32_t exp);
 	
 private:
-	uint32_t	value;
-	int32_t		pos;
-	int32_t		length;
+	uint32_t		value;
+	int32_t			pos;
+	int32_t			length;
+	
+	static uint32_t	powTable[];
 };
 
 
