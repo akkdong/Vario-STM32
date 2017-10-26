@@ -8,20 +8,22 @@
 
 #define NMEA_TAG_SIZE 		(5)
 
-#define CLEAR_STATE()		mParseState = 0;
-#define SET_STATE(bit)		mParseState |= (1 << bit)
-#define UNSET_STATE(bit)	mParseState &= ~(1 << bit)
+#define CLEAR_STATE()		mParseState = 0
+#define SET_STATE(bit)		mParseState |= (bit)
+#define UNSET_STATE(bit)	mParseState &= ~(bit)
 
-#define IS_SET(bit)			(mParseState & (1 << bit))
+#define IS_SET(bit)			(mParseState & (bit)) == (bit)
 
 
-#define SEARCH_RMC_TAG		1
-#define SEARCH_GGA_TAG		2
-//#define PARSE_RMC			3
-//#define PARSE_GGA			4
+#define SEARCH_RMC_TAG		(1 << 0)
+#define SEARCH_GGA_TAG		(1 << 1)
+#define PARSE_RMC			(1 << 2)
+#define PARSE_GGA			(1 << 3)
+#define RMC_VALID			(1 << 4)
+#define GGA_VALID			(1 << 5)
 
-#define RMC_INVALID			5
-#define GGA_INVALID			6
+#define IGC_LOCKED			(1 << 6)
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -76,10 +78,11 @@ void NmeaParserEx::update()
 			mParseStep 	= 0;
 			mParseState	= 0;
 			mParity		= '*';	// '*' remove by twice xor
-			
+
+			UNSET_STATE(PARSE_RMC|PARSE_GGA|RMC_VALID|GGA_VALID);
 			SET_STATE(SEARCH_RMC_TAG);
 			SET_STATE(SEARCH_GGA_TAG);
-			
+
 			//Serial.println("start sentence");
 		}
 		else
@@ -97,9 +100,18 @@ void NmeaParserEx::update()
 					UNSET_STATE(SEARCH_RMC_TAG);
 				if (c != pgm_read_byte_near(tagGGA + mParseStep))
 					UNSET_STATE(SEARCH_GGA_TAG);
-				
-				mParseStep += 1;
-				//Serial.println("search tag");
+
+				if (! IS_SET(SEARCH_RMC_TAG) && ! IS_SET(SEARCH_GGA_TAG))
+				{
+					// It's not valid(known) TAG!!!
+					mParseStep = -1;
+					mWrite = mHead;
+				}
+				else
+				{
+					// continue
+					mParseStep += 1;
+				}
 			}
 			else if (mParseStep == NMEA_TAG_SIZE) // start of data
 			{
@@ -127,9 +139,20 @@ void NmeaParserEx::update()
 					
 					// new entry : set to invalid 
 					if (IS_SET(SEARCH_RMC_TAG))
-						SET_STATE(RMC_INVALID);
-					if (IS_SET(SEARCH_GGA_TAG))
-						SET_STATE(GGA_INVALID);
+					{
+						SET_STATE(PARSE_RMC);
+					}
+					else //if (IS_SET(SEARCH_GGA_TAG))
+					{
+						SET_STATE(PARSE_GGA);
+						
+						// IGC sentence is unavailable if It's unlocked
+						if (! IS_SET(IGC_LOCKED))
+						{
+							mIGCSize = 0;
+							mIGCNext = 0;
+						}
+					}
 				}
 			}
 			else if (mParseStep == NMEA_TAG_SIZE + 1) // data
@@ -200,13 +223,20 @@ void NmeaParserEx::update()
 					// complete a sentence
 					mParseStep = -1;
 					mHead = mWrite;
-					
+
 					//
-					if (IS_SET(SEARCH_GGA_TAG) && ! IS_SET(GGA_INVALID))
+					if (IS_SET(PARSE_GGA) && IS_SET(GGA_VALID) && ! IS_SET(IGC_LOCKED))
 					{
-						// IGC sentence become available
+						// IGC sentence is available
 						mIGCSize = MAX_IGC_SENTENCE;
 						mIGCNext = 0;
+					}
+					
+					// the logger(readIGC) does not unlock state while the parser does parsing.
+					// so the parse must unlocked it
+					if (IS_SET(IGC_LOCKED) && mIGCSize == mIGCNext)
+					{
+						UNSET_STATE(IGC_LOCKED);
 					}
 				}
 			}			
@@ -232,20 +262,29 @@ int NmeaParserEx::read()
 
 int NmeaParserEx::availableIGC()
 {
-	return (mIGCSize == MAX_IGC_SENTENCE);
+	return (mIGCSize == MAX_IGC_SENTENCE && mIGCNext < MAX_IGC_SENTENCE);
 }
 
 int NmeaParserEx::readIGC()
 {
 	if (mIGCSize == MAX_IGC_SENTENCE && mIGCNext < MAX_IGC_SENTENCE)
 	{
-		int ch = mIGCSentence[mIGCNext++];
+		// start reading... : lock state
+		if (mIGCNext == 0)
+			SET_STATE(IGC_LOCKED);
 		
-		if (mIGCNext == MAX_IGC_SENTENCE) // end of sentence
+		int ch = mIGCSentence[mIGCNext++];
+
+		// if it reachs end of sentence, state & buffer must be cleared.
+		// however, if it's parsing state, let the parser clear it.
+		if (mIGCNext == MAX_IGC_SENTENCE && ! IS_SET(PARSE_GGA)) // end of sentence
 		{
+			// unlock
+			UNSET_STATE(IGC_LOCKED);
+			
 			// empty
 			mIGCSize = 0;
-			mIGCNext = 0; 
+			mIGCNext = 0;
 		}
 		
 		return ch;
@@ -267,9 +306,6 @@ void NmeaParserEx::reset()
 	
 	mParseStep = -1;
 	mParseState = 0;
-	
-	SET_STATE(RMC_INVALID);
-	SET_STATE(GGA_INVALID);
 	
 	mIGCSize = 0;
 	mIGCNext = 0;
@@ -298,7 +334,7 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			break;
 		case 1 : // Navigation receiver warning A = OK, V = warning
 			if (mBuffer[startPos] == 'A')
-				UNSET_STATE(RMC_INVALID);
+				SET_STATE(RMC_VALID);
 			break;
 		case 2 : // Latitude (DDMM.mmm)
 			/*
@@ -375,69 +411,84 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 		switch(fieldIndex)
 		{
 		case 0 : // Time (HHMMSS.sss UTC)
-			// update IGC sentence
-			for(int i = 0; i < IGC_SIZE_TIME; i++)
+			// update IGC sentence if it's unlocked
+			if (! IS_SET(IGC_LOCKED))
 			{
-				if ('0' > mBuffer[startPos+i] || mBuffer[startPos+i] > '9')
-					break;
-				
-				mIGCSentence[IGC_OFFSET_TIME+i] = mBuffer[startPos+i];
+				for(int i = 0; i < IGC_SIZE_TIME; i++)
+				{
+					if ('0' > mBuffer[startPos+i] || mBuffer[startPos+i] > '9')
+						break;
+					
+					mIGCSentence[IGC_OFFSET_TIME+i] = mBuffer[startPos+i];
+				}
 			}
 			
 			// save current time
 			// ...
 			break;
 		case 1 : // Latitude (DDMM.mmm)
-			// update IGC sentence
-			for(int i = 0, j = 0; i < IGC_SIZE_LATITUDE; i++, j++)
+			// update IGC sentence if it's unlocked
+			if (! IS_SET(IGC_LOCKED))
 			{
-				if ('0' <= mBuffer[startPos+i] && mBuffer[startPos+i] <= '9')
-					mIGCSentence[IGC_OFFSET_LATITUDE+i] = mBuffer[startPos+j];
-				else if (mBuffer[startPos+i] == '.')
-					i -= 1;
-				else
-					break;
+				for(int i = 0, j = 0; i < IGC_SIZE_LATITUDE; i++, j++)
+				{
+					if ('0' <= mBuffer[startPos+i] && mBuffer[startPos+i] <= '9')
+						mIGCSentence[IGC_OFFSET_LATITUDE+i] = mBuffer[startPos+j];
+					else if (mBuffer[startPos+i] == '.')
+						i -= 1;
+					else
+						break;
+				}
 			}
 
 			// save latitude
 			// ...
 			break;
 		case 2 : // Latitude (N or S)
-			// update IGC sentence
-			if (mBuffer[startPos] != 'N' && mBuffer[startPos] != 'S')
-					break;
-			mIGCSentence[IGC_OFFSET_LATITUDE_] = mBuffer[startPos];
+			// update IGC sentence if it's unlocked
+			if (! IS_SET(IGC_LOCKED))
+			{
+				if (mBuffer[startPos] != 'N' && mBuffer[startPos] != 'S')
+						break;
+				mIGCSentence[IGC_OFFSET_LATITUDE_] = mBuffer[startPos];
+			}
 			
 			// save latitude
 			// ...
 			break;
 		case 3 : // Longitude (DDDMM.mmm)
-			// update IGC sentence
-			for(int i = 0, j = 0; i < IGC_SIZE_LONGITUDE; i++, j++)
+			// update IGC sentence if it's unlocked
+			if (! IS_SET(IGC_LOCKED))
 			{
-				if ('0' <= mBuffer[startPos+i] && mBuffer[startPos+i] <= '9')
-					mIGCSentence[IGC_OFFSET_LONGITUDE+i] = mBuffer[startPos+j];
-				else if (mBuffer[startPos+i] == '.')
-					i -= 1;
-				else
-					break;
+				for(int i = 0, j = 0; i < IGC_SIZE_LONGITUDE; i++, j++)
+				{
+					if ('0' <= mBuffer[startPos+i] && mBuffer[startPos+i] <= '9')
+						mIGCSentence[IGC_OFFSET_LONGITUDE+i] = mBuffer[startPos+j];
+					else if (mBuffer[startPos+i] == '.')
+						i -= 1;
+					else
+						break;
+				}
 			}
 			
 			// save latitude
 			// ...
 			break;
 		case 4 : // Longitude (E or W)
-			// update IGC sentence
-			if (mBuffer[startPos] != 'W' && mBuffer[startPos] != 'E')
-					break;
-			mIGCSentence[IGC_OFFSET_LONGITUDE_] = mBuffer[startPos];
+			// update IGC sentence if it's unlocked
+			if (! IS_SET(IGC_LOCKED))
+			{
+				if (mBuffer[startPos] != 'W' && mBuffer[startPos] != 'E')
+						break;
+				mIGCSentence[IGC_OFFSET_LONGITUDE_] = mBuffer[startPos];
+			}
 			
 			// save latitude
 			// ...
 			break;
 		case 5 : // GPS Fix Quality (0 = Invalid, 1 = GPS fix, 2 = DGPS fix)
 			if (mBuffer[startPos] == '1' || mBuffer[startPos] == '2')
-				UNSET_STATE(GGA_INVALID);
+				SET_STATE(GGA_VALID);
 			break;
 		case 6 : // Number of Satellites
 			//Serial.print("Satellites : ");
@@ -447,7 +498,8 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 		case 7 : // Horizontal Dilution of Precision
 			break;
 		case 8 : // Altitude(above measn sea level)
-			// update IGC sentence
+			// update IGC sentence if it's unlocked
+			if (! IS_SET(IGC_LOCKED))
 			{
 				int i, j;
 				

@@ -13,23 +13,35 @@
 
 VarioSentence::VarioSentence(char type) : sentenceType(type)
 {
+	varioSentence = ((sentenceType == USE_LK8_SENTENCE) ?
+				(IVarioSentence *)&LK8 : (IVarioSentence *)&LxNav);
+				
+	lastTick = millis();
 }
 	
-void VarioSentence::update(float v, float h, float t)
+void VarioSentence::begin(double height, double vel, double temp, double bat)
 {
-	// never update if avaiable sentence exists
-	if (available())
-		return;
-	
-	// ...
+	varioSentence->begin(height, vel, temp, bat);
 }
 	
 int VarioSentence::available()
 {
-	return 0;
+	return varioSentence->available();
 }
 	
 int VarioSentence::read()
 {
-	return -1;
+	return varioSentence->read();
+}
+
+int VarioSentence::checkInterval()
+{
+	if ((millis() - lastTick) > VARIOMETER_SENTENCE_DELAY)
+	{
+		lastTick = millis();
+		
+		return true;
+	}
+	
+	return false;
 }

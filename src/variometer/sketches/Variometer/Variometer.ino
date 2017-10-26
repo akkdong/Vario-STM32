@@ -12,6 +12,7 @@
 #include <NmeaParserEx.h>
 #include <DigitalInput.h>
 #include <GlobalConfig.h>
+#include <ToneGenerator.h>
 #include <TonePlayer.h>
 #include <VarioBeeper.h>
 #include <SerialEx.h>
@@ -58,7 +59,7 @@
 #define PIN_KILL_PWR		PB14	// GPIO : input, active low
 #define PIN_SHDN_INT		PB15	// GPIO : input, active low
 #define PIN_MCU_STATE		PC13	// GPIO : output, active low(led on)
-
+#define PIN_MODE_SELECT		PC14	// GPIO : input, HIGH : UMS, LOW : DBG
 
 
 struct GPIO_PINMODE {
@@ -164,6 +165,12 @@ SdFat sd(SDCARD_CHANNEL);
 
 DigitalInput	funcInput;
 
+//
+//
+//
+
+//AnalogInput		voltInput;
+
 
 //
 //
@@ -184,7 +191,8 @@ static Tone startTone[] = {
 	{   0, 1000 / 8 }, 
 };
 
-TonePlayer	tonePlayer(PLAYER_TIMER_ID, PLAYER_TIMER_CH);
+ToneGenerator toneGen;
+TonePlayer	tonePlayer(toneGen);
 VarioBeeper	varioBeeper(tonePlayer);
 
 
@@ -290,6 +298,9 @@ void setup()
 	funcInput.begin(PIN_FUNC_INPUT);
 	
 	
+	// ToneGenerator uses PIN_PWM_H(PA8 : Timer1, Channel1)
+	toneGen.begin(PIN_PWM_H);
+	
 	//
 	tonePlayer.setVolume(Config.vario_volume);
 	tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, 0);	
@@ -319,8 +330,8 @@ void loop()
 	// read & prase gps sentence
 	nmeaParser.update();
 	// update vario sentence at periodic period
-	//if (varioNmea.checkInterval())
-	//	varioNmea.update(vertVel.getVelocity(), imu.getAltitude(), imu.getTemperature());
+	if (varioNmea.checkInterval())
+		varioNmea.begin(vertVel.getPosition(), vertVel.getVelocity(), imu.getTemperature(), 0.0 /*voltInput.getVoltage*/);
 	// send any prepared sentence to BT
 	btMan.update();
 	
@@ -335,7 +346,7 @@ void loop()
 		// execute(c);
 	}
 
-	// nmeaParser parse GPS sentence and convert it to IGC sentence
+	// nmeaParser parses GPS sentence and converts it to IGC sentence
 	#if 0
 	if (is_logging)
 	{
