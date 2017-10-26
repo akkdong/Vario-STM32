@@ -303,6 +303,7 @@ void NmeaParserEx::reset()
 	mLongitude = 0.0;	
 	mSpeed = 0;
 	mAltitude = 0;
+	mHeading = 0;
 	
 	mParseStep = -1;
 	mParseState = 0;
@@ -318,91 +319,27 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 		switch(fieldIndex)
 		{
 		case 0 : // Time (HHMMSS.sss UTC)
-			/*
-			// update IGC sentence
-			for(int i = 0; i < IGC_SIZE_TIME; i++)
-			{
-				if ('0' > mBuffer[startPos+i] || mBuffer[startPos+i] > '9')
-					break;
-				
-				mIGCSentence[IGC_OFFSET_TIME+i] = mBuffer[startPos+i];
-			}
-			
-			// save current time
-			// ...
-			*/
 			break;
 		case 1 : // Navigation receiver warning A = OK, V = warning
 			if (mBuffer[startPos] == 'A')
 				SET_STATE(RMC_VALID);
 			break;
 		case 2 : // Latitude (DDMM.mmm)
-			/*
-			// update IGC sentence
-			for(int i = 0, j = 0; i < IGC_SIZE_LATITUDE; i++, j++)
-			{
-				if ('0' <= mBuffer[startPos+i] && mBuffer[startPos+i] <= '9')
-					mIGCSentence[IGC_OFFSET_LATITUDE+i] = mBuffer[startPos+j];
-				else if (mBuffer[startPos+i] == '.')
-					i -= 1;
-				else
-					break;
-			}
-
-			// save latitude
-			// ...
-			*/
 			break;
 		case 3 : // Latitude (N or S)
-			/*
-			// update IGC sentence
-			if (mBuffer[startPos] != 'N' && mBuffer[startPos] != 'S')
-					break;
-			mIGCSentence[IGC_OFFSET_LATITUDE_] = mBuffer[startPos];
-			
-			// save latitude
-			// ...
-			*/
 			break;
 		case 4 : // Longitude (DDDMM.mmm)
-			/*
-			// update IGC sentence
-			for(int i = 0, j = 0; i < IGC_SIZE_LONGITUDE; i++, j++)
-			{
-				if ('0' <= mBuffer[startPos+i] && mBuffer[startPos+i] <= '9')
-					mIGCSentence[IGC_OFFSET_LONGITUDE+i] = mBuffer[startPos+j];
-				else if (mBuffer[startPos+i] == '.')
-					i -= 1;
-				else
-					break;
-			}
-			
-			// save latitude
-			// ...
-			*/
 			break;
 		case 5 : // Longitude (E or W)
-			/*
-			// update IGC sentence
-			if (mBuffer[startPos] != 'W' && mBuffer[startPos] != 'E')
-					break;
-			mIGCSentence[IGC_OFFSET_LONGITUDE_] = mBuffer[startPos];
-			
-			// save latitude
-			// ...
-			*/
 			break;
 		case 6 : // Speed over ground, Knots
-			//Serial.print("Speed : ");
-			//Serial.print(strToFloat(startPos) * 1.852);
-			//Serial.println(" Km/h");
+			mSpeed = (uint32_t)(strToFloat(startPos) * 1.852); // convert Knot to Km/h
 			break;
-		case 7 : // Course Made Good, True
+		case 7 : // Track Angle in degrees, True
+			mHeading = (uint32_t)(strToFloat(startPos) + 0.5);
 			break;
 		case 8 : // Date of fix  (DDMMYY)
-			//Serial.print("Date : ");
-			//Serial.print(strToNum(startPos));
-			//Serial.println("");
+			mDate = strToNum(startPos);
 			break;
 		}
 	}
@@ -424,7 +361,7 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			}
 			
 			// save current time
-			// ...
+			mTime = strToNum(startPos);
 			break;
 		case 1 : // Latitude (DDMM.mmm)
 			// update IGC sentence if it's unlocked
@@ -442,7 +379,7 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			}
 
 			// save latitude
-			// ...
+			mLatitude = strToFloat(startPos);
 			break;
 		case 2 : // Latitude (N or S)
 			// update IGC sentence if it's unlocked
@@ -454,7 +391,8 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			}
 			
 			// save latitude
-			// ...
+			if (mBuffer[startPos] != 'N')
+				mLatitude = -mLatitude; // south latitude is negative
 			break;
 		case 3 : // Longitude (DDDMM.mmm)
 			// update IGC sentence if it's unlocked
@@ -471,8 +409,8 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 				}
 			}
 			
-			// save latitude
-			// ...
+			// save longitude
+			mLongitude = strToFloat(startPos);
 			break;
 		case 4 : // Longitude (E or W)
 			// update IGC sentence if it's unlocked
@@ -483,17 +421,15 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 				mIGCSentence[IGC_OFFSET_LONGITUDE_] = mBuffer[startPos];
 			}
 			
-			// save latitude
-			// ...
+			// save longitude
+			if (mBuffer[startPos] != 'E')
+				mLongitude = -mLongitude; // west longitude is negative
 			break;
 		case 5 : // GPS Fix Quality (0 = Invalid, 1 = GPS fix, 2 = DGPS fix)
 			if (mBuffer[startPos] == '1' || mBuffer[startPos] == '2')
 				SET_STATE(GGA_VALID);
 			break;
 		case 6 : // Number of Satellites
-			//Serial.print("Satellites : ");
-			//Serial.print(strToNum(startPos));
-			//Serial.println("");
 			break;
 		case 7 : // Horizontal Dilution of Precision
 			break;
@@ -517,8 +453,8 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 					mIGCSentence[IGC_OFFSET_GPS_ALT+j] =  '0';
 			}
 			
-			// save current time
-			// ...
+			// save GPS altitude
+			mAltitude = (uint32_t)(strToFloat(startPos) + 0.5);
 			break;
 		case 9 : // Altitude unit (M: meter)
 			break;

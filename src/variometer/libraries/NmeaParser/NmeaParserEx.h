@@ -57,7 +57,16 @@ public:
 	int					availableIGC();
 	int					readIGC();
 	
-	void				reset();	
+	void				reset();
+	
+	//
+	uint32_t			getDate();  	// DDMMYY
+	uint32_t			getTime();		// HHMMSS
+	double				getLatitude();
+	double				getLongitude();
+	uint32_t			getAltitude();
+	uint32_t			getSpeed();
+	uint32_t			getHeading();
 	
 private:
 	int					isFull() 	{ return ((mWrite + 1) % MAX_PARSER_BUFFER) == mTail; }
@@ -88,8 +97,9 @@ private:
 	uint32_t			mTime;
 	double				mLatitude;
 	double				mLongitude;
-	uint32_t			mAltitude;
+	uint32_t			mAltitude;	
 	uint32_t			mSpeed;
+	uint32_t			mHeading;
 	
 	// IGC sentence
 	char				mIGCSentence[MAX_IGC_SENTENCE];
@@ -97,5 +107,31 @@ private:
 	int					mIGCSize;	// size = 0 -> empty, size = MAX_xx -> valid
 	
 };
+
+
+// inline functions
+//
+
+inline uint32_t NmeaParserEx::getDate()
+	{ return mDate; }
+	
+inline uint32_t	NmeaParserEx::getTime()
+	{ return mTime; }
+	
+inline double NmeaParserEx::getLatitude()
+	{ return mLatitude; }
+	
+inline double NmeaParserEx::getLongitude()
+	{ return mLongitude; }
+	
+inline uint32_t NmeaParserEx::getAltitude()
+	{ return mAltitude; }
+	
+inline uint32_t NmeaParserEx::getSpeed()
+	{ return mSpeed; }
+	
+inline uint32_t NmeaParserEx::getHeading()
+	{ return mHeading; }
+	
 
 #endif // __NMEAPARSEREX_H__

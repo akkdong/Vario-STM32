@@ -18,9 +18,7 @@
 #include <SerialEx.h>
 #include <VarioSentence.h>
 #include <BluetoothMan.h>
-
-#include <SdFat.h>
-#include <FreeStack.h>
+#include <IGCLogger.h>
 
 #define BAUDRATE_DEBUG		115200
 #define BAUDRATE_BT			9600
@@ -149,14 +147,10 @@ VarioSentence varioNmea(USE_LK8_SENTENCE);
 BluetoothMan	btMan(SerialEx1, nmeaParser, varioNmea);
 
 //
-// SD-Card instance
+// IGC Logger
 //
 
-#define SDCARD_CHANNEL			(1)
-#define SDCARD_CS				(PIN_SD_CS)
-#define SDCARD_CLOCK			(18)
-
-SdFat sd(SDCARD_CHANNEL);
+IGCLogger logger;
 
 
 //
@@ -232,9 +226,6 @@ void board_init()
 	Wire2.begin();
 	Wire2.setClock(400000); // 400KHz
 	
-	// Initialize SD-Card 
-	sd.begin(SDCARD_CS, SD_SCK_MHZ(SDCARD_CLOCK));
-	
 	// Initialize GPIO
 	for (int i = 0; i < sizeof(gpio_mode)/sizeof(gpio_mode[0]); i++)
 	{
@@ -272,31 +263,12 @@ void setup()
 				millis());
 
 
-	// SdFat test...
-	#if 0
-	Serial.print(F("FreeStack: "));
-	Serial.println(FreeStack());
-
-	// initialize the first card
-	if (!sd1.begin(SD1_CS, SD_SCK_MHZ(18))) {
-		Serial.println("sd1.initError(\"sd1:\");");
-		return;
-	}
-	// create Dir1 on sd1 if it does not exist
-	if (!sd1.exists("/Dir1")) {
-		if (!sd1.mkdir("/Dir1")) {
-			Serial.println("sd1.errorExit(\"sd1.mkdir\");");
-			return;
-		}
-	}
-	// list root directory on both cards
-	Serial.println(F("------sd1 root-------"));
-	sd1.ls();	
-	#endif
+	
+	// Initialize IGC Logger
+	logger.init();
 	
 	//
 	funcInput.begin(PIN_FUNC_INPUT);
-	
 	
 	// ToneGenerator uses PIN_PWM_H(PA8 : Timer1, Channel1)
 	toneGen.begin(PIN_PWM_H);
@@ -325,6 +297,8 @@ void loop()
 		
 		//
 		varioBeeper.setVelocity(vertVel.getVelocity());
+		//
+		logger.update(vertVel.getPosition());
 	}
 	
 	// read & prase gps sentence
@@ -336,7 +310,7 @@ void loop()
 	btMan.update();
 	
 	// we can change global configuration by BT communication
-	//  and execute some command also
+	//       and execute some command also
 	if (btMan.available())
 	{
 		//
@@ -346,34 +320,27 @@ void loop()
 		// execute(c);
 	}
 
-	// nmeaParser parses GPS sentence and converts it to IGC sentence
-	#if 0
-	if (is_logging)
+	// check logging state
+	if (! logger.isLogging())
 	{
-		static unsigned long tick = millis();
-		static int index = 0;
+		// if is not, check start condition
+		//
+		// ....
+		// logger.begin(nmeaParser.getDate());
+	}
+	else
+	{
+		// nmeaParser parses GPS sentence and converts it to IGC sentence
 		
-		if ((millis()-tick) > time_interval)
+		//static unsigned long tick = millis();
+		//static int index = 0;
+		
+		//if ((millis()-tick) > time_interval)
 		{		
-			if (nmeaParser.availableIGC())
-			{
-				// save it to file
-				if (IGC_OFFSET_PRESS_ALT <= index && index < IGC_OFFSET_GPS_ALT)
-				{
-					file.write(imu.getAltitude());
-				}
-				else
-				{
-					file.write(nmeaParser.readIGC());
-				}
-			}
-			else
-			{
-				index = 0;
-			}
+			while (nmeaParser.availableIGC())
+				logger.write(nmeaParser.readIGC());
 		}
 	}
-	#endif
 	
 	// beep beep beep!
 	tonePlayer.update();

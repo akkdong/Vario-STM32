@@ -1,0 +1,24 @@
+$LXWP0,Y,222.3,1665.5,1.71,,,,,,239,174,10.1 
+
+0   loger_stored (Y/N) 
+1   IAS (kph) 
+2   baroaltitude (m) 
+3   vario (m/s) 
+4-8 unknown 
+9   heading of plane 
+10  windcourse (deg) 
+11  windspeed (kph) 
+
+
+
+  $LXWP0,Y,222.3,1665.5,1.71,,,,,,239,174,10.1
+
+   0 loger_stored (Y/N)
+   1 IAS (kph) ----> Condor uses TAS!
+   2 baroaltitude (m)
+   3-8 vario (m/s) (last 6 measurements in last second)
+   9 heading of plane
+  10 windcourse (deg)
+  11 windspeed (kph)
+
+
