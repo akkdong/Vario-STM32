@@ -309,7 +309,7 @@ void loop()
 	nmeaParser.update();
 	// update vario sentence at periodic period
 	if (varioNmea.checkInterval())
-		varioNmea.begin(vertVel.getPosition(), vertVel.getVelocity(), imu.getTemperature(), batVolt.getVoltage);
+		varioNmea.begin(vertVel.getPosition(), vertVel.getVelocity(), imu.getTemperature(), batVolt.getVoltage());
 	// send any prepared sentence to BT
 	btMan.update();
 	

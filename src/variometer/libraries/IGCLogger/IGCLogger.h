@@ -8,8 +8,8 @@
 #include <SdFat.h>
 #include <FreeStack.h>
 
-#define SDCARD_CHANNEL			(1)
-#define SDCARD_CS				(PA4)
+#define SDCARD_CHANNEL			(2)
+#define SDCARD_CS				(PB12) // (PA4)
 #define SDCARD_CLOCK			(18)
 
 
@@ -24,7 +24,7 @@ public:
 public:
 	int					init();
 	
-	int					begin(uint32_t date);
+	int					begin(uint32_t date); // date = DDMMYY
 	void				end();
 	
 	int					write(uint8_t ch);

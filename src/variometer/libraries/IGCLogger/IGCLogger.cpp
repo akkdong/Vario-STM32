@@ -33,9 +33,12 @@ int IGCLogger::init()
 	//
 	reset();
 	
+	FreeStack();
+	
 	//
 	if (! sdCard.begin(SDCARD_CS, SD_SCK_MHZ(SDCARD_CLOCK)))
 	{
+		sdCard.initErrorHalt(F("sdCard:"));
 		SET_STATE(LOGGER_INIT_FAILED);
 		
 		return false;
@@ -65,7 +68,8 @@ int	IGCLogger::begin(uint32_t date)
 	// YYYY-MM-DD-STM-AKK-nn.igc
 	char * name = "YYYY-MM-DD-STM-AKK-nn.igc";
 	
-	if (sdFile.open(name, O_WRITE | O_CREAT | O_TRUNC))
+//	if (sdFile.open(name, O_WRITE | O_CREAT | O_EXCL))
+	if (sdFile.open(name, O_WRITE | O_CREAT))
 	{
 		//
 		SET_STATE(LOGGER_WORKING);
@@ -99,10 +103,10 @@ int IGCLogger::write(uint8_t ch)
 	// pressure altitude field is replaced by measured pressure altitude : NmeaParser returns null value
 	if (columnCount == IGC_OFFSET_PRESS_ALT)
 		digit.begin(varioAltitude, IGC_SIZE_PRESS_ALT);
-
-	if (digit.available() )
+	
+	if (digit.available())
 		ch = digit.read();
-
+	
 	sdFile.write(&ch, 1);
 	columnCount += 1;
 	

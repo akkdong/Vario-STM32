@@ -16,45 +16,27 @@
 ///////////////////////////////////////////////////////////////////////////
 // class BatteryVoltage
 
-BatteryVoltage::BatteryVoltage() : adc(ADC_CH)
+void BatteryVoltage::begin(uint8_t pin)
 {
-}
+	//
+	pinMode(pin, INPUT_ANALOG);
 	
-BatteryVoltage & BatteryVoltage::getInst()
-{
-	static BatteryVoltage & batVolt;
-	
-	return batVolt;
-}
-
-void BatteryVoltage::begin()
-{
-	uint8_t pin = ADC_PIN;
+	double total = 0;
+	for (int32_t i = 0; i < ADC_MEASURE_COUNT; i++)
+		total += analogRead(pin);
 	
 	//
-	measVoltage = 0.0;	
-	measState = 0;
-	
+	adcPin = pin;
+	measVoltage = ADC_TO_VOLTAGE(total / ADC_MEASURE_COUNT);	
 	lastTick = millis();
-	
-	//
-	adc.calibrate();
-	
-	adc.setSampleRate(ADC_SMPR_1_5);
-	adc.setPins(&pin, 1);
-	adc.setScanMode();
-	adc.setDMA(&measData[0], 1, (DMA_MINC_MODE | DMA_TRNS_CMPLT), DMA1_CH1_Event);
-	
-	adc.startConversion();
-	SET_STATE(ADC_SAMPLING);
 }
 
 void BatteryVoltage::update()
 {
-	if (! IS_SET(ADC_SAMPLING) && (millis() - lastTick) > ADC_MEASURE_INTERVAL)
+	if ((millis() - lastTick) > ADC_MEASURE_INTERVAL)
 	{
-		adc.startConversion();
-		SET_STATE(ADC_SAMPLING);
+		double value = ADC_TO_VOLTAGE(analogRead(adcPin));
+		measVoltage = value * LPF_FACTOR + measVoltage * (1 - LPF_FACTOR);
 	}
 }
 
@@ -63,14 +45,3 @@ double BatteryVoltage::getVoltage()
 	return measVoltage;
 }
 
-void BatteryVoltage::finish()
-{
-	measVoltage = ADC_TO_VOLTAGE(measData[0]);
-	UNSET_STATE(ADC_SAMPLING);
-}
-
-static void DMA1_CH1_Event()
-{
-	BatteryVoltage &batVolt = BatteryVoltage::getInst();	
-	batVolt.finish();
-}
