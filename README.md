@@ -33,6 +33,7 @@
 * SD card
 * USB : UMS, USB to Serial, DFU
 * EEPROM : 32KB I2C
+* Piezo speaker
 
 ## Device modes
 * Vario : default mode
