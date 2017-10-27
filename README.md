@@ -1,4 +1,4 @@
-# Variomenter with STM32
+# Variometer with STM32
 
 ## Variometer Features
 * Calcualte Vertical Velocity : uses sensor fusion(pressure & accelleration)
