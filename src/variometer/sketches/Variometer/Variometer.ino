@@ -164,7 +164,7 @@ DigitalInput	funcInput;
 //
 //
 
-BatteryVoltage & batVolt = BatteryVoltage::getInst();
+BatteryVoltage batVolt;
 
 
 //
@@ -269,7 +269,7 @@ void setup()
 	logger.init();
 	
 	//
-	batVolt.begin();
+	batVolt.begin(PIN_ADC_BATTERY);
 	
 	//
 	funcInput.begin(PIN_FUNC_INPUT);
@@ -307,7 +307,7 @@ void loop()
 	
 	// read & prase gps sentence
 	nmeaParser.update();
-	// update vario sentence at periodic period
+	// update vario sentence periodically
 	if (varioNmea.checkInterval())
 		varioNmea.begin(vertVel.getPosition(), vertVel.getVelocity(), imu.getTemperature(), batVolt.getVoltage());
 	// send any prepared sentence to BT
@@ -349,7 +349,7 @@ void loop()
 	// beep beep beep!
 	tonePlayer.update();
 	
-	//
+	// start voltage measurement periodically
 	batVolt.update();
 	
 	// process key-input

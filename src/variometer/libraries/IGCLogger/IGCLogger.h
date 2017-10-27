@@ -35,6 +35,9 @@ public:
 
 private:
 	void				reset();
+	
+	const char *		makeFileName(char * buf, uint32_t date);
+	void				writeHeader(uint32_t date);
 
 private:
 	SdFat				sdCard;
