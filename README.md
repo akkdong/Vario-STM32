@@ -21,7 +21,8 @@
 * Low battery detection
 * USB suppport : UMS(USB mass stroage), USB2Serial
 	* UMS can be enabled by Function key or when power on while functin key is pressed.
-	* USB2Serial supports Firmware update & Debugging
+	* USB2Serial supports Firmware update & Debugging\
+* Status LED : Power, MCU, GPS, BT status notify
 
 ## Hardware specifications
 * STM32F103CB Processor
