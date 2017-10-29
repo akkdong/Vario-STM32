@@ -72,14 +72,41 @@ GPIO_PINMODE gpio_mode[] =
 	{ PIN_SD_CS			, OUTPUT, HIGH }, // PA4	output, active low
 	{ PIN_BT_EN			, OUTPUT, HIGH }, // PB0	output, active low
 	{ PIN_GPS_EN		, OUTPUT, HIGH }, // PB1	output, active low
-	{ PIN_FUNC_INPUT	, INPUT,  LOW  }, // PB5	input, active low
+	{ PIN_FUNC_INPUT	, INPUT,   LOW }, // PB5	input, active low
 	{ PIN_USB_DETECT	, INPUT,  HIGH }, // PB8	input, active high
-	{ PIN_USB_EN		, OUTPUT, LOW  }, // PB9	output,	active high
-	{ PIN_KILL_PWR		, INPUT,  LOW  }, // PB14	input, active low
-	{ PIN_SHDN_INT		, INPUT,  LOW  }, // PB15	input, active low
+	{ PIN_USB_EN		, OUTPUT,  LOW }, // PB9	output,	active high
+	{ PIN_KILL_PWR		, INPUT,   LOW }, // PB14	input, active low
+	{ PIN_SHDN_INT		, INPUT,   LOW }, // PB15	input, active low
 	{ PIN_MCU_STATE		, OUTPUT, HIGH }, // PC13	output, active low(led on)
+	{ PIN_MODE_SELECT   , INPUT,  HIGH }, // PC14   input, active HIGH
 };
 
+
+//
+//
+//
+
+#define DEVICE_MODE_VARIO			(0)
+#define DEVICE_MODE_UMS				(1)
+#define DEVICE_MODE_CALIBRATION		(2)
+#define DEVICE_MODE_CONFIGURATION	(3)
+
+#define VARIO_MODE_INIT				(0)
+#define VARIO_MODE_LANDING			(1)
+#define VARIO_MODE_FLYING			(2)
+#define VARIO_MODE_HALT				(3)
+
+uint8_t deviceMode = DEVICE_MODE_VARIO;
+
+uint8_t	varioMode = VARIO_MODE_INIT;
+uint32_t flightTick;
+
+void (* main_loop)(void) = 0;
+
+void vario_loop();
+void ums_loop();
+void calibration_loop();
+void configuration_loop();
 
 
 //
@@ -238,7 +265,6 @@ void board_init()
 }
 
 
-
 //
 //
 //
@@ -279,14 +305,29 @@ void setup()
 	
 	//
 	tonePlayer.setVolume(Config.vario_volume);
-	tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, 0);	
+	tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, 0);
+	
+	//
+	varioMode = VARIO_MODE_LANDING;
+	main_loop = vario_loop;
 }
+
 
 //
 //
 //
 
 void loop()
+{
+	main_loop();
+}
+
+
+//
+//
+//
+
+void vario_loop()
 {
 	//
 	if (imu.dataReady())
@@ -323,16 +364,46 @@ void loop()
 		//
 		// execute(c);
 	}
+	
+	//
+	if (varioMode == VARIO_MODE_LANDING)
+	{
+		if (nmeaParser.getSpeed() > FLIGHT_START_MIN_SPEED)
+		{
+			// start logging & change mode
+			logger.begin(nmeaParser.getDate());
+			varioMode = VARIO_MODE_FLYING;
+			
+			// play take-off melody
+			// ...
+			
+			//
+			flightTick = millis();
+		}
+	}
+	else if (varioMode == VARIO_MODE_FLYING)
+	{
+		if (nmeaParser.getSpeed() < FLIGHT_START_MIN_SPEED)
+		{
+			if ((millis() - flightTick) < FLIGHT_LANDING_THRESHOLD)
+			{
+				// stop logging & change mode
+				logger.end();
+				varioMode = VARIO_MODE_LANDING;
+				
+				// play landing melody
+				// ...
+			}
+		}
+		else
+		{
+			// reset flightTick
+			flightTick = millis();
+		}
+	}
 
 	// check logging state
-	if (! logger.isLogging())
-	{
-		// if is not, check start condition
-		//
-		// ....
-		// logger.begin(nmeaParser.getDate());
-	}
-	else
+	if (logger.isLogging())
 	{
 		// nmeaParser parses GPS sentence and converts it to IGC sentence
 		
@@ -369,4 +440,31 @@ void loop()
 		
 		uint8_t value = funcInput.getValue();
 	}
+}
+
+
+//
+//
+//
+
+void ums_loop()
+{
+}
+
+
+//
+//
+//
+
+void calibration_loop()
+{
+}
+
+
+//
+//
+//
+
+void configuration_loop()
+{
 }

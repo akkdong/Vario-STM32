@@ -61,6 +61,8 @@
 #define FLIGHT_START_VARIO_HIGH_THRESHOLD 0.5
 #define FLIGHT_START_MIN_SPEED 10.0
 
+#define FLIGHT_LANDING_THRESHOLD 10000
+
 /* Speed filtering :                                               */
 /* Greater values give smoother speed. The base unit is 2 seconds  */
 /* so size = 5 use the last 10 seconds to average speed.           */
