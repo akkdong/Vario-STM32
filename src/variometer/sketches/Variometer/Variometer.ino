@@ -81,6 +81,71 @@ GPIO_PINMODE gpio_mode[] =
 	{ PIN_MODE_SELECT   , INPUT,  HIGH }, // PC14   input, active HIGH
 };
 
+// Objects used by each mode
+//
+//	Common used objects
+//	  Config
+//	  ToneGenerator
+//	  TonePlayer
+//	  DigitalInput
+//	  BatteryVoltage
+//	  CommandParser(*)
+//    LEDNotify(*)
+//
+//	Vario-mode
+//	  IMUModule
+//	  IGCLogger
+//	  VarioBeeper
+//	  TurnOff-Checker(*)
+//
+//  UMS-mode
+//      
+//	Calibration-mode
+//	  IMUModule
+//	
+//	Configuration-mode
+//	  IMUModule
+//	  IGCLogger
+//	
+//	  
+//	Commands
+//    by Function Key
+//      Mode change : UMS, Calibration(no-interactive calibration)
+//      Volume change : Mute, Loud, Quiet
+//      Reset
+//      
+//    by Serial (BT & USB)
+//      Mode change : Vario -> Configuration
+//      Read/Update configuration parameters
+//    	...
+//    	accelerator calibration
+//    	vario-tone table
+//      Interactive calibration
+//      Device monitoring : Sensor(IMU, GPS, ADC, ...) state & data
+//      Vario Tone Simulation
+//
+//	Communication(Serial) Protocol description
+//	  format
+//	    SOF(*)[CMD],[DATA1],[DATA2],....[DATAn]\r\n
+//	
+//	  
+//	LED status
+//	  IMU failed
+//	  SDCard failed
+//	  No-interactive Calibration
+//	    measure
+//		measure result (valid, invalid)
+//		can calibrate(?)
+//	  Firmware update
+//	
+//	Sound Notify
+//	  Device ready
+//	  Take-off
+//	  Landing
+//	  Calibration : start, calibration done, calibration failed, measure valid, measure invalid
+//	  Command(key) acquire : replay input
+//	  Command(key) done
+//	
 
 //
 //

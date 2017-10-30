@@ -372,7 +372,7 @@
 
     /* USB Disc Pin Setup.   USB DISC is PB0 */
     #define USB_DISC_BANK       GPIOB
-    #define USB_DISC_PIN            0
+    #define USB_DISC_PIN            9
 	
 #else
     #error "No config for this target"
