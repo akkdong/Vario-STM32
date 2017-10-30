@@ -421,14 +421,40 @@ void vario_loop()
 	
 	// we can change global configuration by BT communication
 	//       and execute some command also
-	if (btMan.available())
+	//if (btMan.available())
+	//{
+	//	//
+	//	int c = btMan.read();
+	//	
+	//	//
+	//	// execute(c);
+	//}
+	
+	//
+	#if 0
+	CommandParser parser1(Serial);	// Serial USB
+	CommandParser parser2(Serial1); // Serial BT
+	CommandStack cmdStack;
+	
+	parser1.begin(cmdStack);
+	parser2.begin(cmdStack);
+	
+	parser1.update();
+	parser2.update();
+	
+	while(cmdStack.peek())
 	{
-		//
-		int c = btMan.read();
+		Command cmd = cmdStack.pop();
 		
-		//
-		// execute(c);
+		switch(cmd.type)
+		{
+		case CALIBRATION :
+			mode = CALIBRATION;
+			requestor = cmd.source;
+			break;
+		}
 	}
+	#endif
 	
 	//
 	if (varioMode == VARIO_MODE_LANDING)
