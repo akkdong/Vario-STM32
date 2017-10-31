@@ -110,6 +110,12 @@
 #define FKYE_INPUT_ACTIVE						(0)			// LOW ACTIVE
 
 
+// LEDFlasher settings
+//
+
+#define FLASHER_LED_ACTIVE						(0)			// LOW ACTIVE(LOW: Turn On)
+
+
 // SD-Card settings
 //
 

@@ -21,6 +21,7 @@
 #include <IGCLogger.h>
 #include <BatteryVoltage.h>
 #include <CommandParser.h>
+#include <LEDFlasher.h>
 
 
 // PIN map
@@ -318,6 +319,13 @@ BatteryVoltage batVolt;
 //
 //
 
+LEDFlasher  ledFlasher;
+
+
+//
+//
+//
+
 static Tone startTone[] = {
 	{ 262, 1000 / 4 }, 
 	{ 196, 1000 / 8 }, 
@@ -421,6 +429,9 @@ void setup()
 	
 	//
 	funcInput.begin(PIN_FUNC_INPUT);
+	
+	//
+	ledFlasher.begin(PIN_MCU_STATE);
 	
 	// ToneGenerator uses PIN_PWM_H(PA8 : Timer1, Channel1)
 	toneGen.begin(PIN_PWM_H);
@@ -565,6 +576,9 @@ void vario_loop()
 	
 	// start voltage measurement periodically
 	batVolt.update();
+	
+	// MCU State : LED Blinking
+	ledFlasher.update();
 	
 	// process key-input
 	funcInput.update();
