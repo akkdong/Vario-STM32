@@ -4,8 +4,10 @@
 #ifndef __GLOBALCONFIG_H__
 #define __GLOBALCONFIG_H__
 
+#include <DefaultSettings.h>
 #include <Arduino.h>
 #include <EEPROMDriver.h>
+
 
 //
 // EEPROM block map
@@ -37,7 +39,7 @@
 //
 //
 
-#define MAX_BLOCK_SIZE			(256)
+#define MAX_CONFIG_BLOCK_SIZE		(256)
 
 
 //
@@ -85,6 +87,7 @@ public:
 	GlobalConfig(EEPROMDriver & driver, unsigned char addr);
 	
 	void				readAll();
+	void				writeAll();
 	
 	boolean				readBlock(unsigned char blockId, EEPROM_Block * block);
 	
@@ -110,8 +113,11 @@ public:
 	float				vario_climbThreshold;
 	float				vario_sensitivity;
 	
-	//
 	// vario_tone_table 
+	// ...
+	
+	// vario nmea sentence format
+	char				vario_sentence;
 	
 	//
 	float				kalman_sigmaP;
@@ -120,11 +126,14 @@ public:
 	// accel calibration data
 	float				accel[3]; 
 	
+	// dirty flag
+	char				dirty;
+	
 private:
 	EEPROMDriver &		eepromDriver;
-	unsigned char		eepromAddr;
+	unsigned char 		eepromAddr;
 	
-	unsigned char		buffer[MAX_BLOCK_SIZE];
+	unsigned char		buffer[MAX_CONFIG_BLOCK_SIZE];
 };
 
 

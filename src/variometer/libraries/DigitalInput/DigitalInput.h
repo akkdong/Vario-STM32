@@ -4,12 +4,7 @@
 #ifndef __DIGITALINPUT_H__
 #define __DIGITALINPUT_H__
 
-#define MIN_DEBOUNCE_TIME		(10)
-#define MIN_SHORTKEY_TIME		(300)
-#define MIN_FIRE_TIME			(500)
-
-
-#define INPUT_ACTIVE			(0)			// LOW ACTIVE
+#include <DefaultSettings.h>
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

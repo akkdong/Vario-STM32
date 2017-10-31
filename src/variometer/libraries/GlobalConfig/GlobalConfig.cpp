@@ -34,26 +34,32 @@ GlobalConfig::GlobalConfig(EEPROMDriver & driver, unsigned char addr) : eepromDr
 	glider = NULL;
 	
 	//
-	timeZone = 9; // GMT+9
+	timeZone = VARIOMETER_TIME_ZONE; // GMT+9
 	
 	//
-	vario_volume = 100; // 0 ~ 100
+	vario_volume = VARIOMETER_BEEP_VOLUME; // 0 ~ 100
 	
-	vario_sinkThreshold = 3.0;
-	vario_climbThreshold = 0.2;
-	vario_sensitivity = 0.15;
+	vario_sinkThreshold = VARIOMETER_SINKING_THRESHOLD; // -3.0
+	vario_climbThreshold = VARIOMETER_CLIMBING_THRESHOLD; // 0.2
+	vario_sensitivity = VARIOMETER_NEAR_CLIMBING_SENSITIVITY; // 0.5
 	
 	//
 	// vario_tone_table 
 	
 	//
-	kalman_sigmaP = 0.1;
-	kalman_sigmaA = 0.3;
+	kalman_sigmaP = POSITION_MEASURE_STANDARD_DEVIATION; // 0.1
+	kalman_sigmaA = ACCELERATION_MEASURE_STANDARD_DEVIATION; // 0.3
+	
+	//
+	vario_sentence = VARIOMETER_NMEA_SENTENCE;
 	
 	// accel calibration data
 	accel[0] = 0.0; 
 	accel[1] = 0.0; 
 	accel[2] = 0.0; 
+	
+	//
+	dirty = false;
 }
 	
 void GlobalConfig::readAll()
@@ -103,6 +109,18 @@ void GlobalConfig::readAll()
 
 	//
 	// ...
+	
+	//
+	dirty = false;
+}
+
+void GlobalConfig::writeAll()
+{
+	// write all parameters
+	// ....
+	
+	//
+	dirty = false;
 }
 
 boolean GlobalConfig::readBlock(unsigned char id, EEPROM_Block * block)

@@ -36,7 +36,7 @@ void BatteryVoltage::update()
 	if ((millis() - lastTick) > ADC_MEASURE_INTERVAL)
 	{
 		double value = ADC_TO_VOLTAGE(analogRead(adcPin));
-		measVoltage = value * LPF_FACTOR + measVoltage * (1 - LPF_FACTOR);
+		measVoltage = value * ADC_LPF_FACTOR + measVoltage * (1 - ADC_LPF_FACTOR);
 	}
 }
 

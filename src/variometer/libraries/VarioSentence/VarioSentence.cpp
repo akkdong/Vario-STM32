@@ -2,10 +2,7 @@
 //
 
 #include <Arduino.h>
-
 #include "VarioSentence.h"
-//#include "LxNavSentence.h"
-//#include "Lk8Sentence.h"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -13,7 +10,7 @@
 
 VarioSentence::VarioSentence(char type) : sentenceType(type)
 {
-	varioSentence = ((sentenceType == USE_LK8_SENTENCE) ?
+	varioSentence = ((sentenceType == VARIOMETER_LK8_SENTENCE) ?
 				(IVarioSentence *)&LK8 : (IVarioSentence *)&LxNav);
 				
 	lastTick = millis();

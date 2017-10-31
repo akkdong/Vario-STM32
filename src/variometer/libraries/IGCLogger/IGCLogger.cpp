@@ -7,6 +7,7 @@
 
 #include "IGCLogger.h"
 
+
 #define CLEAR_STATE()		logState = 0
 #define SET_STATE(bit)		logState |= (bit)
 #define UNSET_STATE(bit)	logState &= ~(bit)

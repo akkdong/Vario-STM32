@@ -70,7 +70,7 @@ void NmeaParserEx::update()
 		//	Serial.print("+ "); Serial.write(c); Serial.println("");
 		
 		mBuffer[mWrite] = c;
-		mWrite = (mWrite + 1) % MAX_PARSER_BUFFER;
+		mWrite = (mWrite + 1) % MAX_NMEA_PARSER_BUFFER ;
 
 		//
 		if (c == '$')
@@ -122,7 +122,7 @@ void NmeaParserEx::update()
 					//for(int i = mHead; i != mWrite; )
 					//{
 					//	Serial.write(mBuffer[i]);
-					//	i = (i + 1) % MAX_PARSER_BUFFER;
+					//	i = (i + 1) % MAX_NMEA_PARSER_BUFFER;
 					//}
 					//Serial.println("]");
 					
@@ -255,7 +255,7 @@ int NmeaParserEx::read()
 		return -1;
 	
 	int c = mBuffer[mTail];
-	mTail = (mTail + 1) % MAX_PARSER_BUFFER;
+	mTail = (mTail + 1) % MAX_NMEA_PARSER_BUFFER;
 	
 	return c;
 }
@@ -486,7 +486,7 @@ double NmeaParserEx::strToFloat(int startPos)
 			break;
 		}
 		
-		i = (i + 1) % MAX_PARSER_BUFFER;
+		i = (i + 1) % MAX_NMEA_PARSER_BUFFER;
 	}
 	
 	if (div)
@@ -512,7 +512,7 @@ long NmeaParserEx::strToNum(int startPos)
 			break;
 		}
 		
-		i = (i + 1) % MAX_PARSER_BUFFER;
+		i = (i + 1) % MAX_NMEA_PARSER_BUFFER;
 	}
 	
 	return value;

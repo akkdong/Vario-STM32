@@ -3,6 +3,11 @@
 
 #include "VarioBeeper.h"
 
+#define BEEP_TYPE_SILENT				(0)
+#define BEEP_TYPE_SINKING				(1)
+#define BEEP_TYPE_CLIMBING				(2)
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -68,7 +73,7 @@ void VarioBeeper::setVelocity(double velocity)
 	switch (beepType)
 	{
 	case BEEP_TYPE_SINKING :
-		if (sinkingThreshold + BEEP_VELOCITY_SISITIVITY < velocity)
+		if (sinkingThreshold + Config.vario_sensitivity < velocity)
 			typeChanged = true;
 		break;
 		
@@ -78,7 +83,7 @@ void VarioBeeper::setVelocity(double velocity)
 		break;
 		
 	case BEEP_TYPE_CLIMBING :
-		if (velocity < climbingThreshold - BEEP_VELOCITY_SISITIVITY)
+		if (velocity < climbingThreshold - Config.vario_sensitivity)
 			typeChanged = true;
 		break;
 	}

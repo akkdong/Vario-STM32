@@ -4,21 +4,9 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
+#include <DefaultSettings.h>
 #include <Arduino.h>
-#include <VarioSettings.h>
 #include <I2CDevice.h>
-
-
-// target definition
-//
-
-#define TARGET_STM32DUINO_VARIOMETER
-
-// sensor definition
-// 
-// it supports MPU6050, MPU6500, MPU9150, MPU9250
-
-#define MPU6050
 
 
 /* The following functions must be defined for this platform:

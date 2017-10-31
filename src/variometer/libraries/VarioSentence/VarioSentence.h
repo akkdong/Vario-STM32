@@ -4,12 +4,8 @@
 #ifndef __VARIOSENTENCE_H__
 #define __VARIOSENTENCE_H__
 
+#include <DefaultSettings.h>
 #include <Digit.h>
-
-#define USE_LK8_SENTENCE			(0)
-#define USE_LXNAV_SENTENCE			(1)
-
-#define VARIOMETER_SENTENCE_DELAY	(1000)
 
 
 /////////////////////////////////////////////////////////////////////////////

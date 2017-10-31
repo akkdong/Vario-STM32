@@ -7,10 +7,7 @@
 #include <FixedLenDigit.h>
 #include <SdFat.h>
 #include <FreeStack.h>
-
-#define SDCARD_CHANNEL			(2)
-#define SDCARD_CS				(PB12) // (PA4)
-#define SDCARD_CLOCK			(18)
+#include <DefaultSettings.h>
 
 
 /////////////////////////////////////////////////////////////////////////////

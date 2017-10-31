@@ -1,12 +1,12 @@
 // Variometer.ino
 //
 
+#include <DefaultSettings.h>
 #include <Arduino.h>
 #include <Wire.h>
 #include <SPI.h>
 #include <I2CDevice.h>
 #include <EEPROMDriver.h>
-#include <VarioSettings.h>
 #include <VertVelocity.h>
 #include <IMUModule.h>
 #include <NmeaParserEx.h>
@@ -20,46 +20,11 @@
 #include <BluetoothMan.h>
 #include <IGCLogger.h>
 #include <BatteryVoltage.h>
+#include <CommandParser.h>
 
-#define BAUDRATE_DEBUG		115200
-#define BAUDRATE_BT			9600
-#define BAUDRATE_GPS		9600
 
-#define PIN_ADC_BATTERY		PA0		// ADC
-#define PIN_EMPTY_1			PA1		// empty
-#define PIN_USART2_TX		PA2		// USART2
-#define PIN_USART2_RX		PA3		// USART2
-#define PIN_SD_CS			PA4		// GPIO : output, active low
-#define PIN_SD_SCLK			PA5		// SD
-#define PIN_SD_MISO			PA6		// SD
-#define PIN_SD_MOSI			PA7		// SD
-#define PIN_PWM_H			PA8		// PWM
-#define PIN_USART1_TX		PA9		// USART1
-#define PIN_USART1_RX		PA10	// USART1
-#define PIN_USB_DM			PA11	// USB
-#define PIN_USB_DP			PA12	// USB
-#define PIN_JTAG_JTMS		PA13	// JTAG
-#define PIN_JTAG_JTCK		PA14	// JTAG
-#define PIN_JTAG_JTDI		PA15	// JTAG
-#define PIN_BT_EN			PB0		// GPIO : output, active low
-#define PIN_GPS_EN			PB1		// GPIO : output, active low
-#define PIN_BOOT1			PB2		// boot
-#define PIN_JTAG_JTDO		PB3		// JTAG
-#define PIN_JTAG_JNTRST		PB4		// JTAG
-#define PIN_FUNC_INPUT		PB5		// GPIO : input, active low
-#define PIN_I2C1_SCL		PB6		// I2C1
-#define PIN_I2C1_SDA		PB7		// I2C1
-#define PIN_USB_DETECT		PB8		// GPIO : input, active high
-#define PIN_USB_EN			PB9		// GPIO : output,	active high
-#define PIN_I2C2_SCL		PB10	// I2C2
-#define PIN_I2C2_SDA		PB11	// I2C2
-#define PIN_EMPTY_2			PB12	// empty
-#define PIN_EMPTY_3			PB13	// empty
-#define PIN_KILL_PWR		PB14	// GPIO : input, active low
-#define PIN_SHDN_INT		PB15	// GPIO : input, active low
-#define PIN_MCU_STATE		PC13	// GPIO : output, active low(led on)
-#define PIN_MODE_SELECT		PC14	// GPIO : input, HIGH : UMS, LOW : DBG
-
+// PIN map
+//
 
 struct GPIO_PINMODE {
 	uint8 			pin;
@@ -125,10 +90,99 @@ GPIO_PINMODE gpio_mode[] =
 //      Vario Tone Simulation
 //
 //	Communication(Serial) Protocol description
-//	  format
-//	    SOF(*)[CMD],[DATA1],[DATA2],....[DATAn]\r\n
-//	
-//	  
+//	  1. Device -> Console
+//        - nmea sentences
+//            SOF($),[SENTENCE],,[DATA1],[DATA2],....[DATAn],[CHKSUM]\r\n
+//        - response
+//	          SOF(*)[TAG]<,[DATA1],[DATA2],....[DATAn]>\r\n : response data
+//            SOF(*)[OK|FAIL]\r\n  : response result
+//            SOF(<),[{FILED:VALUE},...] : response parameters
+//        - log or message
+//            SOF(@)[STRING]\r\n
+//    2. Console -> Device
+//        - command
+//            SOF(#)[CMD],[DATA]\r\n
+//        - set parameter
+//            SOF(>)[TYPE],[VALUE]\r\n
+//
+//
+//
+//
+//
+//
+//
+
+//  Packet from Configuration console
+//    1. mode switch
+//         "#SW,[1|2|3|4]"
+//            1 : start interactive calibration
+//            2 : start no-interactive calibration
+//            3 : start UMS
+//            4 : configuraiton(?)
+//         response
+//            "*OK\r\n"
+//            "*FAIL\r\n"
+//    2. device status
+//         "#DS<,[0|1|2|3>\r\n"
+//            0 : all (imu, sd-card, gps, voltage, ...), default
+//            1 : imu
+//            2 : sd-card
+//            3 : gps
+//            4 : voltage
+//         response
+//            "*STS,[DATA1],[DATA2],...,[DATAn]\r\n"
+//            DATAx -> {TYPE:VALUE(V|F)}
+//            ex) "*STS,IMU:V,SD:V,GPS:F\r\n"
+//    2. sensor dump
+//         "#DU,[0|1|2|3|4|5]"
+//            0 : none (stop)
+//            1 : acceleration
+//            2 : pressure
+//            3 : temperature
+//            4 : voltage
+//            5 : all (acceleration, pressure, temperature, voltage)
+//         response : send repeatedly
+//            "*ACC,x,y,z\r\n"  
+//            "*PRS,x\r\n"  
+//            "*TEM,x\r\n"  
+//            "*VOL,x\r\n"  
+//	  3. vario tone test : configuration mode only(?)
+//         "#TT,[0|1]"
+//            0 : stop if is running
+//            1 : start tone test
+//    4. vario sound level
+//         "#SL,[0|1|2]"
+//            0 : mute
+//            1 : quiet`
+//            2 : loud
+//         response
+//            "*OK\r\n"
+//            "*FAIL\r\n"
+//    5. reset(restart)
+//         "#RS<,[0|1]>\r\n"
+//            0 : just reset
+//            1 : write parameters to eeprom(in configuration mode)
+//         response
+//            (no response)
+//    6. query parameter
+//         "#QU,FIELD\r\n"
+//            0   : all
+//            1~n : each field
+//         response
+//            "*PARAM,[DATA1],[DATA2],...,[DATAn]\r\n"
+//            DATAx -> {FIELD:VALUE}
+//    7. update parameter
+//         "#UD,FIELD,VALUE\r\n"
+//            FIELD : ...
+//            VALUE : BYTE, WORD, DWORD, FLOAT, STRING
+//         response
+//            "*OK\r\n"
+//            "*FAIL\r\n"
+//
+//  Packet from Firmware downloader
+//    DFU....
+
+
 //	LED status
 //	  IMU failed
 //	  SDCard failed
@@ -145,7 +199,10 @@ GPIO_PINMODE gpio_mode[] =
 //	  Calibration : start, calibration done, calibration failed, measure valid, measure invalid
 //	  Command(key) acquire : replay input
 //	  Command(key) done
-//	
+//
+//
+// 
+//
 
 //
 //
@@ -180,8 +237,6 @@ void configuration_loop();
 //
 //
 
-#define POSITION_MEASURE_STANDARD_DEVIATION 		(0.1)
-#define ACCELERATION_MEASURE_STANDARD_DEVIATION 	(0.3)
 
 VertVelocity  	vertVel;
 
@@ -230,7 +285,7 @@ NmeaParserEx nmeaParser(SerialEx2);
 //
 //
 
-VarioSentence varioNmea(USE_LK8_SENTENCE);
+VarioSentence varioNmea(VARIOMETER_NMEA_SENTENCE);
 
 
 //
@@ -263,9 +318,6 @@ BatteryVoltage batVolt;
 //
 //
 
-#define PLAYER_TIMER_ID		(1)
-#define PLAYER_TIMER_CH		(1)
-
 static Tone startTone[] = {
 	{ 262, 1000 / 4 }, 
 	{ 196, 1000 / 8 }, 
@@ -287,13 +339,18 @@ VarioBeeper	varioBeeper(tonePlayer);
 //
 //
 
-#define EEPROM_TOTAL_SIZE		(64*1024)
-#define EEPROM_PAGE_SIZE		(16)
-
-#define EEPROM_ADDRESS			(0x50)
-
-
 GlobalConfig	Config(eeprom, EEPROM_ADDRESS);
+
+
+//
+//
+//
+
+CommandStack	cmdStack;
+
+CommandParser	cmdParser1(Serial, cmdStack); // USB serial parser
+CommandParser	cmdParser2(Serial1, cmdStack); // BT serial parser
+
 
 
 //
@@ -429,32 +486,27 @@ void vario_loop()
 	//	//
 	//	// execute(c);
 	//}
+
 	
 	//
-	#if 0
-	CommandParser parser1(Serial);	// Serial USB
-	CommandParser parser2(Serial1); // Serial BT
-	CommandStack cmdStack;
+	cmdParser1.update();
+	cmdParser2.update();
 	
-	parser1.begin(cmdStack);
-	parser2.begin(cmdStack);
-	
-	parser1.update();
-	parser2.update();
-	
-	while(cmdStack.peek())
+	while(cmdStack.getSize())
 	{
-		Command cmd = cmdStack.pop();
+		Command cmd = cmdStack.dequeue();
 		
-		switch(cmd.type)
+		switch(cmd.code)
 		{
-		case CALIBRATION :
-			mode = CALIBRATION;
-			requestor = cmd.source;
+		case CMD_MODE_SWITCH :
+			break;
+		case 1 :
+			break;
+		case 2 :
 			break;
 		}
 	}
-	#endif
+
 	
 	//
 	if (varioMode == VARIO_MODE_LANDING)
