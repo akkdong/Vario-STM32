@@ -1,7 +1,7 @@
 # Variometer with STM32
 
 ## Variometer Features
-* Calcualte Vertical Velocity : uses sensor fusion(pressure & accelleration)
+* Calculate Vertical Velocity : uses sensor fusion(pressure & accelleration)
 * Vario sound
 * Receive GPS data
 * IGC Logging : save to SD-Card

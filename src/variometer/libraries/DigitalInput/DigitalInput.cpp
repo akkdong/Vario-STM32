@@ -58,7 +58,7 @@ void DigitalInput::update()
 		break;
 		
 	case TRANS_DOWN :
-		if (millis() - lastTick > FKYE_MIN_DEBOUNCE_TIME)
+		if (millis() - lastTick > FKEY_MIN_DEBOUNCE_TIME)
 		{
 			if (input == BUTTON_DOWN)
 			{
@@ -86,7 +86,7 @@ void DigitalInput::update()
 	case STATE_DOWN :
 		if (input == BUTTON_UP)
 		{
-			if (millis() - lastTick > FKYE_MIN_SHORTKEY_TIME)
+			if (millis() - lastTick > FKEY_MIN_SHORTKEY_TIME)
 			{
 				// LONG press
 				inputValue += (1 << inputIndex);
@@ -99,7 +99,7 @@ void DigitalInput::update()
 		break;
 		
 	case TRANS_UP :
-		if (millis() - lastTick > FKYE_MIN_DEBOUNCE_TIME)
+		if (millis() - lastTick > FKEY_MIN_DEBOUNCE_TIME)
 		{
 			inputState = COMP_INPUT;
 			lastTick = millis();
@@ -115,7 +115,7 @@ void DigitalInput::update()
 		}
 		else
 		{
-			if (millis() - lastTick > FKYE_MIN_FIRE_TIME)
+			if (millis() - lastTick > FKEY_MIN_FIRE_TIME)
 			{
 				returnValue = ((inputIndex + 1) << 5) + inputValue;
 				inputState = WAIT_INPUT;
@@ -134,14 +134,14 @@ int DigitalInput::getInput()
 {
 	int input = digitalRead(inputPin);
 	
-#if FKYE_INPUT_ACTIVE
+#if FKEY_INPUT_ACTIVE
 	// active high (press(down) high)
 	// 
 	return input ? BUTTON_DOWN : BUTTON_UP;
 #else
 	// active low (press(down) low)
 	return input ? BUTTON_UP : BUTTON_DOWN;
-#endif // FKYE_INPUT_ACTIVE
+#endif // FKEY_INPUT_ACTIVE
 }
 
 unsigned char DigitalInput::getValue()

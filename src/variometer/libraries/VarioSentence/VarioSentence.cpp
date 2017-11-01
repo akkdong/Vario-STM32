@@ -33,7 +33,7 @@ int VarioSentence::read()
 
 int VarioSentence::checkInterval()
 {
-	if ((millis() - lastTick) > VARIOMETER_SENTENCE_DELAY)
+	if (! varioSentence->available() && (millis() - lastTick) > VARIOMETER_SENTENCE_DELAY)
 	{
 		lastTick = millis();
 		

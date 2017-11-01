@@ -21,8 +21,9 @@
 #include <IGCLogger.h>
 #include <BatteryVoltage.h>
 #include <CommandParser.h>
+#include <FuncKeyParser.h>
 #include <LEDFlasher.h>
-
+#include <SensorReporter.h>
 
 // PIN map
 //
@@ -84,7 +85,7 @@ GPIO_PINMODE gpio_mode[] =
 //      Mode change : Vario -> Configuration
 //      Read/Update configuration parameters
 //    	...
-//    	accelerator calibration
+//    	accelerometer calibration
 //    	vario-tone table
 //      Interactive calibration
 //      Device monitoring : Sensor(IMU, GPS, ADC, ...) state & data
@@ -135,18 +136,26 @@ GPIO_PINMODE gpio_mode[] =
 //            DATAx -> {TYPE:VALUE(V|F)}
 //            ex) "*STS,IMU:V,SD:V,GPS:F\r\n"
 //    2. sensor dump
-//         "#DU,[0|1|2|3|4|5]"
-//            0 : none (stop)
-//            1 : acceleration
-//            2 : pressure
-//            3 : temperature
-//            4 : voltage
-//            5 : all (acceleration, pressure, temperature, voltage)
+//         "#DU,[bitmasks]"
+//            0    : none (stop)
+//            bit0 : accelerometer
+//            bit1 : pressure
+//            bit2 : temperature
+//            bit3 : voltage
+//            bit4 : gps
+//            bit5 : v-velocity
 //         response : send repeatedly
 //            "*ACC,x,y,z\r\n"  
 //            "*PRS,x\r\n"  
 //            "*TEM,x\r\n"  
 //            "*VOL,x\r\n"  
+//    2.1. nmea sentence
+//         "#NM,[0|1]"
+//            0 : stop sending
+//            1 : start sending
+//         response
+//            "*OK\r\n"
+//            "*FAIL\r\n"
 //	  3. vario tone test : configuration mode only(?)
 //         "#TT,[0|1]"
 //            0 : stop if is running
@@ -286,14 +295,20 @@ NmeaParserEx nmeaParser(SerialEx2);
 //
 //
 
-VarioSentence varioNmea(VARIOMETER_NMEA_SENTENCE);
+VarioSentence varioNmea(VARIOMETER_DEFAULT_NMEA_SENTENCE);
 
 
 //
 //
 //
 
-BluetoothMan	btMan(SerialEx1, nmeaParser, varioNmea);
+SensorReporter sensorReporter;
+
+//
+//
+//
+
+BluetoothMan	btMan(SerialEx1, nmeaParser, varioNmea, sensorReporter);
 
 //
 // IGC Logger
@@ -358,7 +373,7 @@ CommandStack	cmdStack;
 
 CommandParser	cmdParser1(Serial, cmdStack); // USB serial parser
 CommandParser	cmdParser2(Serial1, cmdStack); // BT serial parser
-
+FuncKeyParser	keyParser(funcInput, cmdStack, tonePlayer);
 
 
 //
@@ -418,8 +433,6 @@ void setup()
 				Config.kalman_sigmaP, // POSITION_MEASURE_STANDARD_DEVIATION,
 				Config.kalman_sigmaA, // ACCELERATION_MEASURE_STANDARD_DEVIATION,
 				millis());
-
-
 	
 	// Initialize IGC Logger
 	logger.init();
@@ -474,7 +487,8 @@ void vario_loop()
 		Serial.println("");
 		
 		//
-		varioBeeper.setVelocity(vertVel.getVelocity());
+		//sensorReporter.setData(...);
+		varioBeeper.setVelocity(vertVel.getVelocity());		
 		//
 		logger.update(vertVel.getPosition());
 	}
@@ -502,6 +516,7 @@ void vario_loop()
 	//
 	cmdParser1.update();
 	cmdParser2.update();
+	keyParser.update();
 	
 	while(cmdStack.getSize())
 	{
@@ -509,11 +524,38 @@ void vario_loop()
 		
 		switch(cmd.code)
 		{
-		case CMD_MODE_SWITCH :
+		case CMD_MODE_SWITCH 	:
+			// change current mode
+			if (deviceMode != cmd.param)
+			{
+				switch (cmd.param)
+				{
+				case PARAM_SW_ICALIBRATION :
+				case PARAM_SW_CALIBRATION  :
+					break;
+				case PARAM_SW_UMS          :
+					break;
+				}
+			}
 			break;
-		case 1 :
+		case CMD_DEVICE_STATUS 	:
 			break;
-		case 2 :
+		case CMD_SENSOR_DUMP 	:
+			btMan.blockSensorData(cmd.param);
+			break;
+		case CMD_NMEA_SENTENCE  :
+			btMan.blockNmeaSentence(cmd.param);
+			break;
+			break;
+		case CMD_TONE_TEST 		:
+			break;
+		case CMD_SOUND_LEVEL 	:
+			break;
+		case CMD_DEVICE_RESET 	:
+			break;
+		case CMD_QUERY_PARAM 	:
+			break;
+		case CMD_UPDATE_PARAM 	:
 			break;
 		}
 	}
@@ -581,6 +623,7 @@ void vario_loop()
 	ledFlasher.update();
 	
 	// process key-input
+	#if 0 // FuncKeyParser treats key-input internally
 	funcInput.update();
 
 	if (funcInput.fired())
@@ -597,6 +640,7 @@ void vario_loop()
 		
 		uint8_t value = funcInput.getValue();
 	}
+	#endif
 }
 
 

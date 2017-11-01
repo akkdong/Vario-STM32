@@ -51,7 +51,7 @@ GlobalConfig::GlobalConfig(EEPROMDriver & driver, unsigned char addr) : eepromDr
 	kalman_sigmaA = ACCELERATION_MEASURE_STANDARD_DEVIATION; // 0.3
 	
 	//
-	vario_sentence = VARIOMETER_NMEA_SENTENCE;
+	vario_sentence = VARIOMETER_DEFAULT_NMEA_SENTENCE;
 	
 	// accel calibration data
 	accel[0] = 0.0; 

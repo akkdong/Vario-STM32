@@ -62,7 +62,7 @@
 
 #define VARIOMETER_LXNAV_SENTENCE				(1)
 #define VARIOMETER_LK8_SENTENCE					(2)
-#define VARIOMETER_NMEA_SENTENCE				VARIOMETER_LK8_SENTENCE
+#define VARIOMETER_DEFAULT_NMEA_SENTENCE		VARIOMETER_LK8_SENTENCE
 
 #define VARIOMETER_SENTENCE_DELAY				(1000)
 
@@ -102,12 +102,12 @@
 // Function key settings
 //
 
-#define FKYE_MIN_DEBOUNCE_TIME					(10)	// ms
-#define FKYE_MIN_SHORTKEY_TIME					(300)	// ms
-#define FKYE_MIN_FIRE_TIME						(500)	// ms
+#define FKEY_MIN_DEBOUNCE_TIME					(10)	// ms
+#define FKEY_MIN_SHORTKEY_TIME					(300)	// ms
+#define FKEY_MIN_FIRE_TIME						(500)	// ms
 
 
-#define FKYE_INPUT_ACTIVE						(0)			// LOW ACTIVE
+#define FKEY_INPUT_ACTIVE						(0)			// LOW ACTIVE
 
 
 // LEDFlasher settings
