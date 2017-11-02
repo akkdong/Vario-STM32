@@ -73,7 +73,7 @@
 #define EEPROM_TOTAL_SIZE						(32*1024)
 #define EEPROM_PAGE_SIZE						(16)
 
-#define EEPROM_ADDRESS							(0x50)
+#define EEPROM_ADDRESS							(0xA0)	// 1 0 1 0 A2 A1 A0 R/W
 
 
 // Kalman filter settings
