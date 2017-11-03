@@ -10,7 +10,7 @@
 #include <VertVelocity.h>
 #include <IMUModule.h>
 #include <NmeaParserEx.h>
-#include <DigitalInput.h>
+#include <FunctionKey.h>
 #include <GlobalConfig.h>
 #include <ToneGenerator.h>
 #include <TonePlayer.h>
@@ -25,6 +25,7 @@
 #include <LEDFlasher.h>
 #include <SensorReporter.h>
 
+/* not use anymore
 // PIN map
 //
 
@@ -36,17 +37,18 @@ struct GPIO_PINMODE {
 
 GPIO_PINMODE gpio_mode[] = 
 {
-	{ PIN_SD_CS			, OUTPUT, HIGH }, // PA4	output, active low
+//	{ PIN_SD_CS			, OUTPUT, HIGH }, // PA4	output, active low
 	{ PIN_BT_EN			, OUTPUT, HIGH }, // PB0	output, active low
 	{ PIN_GPS_EN		, OUTPUT, HIGH }, // PB1	output, active low
-	{ PIN_FUNC_INPUT	, INPUT,   LOW }, // PB5	input, active low
-	{ PIN_USB_DETECT	, INPUT,  HIGH }, // PB8	input, active high
-	{ PIN_USB_EN		, OUTPUT,  LOW }, // PB9	output,	active high
-	{ PIN_KILL_PWR		, INPUT,   LOW }, // PB14	input, active low
-	{ PIN_SHDN_INT		, INPUT,   LOW }, // PB15	input, active low
+//	{ PIN_USB_EN		, OUTPUT,  LOW }, // PB9	output,	active high
+	{ PIN_KILL_PWR		, OUTPUT, HIGH }, // PB14	output, active low
 	{ PIN_MCU_STATE		, OUTPUT, HIGH }, // PC13	output, active low(led on)
-	{ PIN_MODE_SELECT   , INPUT,  HIGH }, // PC14   input, active HIGH
+	{ PIN_MODE_SELECT   , INPUT,  HIGH }, // PC14    input, active HIGH
+	{ PIN_FUNC_INPUT	, INPUT,   LOW }, // PB5	 input, active low
+	{ PIN_USB_DETECT	, INPUT,  HIGH }, // PB8	 input, active high
+	{ PIN_SHDN_INT		, INPUT,   LOW }, // PB15	 input, active low
 };
+*/
 
 // Objects used by each mode
 //
@@ -54,7 +56,7 @@ GPIO_PINMODE gpio_mode[] =
 //	  Config
 //	  ToneGenerator
 //	  TonePlayer
-//	  DigitalInput
+//	  FunctionKey
 //	  BatteryVoltage
 //	  CommandParser(*)
 //    LEDNotify(*)
@@ -318,22 +320,23 @@ IGCLogger logger;
 
 
 //
-//
-//
-
-DigitalInput	funcInput;
-
-//
-//
+// Digital & Analog Input/Output
 //
 
+// generic digital input
+InputKey	keyMode;
+InputKey	keyShutdown;
+InputKey	keyUSB;
+// functional input
+FunctionKey	funcKey;
+// analog input
 BatteryVoltage batVolt;
 
-
-//
-//
-//
-
+// generic digital output
+OutputKey	keyPowerGPS;
+OutputKey	keyPowerBT;
+OutputKey	keyPowerDev;
+// functional output
 LEDFlasher  ledFlasher;
 
 
@@ -373,7 +376,7 @@ CommandStack	cmdStack;
 
 CommandParser	cmdParser1(Serial, cmdStack); // USB serial parser
 CommandParser	cmdParser2(Serial1, cmdStack); // BT serial parser
-FuncKeyParser	keyParser(funcInput, cmdStack, tonePlayer);
+FuncKeyParser	keyParser(funcKey, cmdStack, tonePlayer);
 
 
 //
@@ -400,6 +403,7 @@ void board_init()
 	Wire2.setClock(400000); // 400KHz
 	
 	// Initialize GPIO
+#if 0
 	for (int i = 0; i < sizeof(gpio_mode)/sizeof(gpio_mode[0]); i++)
 	{
 		pinMode(gpio_mode[i].pin, gpio_mode[i].mode);
@@ -407,6 +411,23 @@ void board_init()
 		if (gpio_mode[i].mode == OUTPUT)
 			digitalWrite(gpio_mode[i].pin, gpio_mode[i].state);
 	}
+#else
+	// input pins
+	keyMode.begin(PIN_MODE_SELECT, ACTIVE_LOW);
+	keyShutdown.begin(PIN_SHDN_INT, ACTIVE_LOW);
+	keyUSB.begin(PIN_USB_DETECT, ACTIVE_HIGH);
+	//
+	keyFunc.begin(PIN_FUNC_INPUT, ACTIVE_LOW);
+	// adc input
+	batVolt.begin(PIN_ADC_BATTERY);	
+	
+	// output pins
+	keyPowerGPS.begin(PIN_GPS_EN, ACTIVE_LOW);
+	keyPowerBT.begin(PIN_BT_EN, ACTIVE_LOW);
+	keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW);
+	// 
+	ledFlasher.begin(PIN_MCU_STATE);
+#endif
 }
 
 
@@ -438,13 +459,28 @@ void setup()
 	logger.init();
 	
 	//
-	batVolt.begin(PIN_ADC_BATTERY);
+	//batVolt.begin(PIN_ADC_BATTERY);
 	
 	//
-	funcInput.begin(PIN_FUNC_INPUT);
+	//funcKey.begin(PIN_FUNC_INPUT);
+
+	/*
+	keyMode.begin(PIN_MODE_SELECT, ACTIVE_LOW); or keyMode.begin(GPIO_PINMODE gpio);
+	keyShutdown.begin(PIN_SHDN_INT, ACTIVE_LOW);
+	keyUSB.begin(PIN_USB_DETECT, ACTIVE_HIGH);
+	
+	keyPowerGPS.begin(PIN_GPS_EN, ACTIVE_LOW);
+	keyPowerBT.begin(PIN_BT_EN, ACTIVE_LOW);
+	keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW);
+	*/
+
+	//ledFlasher.begin(PIN_MCU_STATE);
 	
 	//
-	ledFlasher.begin(PIN_MCU_STATE);
+	/*
+	keyPowerBT.enable();
+	btMan.begin(&nmeaParser, &varioNmea, &sensorReporter);
+	*/
 	
 	// ToneGenerator uses PIN_PWM_H(PA8 : Timer1, Channel1)
 	toneGen.begin(PIN_PWM_H);
@@ -624,9 +660,9 @@ void vario_loop()
 	
 	// process key-input
 	#if 0 // FuncKeyParser treats key-input internally
-	funcInput.update();
+	funcKey.update();
 
-	if (funcInput.fired())
+	if (funcKey.fired())
 	{
 		// value format :
 		// b7 b6 b5 b4 b3 b2 b1 b0
@@ -638,7 +674,7 @@ void vario_loop()
 		//		MSB first, RIGHT aligned
 		//
 		
-		uint8_t value = funcInput.getValue();
+		uint8_t value = funcKey.getValue();
 	}
 	#endif
 }
