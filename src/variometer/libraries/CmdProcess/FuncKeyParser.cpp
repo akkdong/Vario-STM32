@@ -54,7 +54,7 @@ Tone toneVolume[] =
 /////////////////////////////////////////////////////////////////////////////
 // class FuncKeyParser
 
-FuncKeyParser::FuncKeyParser(DigitalInput & input, CommandStack & stack, TonePlayer & player) : Input(input), Stack(stack),	Player(player)
+FuncKeyParser::FuncKeyParser(FunctionKey & input, CommandStack & stack, TonePlayer & player) : Input(input), Stack(stack),	Player(player)
 {
 	inputCmd = inputParam = 0;
 }

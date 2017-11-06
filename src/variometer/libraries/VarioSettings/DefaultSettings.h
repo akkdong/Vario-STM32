@@ -49,6 +49,15 @@
 #define PIN_MCU_STATE		PC13	// GPIO : output, active low(led on)
 #define PIN_MODE_SELECT		PC14	// GPIO : input, HIGH : UMS, LOW : DBG
 
+#define ACTIVE_LOW			(0)
+#define ACTIVE_HIGH			(1)
+
+#include INPUT_HIGH			(0)		// input value according to active state
+#include INPUT_LOW			(1)		// ACTIVE_LOW -> INPUT_HIGH : GPIO_LOW
+
+#include OUTPUT_HIGH		(0)		// output value according to active state
+#include OUTPUT_HIGH		(1)		// ACTIVE_LOW -> OUTPUT_HIGH : GPIO_LOW
+
 
 // Variometer default settings
 //
@@ -107,7 +116,7 @@
 #define FKEY_MIN_FIRE_TIME						(500)	// ms
 
 
-#define FKEY_INPUT_ACTIVE						(0)			// LOW ACTIVE
+#define FKEY_INPUT_ACTIVE						ACTIVE_LOW	// LOW ACTIVE
 
 
 // LEDFlasher settings
