@@ -52,11 +52,11 @@
 #define ACTIVE_LOW			(0)
 #define ACTIVE_HIGH			(1)
 
-#include INPUT_HIGH			(0)		// input value according to active state
-#include INPUT_LOW			(1)		// ACTIVE_LOW -> INPUT_HIGH : GPIO_LOW
+#define INPUT_HIGH			(0)		// input value according to active state
+#define INPUT_LOW			(1)		// ACTIVE_LOW -> INPUT_HIGH : GPIO_LOW
 
-#include OUTPUT_HIGH		(0)		// output value according to active state
-#include OUTPUT_HIGH		(1)		// ACTIVE_LOW -> OUTPUT_HIGH : GPIO_LOW
+#define OUTPUT_HIGH			(0)		// output value according to active state
+#define OUTPUT_HIGH			(1)		// ACTIVE_LOW -> OUTPUT_HIGH : GPIO_LOW
 
 
 // Variometer default settings

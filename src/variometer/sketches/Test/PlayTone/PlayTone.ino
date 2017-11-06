@@ -32,8 +32,8 @@ int playType = 0;
 void setup()
 {
 	//
-	delay(1000);
-	
+	delay(200);
+
 	//
 	Serial.begin(115200);
 	Serial.println("Tone Test!!!");
@@ -52,9 +52,9 @@ void loop()
 	
 	tonePlayer.update();
 	
-	if ((millis() - lastTick) > 4000)
+	if ((millis() - lastTick) > 10000)
 	{
-		tonePlayer.setVolume(v ? 100 : 20);
+		tonePlayer.setVolume(v ? 90 : 10);
 		v = 1 - v;
 		
 		tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]));
