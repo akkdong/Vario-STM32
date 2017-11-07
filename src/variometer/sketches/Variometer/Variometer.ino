@@ -26,6 +26,7 @@
 #include <FuncKeyParser.h>
 #include <LEDFlasher.h>
 #include <SensorReporter.h>
+#include <AccelCalibrator.h>
 
 /* not use anymore
 // PIN map
@@ -239,6 +240,10 @@ uint32_t flightTick;
 
 void (* main_loop)(void) = 0;
 
+void ums_setup();
+void calibration_setup();
+void configuration_setup();
+
 void vario_loop();
 void ums_loop();
 void calibration_loop();
@@ -261,7 +266,7 @@ VertVelocity  	vertVel;
 
 IMUModule imu;
 
-
+AccelCalibrator accelCalibrator(imu);
 
 //
 // declare I2C instance
@@ -433,7 +438,6 @@ void board_init()
 #endif
 }
 
-
 //
 //
 //
@@ -496,7 +500,6 @@ void setup()
 	varioMode = VARIO_MODE_LANDING;
 	main_loop = vario_loop;
 }
-
 
 //
 //
@@ -570,8 +573,17 @@ void vario_loop()
 				switch (cmd.param)
 				{
 				case PARAM_SW_ICALIBRATION :
+					// setup
+					//setup_calibration();
+					// loop
+					//main_loop = icalibration_loop();
+					return;
 				case PARAM_SW_CALIBRATION  :
-					break;
+					// setup
+					setup_calibration();
+					// loop
+					main_loop = calibration_loop;
+					return;
 				case PARAM_SW_UMS          :
 					break;
 				}
@@ -708,11 +720,100 @@ void ums_loop()
 
 
 //
+// !!! calibration !!!
 //
-//
+
+#define HIGH_BEEP_FREQ 			(1000)
+#define LOW_BEEP_FREQ 			(100)
+#define BASE_BEEP_DURATION 		(100)
+
+#define MEASURE_DELAY 			(3000)
+
+
+void setup_calibration()
+{
+	accelCalibrator.init();
+	
+	//
+	tonePlayer.beep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION, 3);
+}
+
+void check_completion()
+{
+	do
+	{
+		keyFunc.update();
+		
+		if (keyFunc.fired())
+		{
+			uint8_t value = keyFunc.getValue();
+			
+			if (value == 0x21)
+			{
+				//do_reset();
+				while(1);
+			}
+			if (value == 0x40)
+			{
+				// continue calibration
+				tonePlayer.beep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION, 3);
+				break; // 
+			}
+		}
+		
+	} while(1);
+}
 
 void calibration_loop()
 {
+	//
+	// make measure repeatedly
+	//
+
+	// wait for positionning accelerometer
+	delay(MEASURE_DELAY);
+
+	// make measure
+	accelCalibrator.measure();
+
+	//
+	// the reversed position launch calibration 
+	//
+
+	// get orientation
+	int orient = accelCalibrator.getMeasureOrientation();
+	
+	if( orient == ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION )
+	{
+
+		/**********************/
+		/* launch calibration */
+		/**********************/
+		if( !accelCalibrator.canCalibrate() )
+		{
+			tonePlayer.beep(LOW_BEEP_FREQ, BASE_BEEP_DURATION, 3);
+		}
+		else
+		{
+			accelCalibrator.calibrate();
+			
+			tonePlayer.beep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION, 3);
+			//tonePlayer.setMemody(melodyCal, ...);
+			check_completion();
+		}
+	}
+	else
+	{
+		// push measure
+		boolean measureValid = accelCalibrator.pushMeasure();
+
+		// make corresponding beep
+		if( measureValid )
+			tonePlayer.beep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 3, 1);
+		else 
+			tonePlayer.beep(LOW_BEEP_FREQ, BASE_BEEP_DURATION * 3, 1);
+			
+	}
 }
 
 

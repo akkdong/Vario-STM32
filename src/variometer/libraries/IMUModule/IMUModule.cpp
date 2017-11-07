@@ -24,6 +24,11 @@ boolean IMUModule::dataReady()
 	return ms5611.dataReady() && mpu6050.dataReady();
 }
 
+boolean IMUModule::rawReady(double* accel, double* upVector, double* vertAccel)
+{
+	return mpu6050.rawReady(accel, upVector, vertAccel);
+}
+
 void IMUModule::updateData()
 {
 	mpu6050.updateData();
@@ -43,4 +48,20 @@ double IMUModule::getTemperature()
 double IMUModule::getVelocity()
 {
 	return mpu6050.getVelocity();
+}
+
+//
+void IMUModule::initCalibration()
+{
+	mpu6050.initSensor(false);
+}
+
+double * IMUModule::getCalibration()
+{
+	return mpu6050.getCalibration();
+}
+
+void IMUModule::saveCalibration(double * calData)
+{
+	mpu6050.saveCalibration(calData);
 }

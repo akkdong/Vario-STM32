@@ -19,12 +19,21 @@ public:
 	void				init(boolean calibrateGyro = true);
 	
 	boolean				dataReady();
+	boolean				rawReady(double * accel, double * upVector, double*  vertAccel);
+	
 	void				updateData();
 	
 	double				getAltitude();
 	double				getTemperature();
 
 	double				getVelocity();
+	
+	//
+	void				initCalibration();
+	
+	double *			getCalibration();
+	void				saveCalibration(double * calData);
+	
 	
 private:
 	SensorMPU6050 &		mpu6050;

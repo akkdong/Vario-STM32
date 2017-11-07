@@ -66,6 +66,9 @@ public:
 	void			setVolume(int value);
 	
 	void			update();
+	
+	// synchronous function
+	void			beep(uint32_t freq, uint32_t duration, int count = 1);
 
 private:
 	int				playCheck();

@@ -267,3 +267,17 @@ void TonePlayer::playNext()
 	
 	setTone(playTone.tonePtr[toneIndex].freq, volume);
 }
+
+// synchronous function
+void TonePlayer::beep(uint32_t freq, uint32_t duration, int count)
+{
+	while (count > 0)
+	{
+		setTone(freq);
+		delay(duration);
+		setTone();
+		delay(duration);
+		
+		count -= 1;
+	}
+}

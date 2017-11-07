@@ -96,6 +96,7 @@ public:
 //	void				updateKalmanParamter();
 //	void				updateTimeZone();
 //	void				updateToneTable();
+	void 				updateAccelCalibration(double * calData);
 
 public:
 	//

@@ -150,3 +150,8 @@ void GlobalConfig::updateVarioSettings()
 	
 	eepromDriver.writePage(eepromAddr, info->address, (unsigned char *)block, sizeof(BLOCK_VarioSettings));
 }
+
+void GlobalConfig::updateAccelCalibration(double * calData)
+{
+	Serial.println("GlobalConfig::updateAccelCalibration --> not implemented!!");
+}

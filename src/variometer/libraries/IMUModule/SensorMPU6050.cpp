@@ -1,6 +1,7 @@
 // SensorMPU6050.cpp
 //
 
+#include <GlobalConfig.h>
 #include "IMUSensor.h"
 
 #include <inv_mpu.h>
@@ -195,13 +196,18 @@ double SensorMPU6050::getVelocity()
 
 void SensorMPU6050::readCalibration()
 {
-	calData[0] = 0;
-	calData[1] = 0;
-	calData[2] = 0;
+	calData[0] = Config.accel[0];
+	calData[1] = Config.accel[1];
+	calData[2] = Config.accel[2];
 }
 
 void SensorMPU6050::saveCalibration(double * data)
 {
+	calData[0] = data[0];
+	calData[1] = data[1];
+	calData[2] = data[2];
+	
+	Config.updateAccelCalibration(data);
 }
 
 double * SensorMPU6050::getCalibration()
