@@ -207,7 +207,7 @@ void SensorMPU6050::saveCalibration(double * data)
 	calData[1] = data[1];
 	calData[2] = data[2];
 	
-	Config.updateAccelCalibration(data);
+	Config.updateCalibrationData(data);
 }
 
 double * SensorMPU6050::getCalibration()

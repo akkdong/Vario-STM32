@@ -744,9 +744,12 @@ void setup_calibration()
 
 void check_completion()
 {
+	ledFlasher.blink(BLINK_MEASURE_INVALID);
+	
 	do
 	{
 		keyFunc.update();
+		ledFlasher.update();
 		
 		if (keyFunc.fired())
 		{
@@ -754,6 +757,9 @@ void check_completion()
 			
 			if (value == 0x21)
 			{
+				// jobs done. reset now!
+				tonePlayer.beep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION*4, 1);
+				
 				nvic_sys_reset();
 				while(1);
 			}

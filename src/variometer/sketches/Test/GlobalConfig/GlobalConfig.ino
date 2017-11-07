@@ -61,7 +61,7 @@ void scan(HardWire & HWire)
 unsigned char buf[EEPROM_PAGE_SIZE];
 
 
-void setup()
+void setup_eeprom()
 {
 	//pinMode(PB9, OUTPUT);
 	//digitalWrite(PB9, HIGH);
@@ -78,6 +78,54 @@ void setup()
 	//
 	Wire2.begin();
 	scan(Wire2);
+	
+	//
+	buf[0] = 0x55;
+	buf[1] = 0xAA;
+	buf[2] = 1;
+	buf[3] = 2;
+	buf[4] = 3;
+	
+	Serial.println("write some data at 0x0000...");
+	eeprom.writePage(EEPROM_ADDRESS, 0, buf, 5);
+	delay(1000);
+	
+	//
+	buf[0] = 0xDE;
+	buf[1] = 0xAD;
+	buf[2] = 6;
+	buf[3] = 7;
+	buf[4] = 8;
+	buf[5] = 9;
+	
+	Serial.println("write some data at 0x0008...");
+	eeprom.writePage(EEPROM_ADDRESS, 8, buf, 6);
+	delay(1000);
+	
+	//
+	memset(buf, 0xFF, sizeof(buf));
+
+	//
+	Serial.print("Read from 0x0000\r\n  ==> ");
+	eeprom.readBuffer(EEPROM_ADDRESS, 0, buf, 5);
+	for (int i = 0; i < 5; i++ )
+	{
+		Serial.print(buf[i], HEX);
+		Serial.print(", ");
+	}
+	Serial.println("");	
+
+	//
+	Serial.print("Read from 0x0008\r\n  ==> ");
+	eeprom.readBuffer(EEPROM_ADDRESS, 8, buf, 6);
+	for (int i = 0; i < 6; i++ )
+	{
+		Serial.print(buf[i], HEX);
+		Serial.print(", ");
+	}
+	Serial.println("");		
+	
+	return; 
 	
 	//
 	memset(buf, 0xFF, sizeof(buf));
@@ -156,6 +204,62 @@ void setup()
 		}
 		Serial.println("");
 	}
+}
+
+
+void setup_GlobalConfig()
+{
+	//
+	delay(400);
+	
+	//
+	Serial.begin(115200);
+	while (! Serial);
+	
+	Serial.println("GlobaConfig Test!!!");
+	
+	//
+	Wire2.begin();
+	scan(Wire2);
+	
+	//
+	Config.readAll();
+	
+	Serial.print("vario_volume = "), Serial.println((int)Config.vario_volume);
+	Serial.print("vario_sinkThreshold = "), Serial.println(Config.vario_sinkThreshold);
+	Serial.print("vario_climbThreshold = "), Serial.println(Config.vario_climbThreshold);
+	Serial.print("vario_sensitivity = "), Serial.println(Config.vario_sensitivity);
+	
+	Serial.print("vario_sentence = "), Serial.println(Config.vario_sentence);
+	
+	Serial.print("kalman_sigmaP = "), Serial.println(Config.kalman_sigmaP);
+	Serial.print("kalman_sigmaA = "), Serial.println(Config.kalman_sigmaA);
+	
+	Serial.print("accel[0] = "), Serial.println(Config.accel[0]);
+	Serial.print("accel[1] = "), Serial.println(Config.accel[1]);
+	Serial.print("accel[2] = "), Serial.println(Config.accel[2]);
+	
+	if (Config.accel[0] == 0.0 && Config.accel[1] == 0.0 && Config.accel[2] == 0.0)
+	{
+		Config.accel[0] = 0.123;
+		Config.accel[1] = -0.3;
+		Config.accel[2] = 0.032;
+		
+		Serial.println("write calibration data to EEPROM...");
+		Config.writeCalibrationData();
+
+		// read-again
+		Config.readAll();
+	
+		Serial.print("accel[0] = "), Serial.println(Config.accel[0]);
+		Serial.print("accel[1] = "), Serial.println(Config.accel[1]);
+		Serial.print("accel[2] = "), Serial.println(Config.accel[2]);
+	}
+}
+
+void setup()
+{
+	setup_GlobalConfig();
 }
 
 void loop()
