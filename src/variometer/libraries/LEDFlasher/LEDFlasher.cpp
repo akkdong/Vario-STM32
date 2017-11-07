@@ -9,16 +9,16 @@
 
 typedef struct tagBlinkPattern
 {
-	int8_t 		count;
-	int8_t *	pattern;
+	int16_t 	count;
+	int16_t *	pattern;
 } BlinkPattern;
 
-int8_t pattern1[] = { 300, -100, 100, -100, 100, -100, 100, -100 };
-int8_t pattern2[] = { 300, -100, 100, -100, 100, -100 };
-int8_t pattern3[] = { 300, -300 };
-int8_t pattern4[] = { 300, -100 };
-int8_t pattern5[] = { 100, -300 };
-int8_t pattern6[] = { 100, -100 };
+int16_t pattern1[] = { 400, -100, 100, -100, 100, -100, 100, -100 };
+int16_t pattern2[] = { 400, -100, 100, -100, 100, -100 };
+int16_t pattern3[] = { 400, -400 };
+int16_t pattern4[] = { 400, -100 };
+int16_t pattern5[] = { 100, -400 };
+int16_t pattern6[] = { 100, -100 };
 
 BlinkPattern blinkPattern[] = 
 {
@@ -39,9 +39,12 @@ LEDFlasher::LEDFlasher()
 	blinkType = BLINK_NONE;
 }
 
-void LEDFlasher::begin(uint8_t pin)
+void LEDFlasher::begin(uint8_t pin, uint8_t active)
 {
 	blinkPin = pin;
+	activeState = active;
+	
+	pinMode(blinkPin, OUTPUT);
 }
 
 void LEDFlasher::update()
@@ -86,6 +89,9 @@ void LEDFlasher::blink(uint8_t type)
 		blinkInterval = abs(blinkInterval);
 		blinkTick = millis();
 		break;
+	case BLINK_NONE:
+		turnOff();
+		break;
 	}
 }
 
@@ -103,22 +109,10 @@ void LEDFlasher::turnOff()
 
 void LEDFlasher::ledOn()
 {
-#if FLASHER_LED_ACTIVE
-	// active high
-	digitalWrite(blinkPin, HIGH);
-#else
-	// active low
-	digitalWrite(blinkPin, LOW);
-#endif // FLASHER_LED_ACTIVE
+	digitalWrite(blinkPin, activeState ? HIGH : LOW);
 }
 
 void LEDFlasher::ledOff()
 {
-#if FLASHER_LED_ACTIVE
-	// active high
-	digitalWrite(blinkPin, LOW);
-#else
-	// active low
-	digitalWrite(blinkPin, HIGH);
-#endif // FLASHER_LED_ACTIVE
+	digitalWrite(blinkPin, activeState ? LOW : HIGH);
 }

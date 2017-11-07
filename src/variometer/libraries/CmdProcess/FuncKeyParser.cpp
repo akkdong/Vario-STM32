@@ -3,7 +3,7 @@
 
 #include "FuncKeyParser.h"
 
-#define MAX_RESPONSE_INPUT_TIME		(3000)	// 3s
+#define MAX_RESPONSE_INPUT_TIME		(5000)	// 5s
 
 #define FREQ_C3		131
 #define FREQ_C4		262

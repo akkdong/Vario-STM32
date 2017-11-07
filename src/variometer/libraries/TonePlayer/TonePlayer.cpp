@@ -154,11 +154,14 @@ void TonePlayer::setTone(int freq, int vol)
 void TonePlayer::setVolume(int value)
 {
 	if (value < 0)
-		volume = 0;
+		value = 0;
 	else if (value > 100)
-		volume = 100;
-	else
-		volume = value;
+		value = 100;
+	
+	if (volumeRecovery >= 0)
+		volumeRecovery = value;
+
+	volume = value;
 }
 
 void TonePlayer::update()
@@ -167,8 +170,10 @@ void TonePlayer::update()
 	{
 		if (volumeRecovery >= 0)
 		{
-			setVolume(volumeRecovery);
+			int temp = volumeRecovery;
 			volumeRecovery = -1;
+			
+			setVolume(temp);
 		}
 		
 		playNext();

@@ -29,7 +29,7 @@ public:
 	LEDFlasher();
 	
 public:
-	void				begin(uint8_t pin);
+	void				begin(uint8_t pin, uint8_t active);
 	
 	void				update();
 	
@@ -43,10 +43,11 @@ private:
 	
 private:
 	uint8_t				blinkPin;
+	uint8_t				activeState;
 	
 	int8_t				blinkType;
 	int8_t				indexPattern;
-	int8_t				blinkInterval;
+	int16_t				blinkInterval;
 	
 	uint32_t			blinkTick;	
 };

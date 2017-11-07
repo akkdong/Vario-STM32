@@ -28,6 +28,8 @@
 #include <SensorReporter.h>
 #include <AccelCalibrator.h>
 
+#include <libmaple\nvic.h>
+
 /* not use anymore
 // PIN map
 //
@@ -434,7 +436,7 @@ void board_init()
 	keyPowerBT.begin(PIN_BT_EN, ACTIVE_LOW, OUTPUT_HIGH);
 	//keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUPUT_HIGH);
 	// 
-	ledFlasher.begin(PIN_MCU_STATE);
+	ledFlasher.begin(PIN_MCU_STATE, ACTIVE_LOW);
 #endif
 }
 
@@ -499,6 +501,8 @@ void setup()
 	//
 	varioMode = VARIO_MODE_LANDING;
 	main_loop = vario_loop;
+	
+	ledFlasher.blink(BLINK_SD_FAIELD);
 }
 
 //
@@ -750,7 +754,7 @@ void check_completion()
 			
 			if (value == 0x21)
 			{
-				//do_reset();
+				nvic_sys_reset();
 				while(1);
 			}
 			if (value == 0x40)
