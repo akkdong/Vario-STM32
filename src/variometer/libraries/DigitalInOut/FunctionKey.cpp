@@ -43,7 +43,8 @@ void FunctionKey::begin(int pin, int active)
 
 void FunctionKey::update()
 {
-	int input = digitalRead(inputPin);
+//	int input = digitalRead(inputPin);
+	int input = getInput();
 	
 	switch (inputState)
 	{
@@ -87,12 +88,13 @@ void FunctionKey::update()
 	case STATE_DOWN :
 		if (input == BUTTON_UP)
 		{
+			//
+			inputValue = (inputValue << 1);
+			
 			if (millis() - lastTick > FKEY_MIN_SHORTKEY_TIME)
-			{
-				// LONG press
-				inputValue += (1 << inputIndex);
-			}
+				inputValue += 1; // LONG press
 
+			//
 			inputState = TRANS_UP;
 			lastTick = millis();
 		}

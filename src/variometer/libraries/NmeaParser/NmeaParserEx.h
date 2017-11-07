@@ -57,7 +57,7 @@ private:
 	volatile int		mFieldIndex;
 	
 	//
-	volatile char		mParseStep; 		// -1 or 0 ~ 12
+	volatile int		mParseStep; 		// -1 or 0 ~ 12
 	volatile uint8_t	mParseState;		// 
 	volatile uint8_t	mParity;
 	

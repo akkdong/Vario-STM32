@@ -3,8 +3,8 @@
 
 void setup()
 {
-	pinMode(PB14, OUTPUT_OPEN_DRAIN);
-	digitalWrite(PB14, HIGH);
+	//pinMode(PB14, OUTPUT);
+	//digitalWrite(PB14, HIGH);
 	
 	pinMode(PB15, INPUT);
 	

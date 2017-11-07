@@ -12,7 +12,7 @@
 #define SET_STATE(bit)		mParseState |= (bit)
 #define UNSET_STATE(bit)	mParseState &= ~(bit)
 
-#define IS_SET(bit)			(mParseState & (bit)) == (bit)
+#define IS_SET(bit)			(mParseState & (bit))
 
 
 #define SEARCH_RMC_TAG		(1 << 0)
@@ -62,15 +62,12 @@ void NmeaParserEx::update()
 		
 		if (mParseStep < 0 && c != '$')
 		{
-			//Serial.print("* "); Serial.write(c); Serial.println("");
-			continue; // skil bad characters(find first sentence character)
+			//Serial.print('<'); Serial.print((char)c); Serial.println('>'); 
+			continue; // skip bad characters(find first sentence character)
 		}
 		
-		//if (mParseStep < 0)
-		//	Serial.print("+ "); Serial.write(c); Serial.println("");
-		
 		mBuffer[mWrite] = c;
-		mWrite = (mWrite + 1) % MAX_NMEA_PARSER_BUFFER ;
+		mWrite = (mWrite + 1) % MAX_NMEA_PARSER_BUFFER;
 
 		//
 		if (c == '$')
@@ -96,13 +93,24 @@ void NmeaParserEx::update()
 
 			if (mParseStep < NMEA_TAG_SIZE) // 0 ~ 4, sentence identifier
 			{
-				if (c != pgm_read_byte_near(tagRMC + mParseStep))
+				//if (c != pgm_read_byte_near(tagRMC + mParseStep))
+				if (c != tagRMC[mParseStep])
 					UNSET_STATE(SEARCH_RMC_TAG);
-				if (c != pgm_read_byte_near(tagGGA + mParseStep))
+				//if (c != pgm_read_byte_near(tagGGA + mParseStep))
+				if (c != tagGGA[mParseStep])
 					UNSET_STATE(SEARCH_GGA_TAG);
 
 				if (! IS_SET(SEARCH_RMC_TAG) && ! IS_SET(SEARCH_GGA_TAG))
 				{
+					//
+					//Serial.println("[unsupport sentence");
+					//for(int i = mHead; i != mWrite; )
+					//{
+					//	Serial.write(mBuffer[i]);
+					//	i = (i + 1) % MAX_NMEA_PARSER_BUFFER;
+					//}
+					//Serial.println("]");
+
 					// It's not valid(known) TAG!!!
 					mParseStep = -1;
 					mWrite = mHead;
@@ -112,6 +120,9 @@ void NmeaParserEx::update()
 					// continue
 					mParseStep += 1;
 				}
+				
+				//Serial.print("mParseStep = "); Serial.println((int)mParseStep);
+				//Serial.print("mParseState = "); Serial.println((int)mParseState);
 			}
 			else if (mParseStep == NMEA_TAG_SIZE) // start of data
 			{
@@ -220,6 +231,14 @@ void NmeaParserEx::update()
 				}
 				else
 				{
+					//Serial.println("[complete a setence");
+					//for(int i = mHead; i != mWrite; )
+					//{
+					//	Serial.write(mBuffer[i]);
+					//	i = (i + 1) % MAX_NMEA_PARSER_BUFFER;
+					//}
+					//Serial.println("]");
+					
 					// complete a sentence
 					mParseStep = -1;
 					mHead = mWrite;

@@ -11,6 +11,8 @@
 #include <IMUModule.h>
 #include <NmeaParserEx.h>
 #include <FunctionKey.h>
+#include <InputKey.h>
+#include <OutputKey.h>
 #include <GlobalConfig.h>
 #include <ToneGenerator.h>
 #include <TonePlayer.h>
@@ -328,7 +330,7 @@ InputKey	keyMode;
 InputKey	keyShutdown;
 InputKey	keyUSB;
 // functional input
-FunctionKey	funcKey;
+FunctionKey	keyFunc;
 // analog input
 BatteryVoltage batVolt;
 
@@ -376,7 +378,7 @@ CommandStack	cmdStack;
 
 CommandParser	cmdParser1(Serial, cmdStack); // USB serial parser
 CommandParser	cmdParser2(Serial1, cmdStack); // BT serial parser
-FuncKeyParser	keyParser(funcKey, cmdStack, tonePlayer);
+FuncKeyParser	keyParser(keyFunc, cmdStack, tonePlayer);
 
 
 //
@@ -386,8 +388,9 @@ FuncKeyParser	keyParser(funcKey, cmdStack, tonePlayer);
 void board_init()
 {
 	// Initialize Serials
-	Serial.begin(BAUDRATE_DEBUG);  	// Serial(USB2Serial) : for debugging
-	while (! Serial);
+	Serial.begin();
+	//Serial.begin(BAUDRATE_DEBUG);  	// Serial(USB2Serial) : for debugging
+	//while (! Serial);
 	
 	Serial1.begin(BAUDRATE_BT); 	// Serial1(USART1) : for BT
 	while (! Serial1);
@@ -416,15 +419,15 @@ void board_init()
 	keyMode.begin(PIN_MODE_SELECT, ACTIVE_LOW);
 	keyShutdown.begin(PIN_SHDN_INT, ACTIVE_LOW);
 	keyUSB.begin(PIN_USB_DETECT, ACTIVE_HIGH);
-	//
-	keyFunc.begin(PIN_FUNC_INPUT, ACTIVE_LOW);
+	// function-key
+	keyFunc.begin(PIN_FUNC_INPUT, ACTIVE_HIGH);
 	// adc input
 	batVolt.begin(PIN_ADC_BATTERY);	
 	
 	// output pins
-	keyPowerGPS.begin(PIN_GPS_EN, ACTIVE_LOW);
-	keyPowerBT.begin(PIN_BT_EN, ACTIVE_LOW);
-	keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW);
+	keyPowerGPS.begin(PIN_GPS_EN, ACTIVE_LOW, OUTPUT_HIGH);
+	keyPowerBT.begin(PIN_BT_EN, ACTIVE_LOW, OUTPUT_HIGH);
+	//keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUPUT_HIGH);
 	// 
 	ledFlasher.begin(PIN_MCU_STATE);
 #endif
@@ -462,7 +465,7 @@ void setup()
 	//batVolt.begin(PIN_ADC_BATTERY);
 	
 	//
-	//funcKey.begin(PIN_FUNC_INPUT);
+	//keyFunc.begin(PIN_FUNC_INPUT);
 
 	/*
 	keyMode.begin(PIN_MODE_SELECT, ACTIVE_LOW); or keyMode.begin(GPIO_PINMODE gpio);
@@ -519,8 +522,8 @@ void vario_loop()
 		
 		//Serial.print(imu.getAltitude()); Serial.print(", ");
 		//Serial.print(imu.getVelocity()); Serial.print(", ");
-		Serial.print(vertVel.getVelocity());
-		Serial.println("");
+		//Serial.print(vertVel.getVelocity());
+		//Serial.println("");
 		
 		//
 		//sensorReporter.setData(...);
@@ -582,10 +585,25 @@ void vario_loop()
 		case CMD_NMEA_SENTENCE  :
 			btMan.blockNmeaSentence(cmd.param);
 			break;
-			break;
 		case CMD_TONE_TEST 		:
 			break;
 		case CMD_SOUND_LEVEL 	:
+			switch (cmd.param)
+			{
+			case PARAM_LV_LOUD 	: 
+				Serial.println("set volume to 90%");
+				tonePlayer.setVolume(90);
+				break;
+			case PARAM_LV_QUIET :
+				Serial.println("set volume to 10%");
+				tonePlayer.setVolume(10);
+				break;
+			case PARAM_LV_MUTE	:
+			default				: 
+				Serial.println("set volume to mute");
+				tonePlayer.setVolume(0);
+				break;
+			}
 			break;
 		case CMD_DEVICE_RESET 	:
 			break;
@@ -660,9 +678,9 @@ void vario_loop()
 	
 	// process key-input
 	#if 0 // FuncKeyParser treats key-input internally
-	funcKey.update();
+	keyFunc.update();
 
-	if (funcKey.fired())
+	if (keyFunc.fired())
 	{
 		// value format :
 		// b7 b6 b5 b4 b3 b2 b1 b0
@@ -674,7 +692,7 @@ void vario_loop()
 		//		MSB first, RIGHT aligned
 		//
 		
-		uint8_t value = funcKey.getValue();
+		uint8_t value = keyFunc.getValue();
 	}
 	#endif
 }

@@ -78,7 +78,7 @@ public:
 	
 public:
 	uint16_t	code;	// command code;
-	uint8_t		from; 	// this command received from BT or USB or KEY
+	uint16_t	from; 	// this command received from BT or USB or KEY
 	uint32_t	param;	// command specific parameter
 };
 

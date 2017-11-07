@@ -30,8 +30,8 @@ static Tone beepToneNext[] =
 
 TonePlayer::TonePlayer(ToneGenerator & gen) : toneGen(gen)
 {
-	playCurr.playType	= PLAY_NONE;
-	playNext.playType	= PLAY_NONE;
+	playTone.playType	= PLAY_NONE;
+	nextTone.playType	= PLAY_NONE;
 	
 	/*
 	//
@@ -53,7 +53,8 @@ TonePlayer::TonePlayer(ToneGenerator & gen) : toneGen(gen)
 	
 	//
 	volume			= 100;
-	
+	volumeRecovery	= -1;
+
 	//
 	//Timer.pause();
 	//Timer.setMode(timerCh, TIMER_OUTPUT_PWM);
@@ -65,13 +66,26 @@ TonePlayer::TonePlayer(ToneGenerator & gen) : toneGen(gen)
 
 void TonePlayer::setMelody(Tone * tonePtr, int toneCount, int repeat, int instant)
 {
-	playNext.tonePtr 		= tonePtr;
-	playNext.toneCount		= toneCount;
-	playNext.repeatCount	= repeat;
-	playNext.playType		= PLAY_MELODY;
+	nextTone.tonePtr 		= tonePtr;
+	nextTone.toneCount		= toneCount;
+	nextTone.repeatCount	= repeat;
+	nextTone.playType		= PLAY_MELODY;
 	
 	if (instant)
-		updateNow();
+		playNext();
+}
+
+void TonePlayer::setMelodyEx(Tone * tonePtr, int toneCount)
+{
+	nextTone.tonePtr 		= tonePtr;
+	nextTone.toneCount		= toneCount;
+	nextTone.repeatCount	= 1;
+	nextTone.playType		= PLAY_MELODY;
+	
+	volumeRecovery = volume;
+	volume = RECOVERY_TONE_VOLUME;
+	
+	playNext();
 }
 
 void TonePlayer::setBeep(int freq, int period, int duty) 
@@ -84,21 +98,21 @@ void TonePlayer::setBeep(int freq, int period, int duty)
 	beepToneNext[1].length	= period - duty;
 	
 	//
-	playNext.tonePtr 		= &beepTone[0];	// beepToneNext? ??? ?? updateNow ???? beepTone?? ????.
-	playNext.toneCount		= sizeof(beepTone) / sizeof(beepTone[0]); // 2
-	playNext.repeatCount	= 0; // infinite repeat
-	playNext.playType		= PLAY_BEEP;
+	nextTone.tonePtr 		= &beepTone[0];	// beepToneNext? ??? ?? nextTone ???? beepTone?? ????.
+	nextTone.toneCount		= sizeof(beepTone) / sizeof(beepTone[0]); // 2
+	nextTone.repeatCount	= 0; // infinite repeat
+	nextTone.playType		= PLAY_BEEP;
 }
 
 void TonePlayer::setMute(int instant)
 {
-	playNext.tonePtr 		= &muteTone[0];
-	playNext.toneCount		= sizeof(muteTone) / sizeof(muteTone[0]); // 1
-	playNext.repeatCount	= 0; // infinite repeat
-	playNext.playType		= PLAY_MUTE;
+	nextTone.tonePtr 		= &muteTone[0];
+	nextTone.toneCount		= sizeof(muteTone) / sizeof(muteTone[0]); // 1
+	nextTone.repeatCount	= 0; // infinite repeat
+	nextTone.playType		= PLAY_MUTE;
 	
 	if (instant)
-		updateNow();
+		playNext();
 }
 
 void TonePlayer::setTone(int freq, int vol)
@@ -149,15 +163,23 @@ void TonePlayer::setVolume(int value)
 
 void TonePlayer::update()
 {
-	if (updateCheck())
-		updateNow();
+	if (playCheck())
+	{
+		if (volumeRecovery >= 0)
+		{
+			setVolume(volumeRecovery);
+			volumeRecovery = -1;
+		}
+		
+		playNext();
+	}
 }
 
-int TonePlayer::updateCheck()
+int TonePlayer::playCheck()
 {
-	if (playCurr.playType == PLAY_NONE)
+	if (playTone.playType == PLAY_NONE)
 	{
-		//if (playNext.playType != PLAY_NONE)
+		//if (nextTone.playType != PLAY_NONE)
 		//	return 1;
 		//
 		//return 0;
@@ -165,18 +187,18 @@ int TonePlayer::updateCheck()
 		return 1;
 	}
 	
-	if (playCurr.tonePtr[toneIndex].length > 0)
+	if (playTone.tonePtr[toneIndex].length > 0)
 	{
 		unsigned long now = millis();
 
-		if (toneStartTick + playCurr.tonePtr[toneIndex].length <= now)
+		if (toneStartTick + playTone.tonePtr[toneIndex].length <= now)
 		{
 			toneIndex += 1;
 			
-			if (toneIndex < playCurr.toneCount)
+			if (toneIndex < playTone.toneCount)
 			{
 				toneStartTick = now;
-				setTone(playCurr.tonePtr[toneIndex].freq, volume);
+				setTone(playTone.tonePtr[toneIndex].freq, volume);
 			}
 			else
 			{
@@ -184,20 +206,20 @@ int TonePlayer::updateCheck()
 				// move next or repeat again ?
 				playCount += 1;
 				
-				if (playCurr.repeatCount == 0 || playCount < playCurr.repeatCount)
+				if (playTone.repeatCount == 0 || playCount < playTone.repeatCount)
 				{
-					if (playCurr.repeatCount == 0 && playNext.playType != PLAY_NONE)
+					// interrupt continuous tone if next tone exist
+					if (playTone.repeatCount == 0 && nextTone.playType != PLAY_NONE)
 						return 1; // play next
-					// else play again
 					
-					// ??? tone ?? ??...
+					// else replay from first tone
 					toneIndex = 0;
 					toneStartTick = now;
-					setTone(playCurr.tonePtr[toneIndex].freq, volume);
+					setTone(playTone.tonePtr[toneIndex].freq, volume);
 				}
 				else // repeatCount > 0 && playerCount == repeatCount
 				{
-					playCurr.playType = PLAY_NONE; // stop play
+					playTone.playType = PLAY_NONE; // stop play
 					setTone(); // mute
 					
 					return 1; // play next
@@ -206,43 +228,42 @@ int TonePlayer::updateCheck()
 		}
 		else
 		{
-			// ?? ? ???? ?? ?? ??? ??? ????? ??? ??.
-			// !!! BUT !!! ???? ???? ??? ??? ??? ??? ?? ???? ?? ???? ?? ??? ??.
-			if (toneStartTick + playCurr.tonePtr[toneIndex].length - GAP_BETWEEN_TONE <= now)
+			// insert mute gap between tones.
+			if (toneStartTick + playTone.tonePtr[toneIndex].length - GAP_BETWEEN_TONE <= now)
 				setTone(); // mute
 		}
 	}
 	else
 	{
-		// mute, sinking beep ?? length? 0? ?? ?? ??? ??? ?? ??? ????.
-		if (playNext.playType != PLAY_NONE)
+		// 
+		if (nextTone.playType != PLAY_NONE)
 			return 1;
 	}
 
 	return 0;
 }
 
-void TonePlayer::updateNow()
+void TonePlayer::playNext()
 {
-	if (playNext.playType == PLAY_NONE)
+	if (nextTone.playType == PLAY_NONE)
 		return;
 	
 	// copy next context to current 
-	playCurr = playNext;
+	playTone = nextTone;
 	// copy beepToneNext to beepTone if next play type is beep
-	if (playCurr.playType == PLAY_BEEP)
+	if (playTone.playType == PLAY_BEEP)
 	{
 		beepTone[0] = beepToneNext[0];
 		beepTone[1] = beepToneNext[1];
 	}
 
 	// reset next play
-	playNext.playType = PLAY_NONE;
+	nextTone.playType = PLAY_NONE;
 	
 	//
 	toneIndex = 0;
 	toneStartTick = millis();
 	playCount = 0;
 	
-	setTone(playCurr.tonePtr[toneIndex].freq, volume);
+	setTone(playTone.tonePtr[toneIndex].freq, volume);
 }

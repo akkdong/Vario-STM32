@@ -5,6 +5,7 @@
 #define __OUTPUTKEY_H__
 
 #include <DefaultSettings.h>
+#include <Arduino.h>
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -13,7 +14,7 @@
 class OutputKey
 {
 public:
-	void			begin(uint8_t pin, uint8_t active);
+	void			begin(uint8_t pin, uint8_t active, uint8_t init = OUTPUT_HIGH);
 	
 	void			enable();
 	void			disable();

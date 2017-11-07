@@ -54,20 +54,17 @@ void BluetoothMan::update()
 	}
 	else
 	{
-		if (blockTransfer & BTMAK_BLOCK_MASK)
-			return;
-		
-		if (varioSentence.available())
+		if (varioSentence.available() && ! (blockTransfer & BTMAN_BLOCK_NMEA))
 		{
 			lockState = BTMAN_LOCKED_BY_VARIO;			
 			writeVarioSentence();
 		}
-		else if (nmeaParser.available())
+		else if (nmeaParser.available() && ! (blockTransfer & BTMAN_BLOCK_NMEA))
 		{
 			lockState = BTMAN_LOCKED_BY_GPS;
 			writeGPSSentence();
 		}
-		else if (sensorReporter.available())
+		else if (sensorReporter.available() && ! (blockTransfer & BTMAN_BLOCK_SENSOR))
 		{
 			lockState = BTMAN_LOCKED_BY_SENSOR;
 			writeSensorData();
@@ -79,7 +76,12 @@ void BluetoothMan::writeGPSSentence()
 {
 	while (serialBT.availableForWrite())
 	{
+		//
 		int c = nmeaParser.read();
+		if (c < 0)
+			break;
+		
+		//
 		serialBT.write(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'
@@ -94,7 +96,12 @@ void BluetoothMan::writeVarioSentence()
 {
 	while (serialBT.availableForWrite())
 	{
+		//
 		int c = varioSentence.read();
+		if (c < 0)
+			break;
+		
+		//
 		serialBT.write(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'
@@ -109,7 +116,12 @@ void BluetoothMan::writeSensorData()
 {
 	while (serialBT.availableForWrite())
 	{
+		//
 		int c = sensorReporter.read();
+		if (c < 0)
+			break;
+		
+		//
 		serialBT.write(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'

@@ -11,18 +11,19 @@
 ////////////////////////////////////////////////////////////////////////////////////
 //
 
-#define PLAY_NONE			0
-#define PLAY_MUTE			1
-#define PLAY_BEEP			2
-#define PLAY_MELODY			3
+#define PLAY_NONE				(0)
+#define PLAY_MUTE				(1)
+#define PLAY_BEEP				(2)
+#define PLAY_MELODY				(3)
 
-#define SOUND_MUTE			1
-#define SOUND_BEEP			2
-#define SOUND_MELODY		3
+#define SOUND_MUTE				(1)
+#define SOUND_BEEP				(2)
+#define SOUND_MELODY			(3)
 
 
-#define GAP_BETWEEN_TONE	1		// 1ms
+#define GAP_BETWEEN_TONE		(1)		// 1ms
 
+#define RECOVERY_TONE_VOLUME	(10)
 
 ////////////////////////////////////////////////////////////////////////////////////
 //
@@ -57,6 +58,7 @@ public:
 	
 public:	
 	void			setMelody(Tone * tonePtr, int toneCount, int repeat = 1, int instant = 1);
+	void			setMelodyEx(Tone * tonePtr, int toneCount);
 	void			setBeep(int freq, int period, int duty); // duty --> ms, <= period
 	void			setMute(int instant = 1);
 	
@@ -66,13 +68,13 @@ public:
 	void			update();
 
 private:
-	int				updateCheck();
-	void			updateNow();
+	int				playCheck();
+	void			playNext();
 
 public:
 	//
-	PlayContext		playCurr;
-	PlayContext		playNext;
+	PlayContext		playTone;
+	PlayContext		nextTone;
 	
 	/*
 	//
@@ -94,6 +96,7 @@ public:
 	
 	//
 	int				volume;
+	int				volumeRecovery;
 	
 	//
 	ToneGenerator &	toneGen;
