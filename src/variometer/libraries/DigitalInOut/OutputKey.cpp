@@ -32,7 +32,7 @@ void OutputKey::enable()
 
 void OutputKey::disable()
 {
-	// active-high : disable -> HIGH
-	// actgive-low : disable -> LOW
+	// active-high : disable -> LOW
+	// actgive-low : disable -> HIGH
 	digitalWrite(outputPin, activeState ? LOW : HIGH);
 }

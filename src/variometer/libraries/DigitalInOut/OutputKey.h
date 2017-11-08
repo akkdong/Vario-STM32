@@ -14,7 +14,7 @@
 class OutputKey
 {
 public:
-	void			begin(uint8_t pin, uint8_t active, uint8_t init = OUTPUT_HIGH);
+	void			begin(uint8_t pin, uint8_t active, uint8_t init = OUTPUT_ACTIVE);
 	
 	void			enable();
 	void			disable();

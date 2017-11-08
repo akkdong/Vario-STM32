@@ -23,6 +23,9 @@ const char * nameManufacture = "NRC";
 const char * serialNumber = "STM";
 const char * tailOfFileName = "01.igc";
 
+const char * logsFolder = "/TrackLogs";
+
+
 // ANRCSTM Variometer & GPS Loggger
 // HFDTExxxx
 // HPPLTPILOT:xxxxxx
@@ -77,14 +80,14 @@ int IGCLogger::init()
 	
 	//
 	#if 0 // files is saved on the root : not support sub-folder
-	if (! sdCard.exists(F("/TrackLogs")))
+	if (! sdCard.exists(logsFolder))
 	{
 		SET_STATE(LOGGER_INIT_FAILED);
 		
 		return false;
 	}
 	
-	sd.chdir(F("/TrackLogs"));
+	sd.chdir(logsFolder);
 	#endif
 	
 	return true;
@@ -152,6 +155,11 @@ int IGCLogger::write(uint8_t ch)
 void IGCLogger::update(uint32_t varioAlt)
 {
 	varioAltitude = varioAlt;
+}
+
+int IGCLogger::isInitialized()
+{
+	return IS_SET(LOGGER_INIT_FAILED) ? false : true;
 }
 
 int IGCLogger::isLogging()

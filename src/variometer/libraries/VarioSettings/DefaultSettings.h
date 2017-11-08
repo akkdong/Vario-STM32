@@ -52,18 +52,24 @@
 #define ACTIVE_LOW								(0)
 #define ACTIVE_HIGH								(1)
 
-#define INPUT_HIGH								(0)		// input value according to active state
-#define INPUT_LOW								(1)		// ACTIVE_LOW -> INPUT_HIGH : GPIO_LOW
+#define INPUT_LOW								(0)		// input value according to gpio state
+#define INPUT_HIGH								(1)		// ex) INPUT_HIGH <- HIGH, INPUT_LOW <- LOW
 
-#define OUTPUT_HIGH								(0)		// output value according to active state
-#define OUTPUT_HIGH								(1)		// ACTIVE_LOW -> OUTPUT_HIGH : GPIO_LOW
+#define INPUT_INACTIVE							(0)		// input value according to active state
+#define INPUT_ACTIVE							(1)		// ex) ACTIVE_LOW : INPUT_ACTIVE <- INPUT_LOW
+
+#define OUTPUT_LOW								(0)		// output value
+#define OUTPUT_HIGH								(1)		// ex) OUTPUT_HIGH -> HIGH, OUTPUT_LOW -> LOW
+
+#define OUTPUT_INACTIVE							(0)		// output active-state value
+#define OUTPUT_ACTIVE							(1)		// ex) ACTIVE_LOW : OUTPUT_ACTIVE -> OUTPUT_LOW
 
 
 // Variometer default settings
 //
 
-#define VARIOMETER_TIME_ZONE					(9)		// GMT+9
-#define VARIOMETER_BEEP_VOLUME					(0)	// percentage
+#define VARIOMETER_TIME_ZONE					(9)	// GMT+9
+#define VARIOMETER_BEEP_VOLUME					(0)	// percentage (0 ~ 100)
 
 #define VARIOMETER_SINKING_THRESHOLD 			(-3.0)
 #define VARIOMETER_CLIMBING_THRESHOLD 			(0.2)
@@ -74,6 +80,13 @@
 #define VARIOMETER_DEFAULT_NMEA_SENTENCE		VARIOMETER_LK8_SENTENCE
 
 #define VARIOMETER_SENTENCE_DELAY				(1000)
+
+
+// Low battery threshold
+//
+
+#define LOW_BATTERY_THRESHOLD					(2.8)	// VBAT drop down about 0.4v. so rear threshold voltage is -0.4
+#define SHUTDOWN_HOLD_TIME						(2000)
 
 
 // EEPROM(AT25C256) settings
@@ -152,7 +165,7 @@
 
 #define MAX_NMEA_PARSER_BUFFER					(128)
 
-#define MAX_IGC_SENTENCE						(38)	// B-sentence max size : include null termination
+#define MAX_IGC_SENTENCE						(37)	// B-sentence max size : include null termination
 														// ex: B1602405407121N00249342WA0028000421 CR LF
 														//     BHHMMSSDDMMmmmNDDDMMmmmWAPPPPPGGGGGCL
 														//                   S        EV          RF

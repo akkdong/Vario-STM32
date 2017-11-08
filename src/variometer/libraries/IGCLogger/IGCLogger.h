@@ -28,6 +28,7 @@ public:
 
 	void				update(uint32_t varioAlt);
 	
+	int					isInitialized();
 	int					isLogging();
 
 private:

@@ -8,6 +8,8 @@
 #include <Arduino.h>
 #include <Stream.h>
 
+#include <time.h>
+
 
 /////////////////////////////////////////////////////////////////////////////
 // class NmeaParserEx
@@ -33,7 +35,7 @@ public:
 	uint32_t			getTime();		// HHMMSS
 	double				getLatitude();
 	double				getLongitude();
-	uint32_t			getAltitude();
+	int32_t				getAltitude();
 	uint32_t			getSpeed();
 	uint32_t			getHeading();
 	
@@ -64,6 +66,10 @@ private:
 	//
 	uint32_t			mDate;
 	uint32_t			mTime;
+	
+	struct tm 			mTm;
+	time_t				mDateTime;
+	
 	double				mLatitude;
 	double				mLongitude;
 	uint32_t			mAltitude;	
@@ -74,7 +80,6 @@ private:
 	char				mIGCSentence[MAX_IGC_SENTENCE];
 	int					mIGCNext;	// next = 0 ~ MAX_XXX -1 -> available
 	int					mIGCSize;	// size = 0 -> empty, size = MAX_xx -> valid
-	
 };
 
 
@@ -93,7 +98,7 @@ inline double NmeaParserEx::getLatitude()
 inline double NmeaParserEx::getLongitude()
 	{ return mLongitude; }
 	
-inline uint32_t NmeaParserEx::getAltitude()
+inline int32_t NmeaParserEx::getAltitude()
 	{ return mAltitude; }
 	
 inline uint32_t NmeaParserEx::getSpeed()

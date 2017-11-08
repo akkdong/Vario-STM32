@@ -331,6 +331,26 @@ void NmeaParserEx::reset()
 	mIGCNext = 0;
 }
 
+void timeStr2TmStruct(struct tm * _tm, const char * str)
+{
+	_tm->tm_hour = ((str[0] - '0') * 10) + (str[1] - '0');
+	_tm->tm_min  = ((str[2] - '0') * 10) + (str[3] - '0');
+	_tm->tm_sec  = ((str[4] - '0') * 10) + (str[5] - '0');
+}
+
+void dateStr2TmStruct(struct tm * _tm, const char * str)
+{
+	// nmea date(year) -> since 2000
+	// struct tm(year) -> since 1900
+	//
+	// tm_year <-- nmea date(year) + 100
+	//
+	
+	_tm->tm_mday = ((str[0] - '0') * 10) + (str[1] - '0');			// tm_mday : 1 ~ 31
+	_tm->tm_mon  = ((str[2] - '0') * 10) + (str[3] - '0') - 1;		// tm_mon  : 0 ~ 11
+	_tm->tm_year = ((str[4] - '0') * 10) + (str[5] - '0') + 100;	// tm_year : 0 -> 1900, nm_year : 0 -> 2000
+}
+
 void NmeaParserEx::parseField(int fieldIndex, int startPos)
 {
 	if (IS_SET(SEARCH_RMC_TAG))
@@ -338,6 +358,7 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 		switch(fieldIndex)
 		{
 		case 0 : // Time (HHMMSS.sss UTC)
+			timeStr2TmStruct(&mTm, &mBuffer[startPos]);
 			break;
 		case 1 : // Navigation receiver warning A = OK, V = warning
 			if (mBuffer[startPos] == 'A')
@@ -358,6 +379,8 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			mHeading = (uint32_t)(strToFloat(startPos) + 0.5);
 			break;
 		case 8 : // Date of fix  (DDMMYY)
+			dateStr2TmStruct(&mTm, &mBuffer[startPos]);
+			mDateTime = mktime(&mTm);
 			mDate = strToNum(startPos);
 			break;
 		}
@@ -388,9 +411,9 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			{
 				for(int i = 0, j = 0; i < IGC_SIZE_LATITUDE; i++, j++)
 				{
-					if ('0' <= mBuffer[startPos+i] && mBuffer[startPos+i] <= '9')
+					if ('0' <= mBuffer[startPos+j] && mBuffer[startPos+j] <= '9')
 						mIGCSentence[IGC_OFFSET_LATITUDE+i] = mBuffer[startPos+j];
-					else if (mBuffer[startPos+i] == '.')
+					else if (mBuffer[startPos+j] == '.')
 						i -= 1;
 					else
 						break;
@@ -419,9 +442,9 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			{
 				for(int i = 0, j = 0; i < IGC_SIZE_LONGITUDE; i++, j++)
 				{
-					if ('0' <= mBuffer[startPos+i] && mBuffer[startPos+i] <= '9')
+					if ('0' <= mBuffer[startPos+j] && mBuffer[startPos+j] <= '9')
 						mIGCSentence[IGC_OFFSET_LONGITUDE+i] = mBuffer[startPos+j];
-					else if (mBuffer[startPos+i] == '.')
+					else if (mBuffer[startPos+j] == '.')
 						i -= 1;
 					else
 						break;

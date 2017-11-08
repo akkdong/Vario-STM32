@@ -225,23 +225,31 @@ GPIO_PINMODE gpio_mode[] =
 //
 //
 
-#define DEVICE_MODE_VARIO			(0)
-#define DEVICE_MODE_UMS				(1)
-#define DEVICE_MODE_CALIBRATION		(2)
-#define DEVICE_MODE_CONFIGURATION	(3)
+enum _DeviceMode
+{
+	DEVICE_MODE_VARIO = 0,		// (0)
+	DEVICE_MODE_UMS,			// (1)
+	DEVICE_MODE_CALIBRATION,	// (2)
+	DEVICE_MODE_CONFIGURATION,	// (3)
+};
 
-#define VARIO_MODE_INIT				(0)
-#define VARIO_MODE_LANDING			(1)
-#define VARIO_MODE_FLYING			(2)
-#define VARIO_MODE_HALT				(3)
+enum _VarioMode
+{
+	VARIO_MODE_INIT = 0,		// (0)
+	VARIO_MODE_LANDING,			// (1)
+	VARIO_MODE_FLYING,			// (2)
+	VARIO_MODE_SHUTDOWN,		// (3)
+};
+
 
 uint8_t deviceMode = DEVICE_MODE_VARIO;
 
 uint8_t	varioMode = VARIO_MODE_INIT;
-uint32_t flightTick;
+uint32_t varioTick;
 
 void (* main_loop)(void) = 0;
 
+void vario_setup();
 void ums_setup();
 void calibration_setup();
 void configuration_setup();
@@ -258,8 +266,7 @@ void configuration_loop();
 //
 //
 
-
-VertVelocity  	vertVel;
+VertVelocity vertVel;
 
 //
 // InertialMeasurementUnit Module : measure accelerometer & gyro & do calibration for accelerometer
@@ -290,7 +297,7 @@ HardWire & I2CDevice::Wire = Wire1;
 UnlockCallback I2CDevice::cbUnlock = SensorMS5611::UnlockI2C;
 
 // declare EEPROMDriver
-EEPROMDriver	eeprom(Wire2);
+EEPROMDriver eeprom(Wire2);
 
 
 //
@@ -319,7 +326,7 @@ SensorReporter sensorReporter;
 //
 //
 
-BluetoothMan	btMan(SerialEx1, nmeaParser, varioNmea, sensorReporter);
+BluetoothMan btMan(SerialEx1, nmeaParser, varioNmea, sensorReporter);
 
 //
 // IGC Logger
@@ -333,18 +340,18 @@ IGCLogger logger;
 //
 
 // generic digital input
-InputKey	keyMode;
-InputKey	keyShutdown;
-InputKey	keyUSB;
+InputKey keyMode;
+InputKey keyShutdown;
+InputKey keyUSB;
 // functional input
 FunctionKey	keyFunc;
 // analog input
 BatteryVoltage batVolt;
 
 // generic digital output
-OutputKey	keyPowerGPS;
-OutputKey	keyPowerBT;
-OutputKey	keyPowerDev;
+OutputKey keyPowerGPS;
+OutputKey keyPowerBT;
+OutputKey keyPowerDev;
 // functional output
 LEDFlasher  ledFlasher;
 
@@ -353,7 +360,8 @@ LEDFlasher  ledFlasher;
 //
 //
 
-static Tone startTone[] = {
+static Tone startTone[] =
+{
 	{ 262, 1000 / 4 }, 
 	{ 196, 1000 / 8 }, 
 	{ 196, 1000 / 8 }, 
@@ -365,9 +373,16 @@ static Tone startTone[] = {
 	{   0, 1000 / 8 }, 
 };
 
+static Tone shutdownTone[] = 
+{
+	{ 460, 500 },
+	{   0, 200 },
+};
+
 ToneGenerator toneGen;
-TonePlayer	tonePlayer(toneGen);
-VarioBeeper	varioBeeper(tonePlayer);
+TonePlayer tonePlayer(toneGen);
+
+VarioBeeper varioBeeper(tonePlayer);
 
 
 //
@@ -381,11 +396,11 @@ GlobalConfig	Config(eeprom, EEPROM_ADDRESS);
 //
 //
 
-CommandStack	cmdStack;
+CommandStack cmdStack;
 
-CommandParser	cmdParser1(Serial, cmdStack); // USB serial parser
-CommandParser	cmdParser2(Serial1, cmdStack); // BT serial parser
-FuncKeyParser	keyParser(keyFunc, cmdStack, tonePlayer);
+CommandParser cmdParser1(Serial, cmdStack); // USB serial parser
+CommandParser cmdParser2(Serial1, cmdStack); // BT serial parser
+FuncKeyParser keyParser(keyFunc, cmdStack, tonePlayer);
 
 
 //
@@ -423,7 +438,7 @@ void board_init()
 	}
 #else
 	// input pins
-	keyMode.begin(PIN_MODE_SELECT, ACTIVE_LOW);
+	//keyMode.begin(PIN_MODE_SELECT, ACTIVE_LOW); // not used
 	keyShutdown.begin(PIN_SHDN_INT, ACTIVE_LOW);
 	keyUSB.begin(PIN_USB_DETECT, ACTIVE_HIGH);
 	// function-key
@@ -432,12 +447,39 @@ void board_init()
 	batVolt.begin(PIN_ADC_BATTERY);	
 	
 	// output pins
-	keyPowerGPS.begin(PIN_GPS_EN, ACTIVE_LOW, OUTPUT_HIGH);
-	keyPowerBT.begin(PIN_BT_EN, ACTIVE_LOW, OUTPUT_HIGH);
-	//keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUPUT_HIGH);
-	// 
+	keyPowerGPS.begin(PIN_GPS_EN, ACTIVE_LOW, OUTPUT_INACTIVE);
+	keyPowerBT.begin(PIN_BT_EN, ACTIVE_LOW, OUTPUT_INACTIVE);
+	//keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_ACTIVE);
+	// state beacon
 	ledFlasher.begin(PIN_MCU_STATE, ACTIVE_LOW);
 #endif
+}
+
+//
+//
+//
+
+void changeDeviceMode(int mode)
+{
+	switch ((deviceMode = mode))
+	{
+	case DEVICE_MODE_VARIO :
+		vario_setup();
+		main_loop = vario_loop;	
+		break;
+	case DEVICE_MODE_UMS :
+		ums_setup();
+		main_loop = ums_loop;
+		break;
+	case DEVICE_MODE_CALIBRATION :
+		calibration_setup();
+		main_loop = calibration_loop;
+		break;
+	case DEVICE_MODE_CONFIGURATION :
+		// not support
+		while(1);
+		break;
+	}
 }
 
 //
@@ -452,7 +494,6 @@ void setup()
 	//
 	Config.readAll();
 
-  
 	// initialize imu module & measure first data
 	imu.init();
 	while (! imu.dataReady());
@@ -468,42 +509,19 @@ void setup()
 	logger.init();
 	
 	//
-	//batVolt.begin(PIN_ADC_BATTERY);
-	
-	//
-	//keyFunc.begin(PIN_FUNC_INPUT);
-
-	/*
-	keyMode.begin(PIN_MODE_SELECT, ACTIVE_LOW); or keyMode.begin(GPIO_PINMODE gpio);
-	keyShutdown.begin(PIN_SHDN_INT, ACTIVE_LOW);
-	keyUSB.begin(PIN_USB_DETECT, ACTIVE_HIGH);
-	
-	keyPowerGPS.begin(PIN_GPS_EN, ACTIVE_LOW);
-	keyPowerBT.begin(PIN_BT_EN, ACTIVE_LOW);
-	keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW);
-	*/
-
-	//ledFlasher.begin(PIN_MCU_STATE);
-	
-	//
-	/*
-	keyPowerBT.enable();
-	btMan.begin(&nmeaParser, &varioNmea, &sensorReporter);
-	*/
+	// keyPowerBT.begin(PIN_KILL_PWR, ACTIVE_LOW, OUPUT_HIGH); // how about OUTPUT_ACTIVE & OUTPUT_INACTIVE
+	// keyPowerBT.enable();
 	
 	// ToneGenerator uses PIN_PWM_H(PA8 : Timer1, Channel1)
 	toneGen.begin(PIN_PWM_H);
 	
 	//
 	tonePlayer.setVolume(Config.vario_volume);
-	tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, 0);
-	
+
 	//
-	varioMode = VARIO_MODE_LANDING;
-	main_loop = vario_loop;
-	
-	ledFlasher.blink(BLINK_SD_FAIELD);
+	changeDeviceMode(DEVICE_MODE_VARIO);
 }
+
 
 //
 //
@@ -519,46 +537,53 @@ void loop()
 //
 //
 
+void vario_setup()
+{
+	//
+	varioMode = VARIO_MODE_INIT;
+	
+	// turn-on GPS & BT
+	keyPowerGPS.enable();
+	keyPowerBT.enable();
+
+	// led flash as init-state
+	if (! logger.isInitialized())
+		ledFlasher.blink(BLINK_SD_FAIELD);
+	//else if (! imu.isReady())
+	//	ledFlasher.blink(BLINK_IMU_FAILED);
+	else
+		ledFlasher.turnOn();
+
+	// start vario-loop
+	tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, 0);
+}
+
 void vario_loop()
 {
 	//
 	if (imu.dataReady())
 	{
-		imu.updateData();
+		//
+		imu.updateData(/* &sensorReporter */);
+
+		//
 		vertVel.update(imu.getAltitude(), imu.getVelocity(), millis());
 		
-		//Serial.print(imu.getAltitude()); Serial.print(", ");
-		//Serial.print(imu.getVelocity()); Serial.print(", ");
-		//Serial.print(vertVel.getVelocity());
-		//Serial.println("");
-		
-		//
 		//sensorReporter.setData(...);
 		varioBeeper.setVelocity(vertVel.getVelocity());		
-		//
 		logger.update(vertVel.getPosition());
 	}
 	
 	// read & prase gps sentence
 	nmeaParser.update();
+	
 	// update vario sentence periodically
 	if (varioNmea.checkInterval())
 		varioNmea.begin(vertVel.getPosition(), vertVel.getVelocity(), imu.getTemperature(), batVolt.getVoltage());
+
 	// send any prepared sentence to BT
 	btMan.update();
-	
-	// we can change global configuration by BT communication
-	//       and execute some command also
-	//if (btMan.available())
-	//{
-	//	//
-	//	int c = btMan.read();
-	//	
-	//	//
-	//	// execute(c);
-	//}
 
-	
 	//
 	cmdParser1.update();
 	cmdParser2.update();
@@ -583,12 +608,15 @@ void vario_loop()
 					//main_loop = icalibration_loop();
 					return;
 				case PARAM_SW_CALIBRATION  :
-					// setup
-					setup_calibration();
-					// loop
-					main_loop = calibration_loop;
+					changeDeviceMode(DEVICE_MODE_CALIBRATION);
 					return;
 				case PARAM_SW_UMS          :
+					if (keyUSB.read() && logger.isInitialized())
+					{
+						changeDeviceMode(DEVICE_MODE_UMS);
+						return;
+					}
+					// cann't change mode : warning beep~~
 					break;
 				}
 			}
@@ -629,10 +657,17 @@ void vario_loop()
 			break;
 		}
 	}
-
 	
-	//
-	if (varioMode == VARIO_MODE_LANDING)
+	// IGC setence is available when it received a valid GGA. -> altitude is valid
+	if (varioMode == VARIO_MODE_INIT  && nmeaParser.availableIGC())
+	{
+		// do position calibration
+		vertVel.calibratePosition(nmeaParser.getAltitude());
+		
+		// now ready to fly~~~
+		varioMode = VARIO_MODE_LANDING;
+	}
+	else if (varioMode == VARIO_MODE_LANDING)
 	{
 		if (nmeaParser.getSpeed() > FLIGHT_START_MIN_SPEED)
 		{
@@ -644,14 +679,14 @@ void vario_loop()
 			// ...
 			
 			//
-			flightTick = millis();
+			varioTick = millis();
 		}
 	}
 	else if (varioMode == VARIO_MODE_FLYING)
 	{
 		if (nmeaParser.getSpeed() < FLIGHT_START_MIN_SPEED)
 		{
-			if ((millis() - flightTick) < FLIGHT_LANDING_THRESHOLD)
+			if ((millis() - varioTick) > FLIGHT_LANDING_THRESHOLD)
 			{
 				// stop logging & change mode
 				logger.end();
@@ -663,8 +698,18 @@ void vario_loop()
 		}
 		else
 		{
-			// reset flightTick
-			flightTick = millis();
+			// reset varioTick
+			varioTick = millis();
+		}
+	}
+	else if (varioMode == VARIO_MODE_SHUTDOWN)
+	{
+		if (millis() - varioTick > SHUTDOWN_HOLD_TIME)
+		{
+			tonePlayer.setMute();
+			keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_ACTIVE);
+			
+			while(1);
 		}
 	}
 
@@ -692,25 +737,32 @@ void vario_loop()
 	// MCU State : LED Blinking
 	ledFlasher.update();
 	
-	// process key-input
-	#if 0 // FuncKeyParser treats key-input internally
-	keyFunc.update();
-
-	if (keyFunc.fired())
+	//
+	if (batVolt.getVoltage() < LOW_BATTERY_THRESHOLD)
 	{
-		// value format :
-		// b7 b6 b5 b4 b3 b2 b1 b0
-		// C2 C1 C0 I4 I3 I2 I1 I0
-		//
-		// Cx : count of bits (valid: 1~5, forbidden(ignore): 0, 6, 7)
-		// Ix : input value
-		//      each bit represents LONG(1) or SHORT(0) input, default is SHORT
-		//		MSB first, RIGHT aligned
-		//
+		// alert & clean-up & power-off
+		tonePlayer.setMelody(&shutdownTone[0], sizeof(shutdownTone) / sizeof(shutdownTone[0]), 10, 0);
+		varioMode = VARIO_MODE_SHUTDOWN;
+		varioTick = millis();
 		
-		uint8_t value = keyFunc.getValue();
+		if (logger.isLogging())
+			logger.end();
+		
+		ledFlasher.blink(BLINK_FIRMWARE_UPDATE);
 	}
-	#endif
+	
+	//
+	if (keyShutdown.read() == INPUT_ACTIVE)
+	{
+		// shutdown interrupt trigged by LTC2950
+		// clean-up & wait power-off(LTC2750 will turn off power)		
+		if (logger.isLogging())
+			logger.end();
+		
+		// beep~
+		tonePlayer.setBeep(460, 0, 0);
+		while(1);
+	}
 }
 
 
@@ -734,7 +786,7 @@ void ums_loop()
 #define MEASURE_DELAY 			(3000)
 
 
-void setup_calibration()
+void calibration_setup()
 {
 	accelCalibrator.init();
 	

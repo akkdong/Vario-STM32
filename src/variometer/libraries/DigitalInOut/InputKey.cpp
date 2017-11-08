@@ -22,11 +22,11 @@ int InputKey::read()
 	uint32_t input = digitalRead(inputPin);
 	
 	if (activeState)
-		// active-high : HIGH -> INPUT_HIGH, LOW -> INPUT_LOW
-		return input ? INPUT_HIGH : INPUT_LOW;
+		// active-high : HIGH -> INPUT_ACTIVE, LOW -> INPUT_INACTIVE
+		return input ? INPUT_ACTIVE : INPUT_INACTIVE;
 	else
-		// active-low : HIGH -> INPUT_LOW, LOW -> INPUT_HIGH
-		return input ? INPUT_LOW : INPUT_HIGH; 
+		// active-low : HIGH -> INPUT_INACTIVE, LOW -> INPUT_ACTIVE
+		return input ? INPUT_INACTIVE : INPUT_ACTIVE; 
 }
 
 void InputKey::interrupt()
