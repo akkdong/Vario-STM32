@@ -89,7 +89,7 @@ int IGCLogger::init()
 	
 	sd.chdir(logsFolder);
 	#endif
-	
+
 	return true;
 }
 
@@ -223,6 +223,62 @@ const char * IGCLogger::makeFileName(char * buf, uint32_t date)
 	return NULL;
 }
 
+const char * IGCLogger::makeFileNameEx(char * buf, time_t date)
+{
+	// name format : YYYY-MM-DD-NRC-STM-nn.igc
+	// ...
+	int pos = 0;
+	int i, num;
+	const char * ptr;
+	struct tm * _tm;
+
+	date = date + (Config.vario_timezone * 60 *60); 
+	_tm = localtime(&date);
+	
+	// year
+	digit.begin(_tm->tm_year + 1900, 4);
+	while (digit.available())
+		buf[pos++] = digit.read();
+	buf[pos++] = '-';
+	// month
+	digit.begin(_tm->tm_mon + 1, 2);
+	while (digit.available())
+		buf[pos++] = digit.read();
+	buf[pos++] = '-';
+	// day
+	digit.begin(_tm->tm_mday, 2);
+	while (digit.available())
+		buf[pos++] = digit.read();
+	buf[pos++] = '-';
+
+	// manufacture code
+	for (i = 0, ptr = nameManufacture; i < 3; i++)
+		buf[pos++] = (*ptr) ? *ptr++ : 'X';
+	buf[pos++] = '-';
+		
+	// FR serial number
+	ptr = Config.profile_pilot[0] ? Config.profile_pilot : serialNumber;
+	for (i = 0; i < 3; i++)
+		buf[pos++] = (*ptr) && (*ptr != 0x20) ? *ptr++ : 'X';
+	buf[pos++] = '-';
+	
+	// flight number of the day & file extension
+	for (ptr = tailOfFileName; *ptr; ptr++)
+		buf[pos++] = *ptr;
+	buf[pos] = '\0'; // null-terminate
+	
+	for (i = 2; i < 101; i++) // valid number : 01 ~ 99
+	{
+		if (! sdCard.exists(buf))
+			return buf;
+		
+		buf[19] = (i / 10) + '0';
+		buf[20] = (i % 10) + '0';
+	}
+	
+	return NULL;
+}
+
 void IGCLogger::writeHeader(uint32_t date)
 {
 	if(! IS_SET(LOGGER_WORKING))
@@ -242,8 +298,15 @@ void IGCLogger::writeHeader(uint32_t date)
 			}
 			break;
 		case IGC_HEADER_PILOT	 :
+			if (Config.profile_pilot[0])
+				sdFile.write((const char *)Config.profile_pilot);
+			break;
 		case IGC_HEADER_CLASS	 :
+			break;
 		case IGC_HEADER_GLIDER	 :
+			if (Config.profile_glider[0])
+				sdFile.write((const char *)Config.profile_glider);
+			break;
 		case IGC_HEADER_GPSDATUM :
 			// leave it empty!!
 			break;

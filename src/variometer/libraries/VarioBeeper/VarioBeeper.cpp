@@ -55,15 +55,8 @@ static VarioTone varioTone[] =
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-VarioBeeper::VarioBeeper(TonePlayer & tp, double ct, double st) :	player(tp)
+VarioBeeper::VarioBeeper(TonePlayer & tp) :	player(tp)
 {
-	setThreshold(ct, st);
-}
-
-void VarioBeeper::setThreshold(double ct, double st)
-{
-	climbingThreshold = ct;
-	sinkingThreshold = st;
 }
 
 void VarioBeeper::setVelocity(double velocity)
@@ -73,26 +66,26 @@ void VarioBeeper::setVelocity(double velocity)
 	switch (beepType)
 	{
 	case BEEP_TYPE_SINKING :
-		if (sinkingThreshold + Config.vario_sensitivity < velocity)
+		if (Config.vario_sinkThreshold + Config.vario_sensitivity < velocity)
 			typeChanged = true;
 		break;
 		
 	case BEEP_TYPE_SILENT :
-		if (velocity <= sinkingThreshold || climbingThreshold <= velocity)
+		if (velocity <= Config.vario_sinkThreshold || Config.vario_climbThreshold <= velocity)
 			typeChanged = true;
 		break;
 		
 	case BEEP_TYPE_CLIMBING :
-		if (velocity < climbingThreshold - Config.vario_sensitivity)
+		if (velocity < Config.vario_climbThreshold - Config.vario_sensitivity)
 			typeChanged = true;
 		break;
 	}
 	
 	if (typeChanged)
 	{
-		if (velocity <= sinkingThreshold)
+		if (velocity <= Config.vario_sinkThreshold)
 			beepType = BEEP_TYPE_SINKING;
-		else if (climbingThreshold <= velocity)
+		else if (Config.vario_climbThreshold <= velocity)
 			beepType = BEEP_TYPE_CLIMBING;
 		else
 			beepType = BEEP_TYPE_SILENT;

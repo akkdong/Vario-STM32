@@ -16,22 +16,24 @@
 class VarioBeeper
 {
 public:
-	VarioBeeper(TonePlayer & sp, double climbingThreshold = VARIOMETER_CLIMBING_THRESHOLD, double sinkingThreshold = VARIOMETER_SINKING_THRESHOLD);
+	VarioBeeper(TonePlayer & sp);
 	
 public:
-	void			setThreshold(double climbingThreshold, double sinkingThreshold);
+//	void			setThreshold(double climbingThreshold, double sinkingThreshold);
 	void			setVelocity(double velocity);
 	
 private:
 	void 			findTone(double velocity, int & freq, int & period, int & duty);
 
 private:
-	double 			climbingThreshold;
-	double			sinkingThreshold;
+//	double 			climbingThreshold;
+//	double			sinkingThreshold;
 	
-	uint8_t			beepType;	// sinking, silent, (gliding), climbling
-	
+	//
 	TonePlayer &	player;
+	
+	//
+	uint8_t			beepType;	// sinking, silent, (gliding), climbling
 };
 
 #endif // __VARIOBEEPER_H__

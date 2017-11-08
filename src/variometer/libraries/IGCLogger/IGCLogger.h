@@ -4,10 +4,11 @@
 #ifndef __IGCLOGGER_H__
 #define __IGCLOGGER_H__
 
+#include <DefaultSettings.h>
 #include <FixedLenDigit.h>
 #include <SdFat.h>
 #include <FreeStack.h>
-#include <DefaultSettings.h>
+#include <time.h>
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -35,6 +36,7 @@ private:
 	void				reset();
 	
 	const char *		makeFileName(char * buf, uint32_t date);
+	const char *		makeFileNameEx(char * buf, time_t date);
 	void				writeHeader(uint32_t date);
 
 private:

@@ -17,6 +17,7 @@
 #define BLOCK_SIZE_PROFILE_PILOT	(sizeof(BLOCK_Profile))	// x + sizeof(mask)
 #define BLOCK_SIZE_PROFILE_GLIDER	(sizeof(BLOCK_Profile))	// x + sizeof(mask)
 #define BLOCK_SIZE_VARIO_SETTINGS	(sizeof(BLOCK_VarioSettings))	// x + sizeof(mask)
+#define BLOCK_SIZE_VARIO_TIMEZONE	(sizeof(BLOCK_VarioTimezone))	// x + sizeof(mask)
 #define BLOCK_SIZE_VARIO_VOLUMNE	(sizeof(BLOCK_VarioVolume))	// x + sizeof(mask)
 #define BLOCK_SIZE_VARIO_TONE_00	(sizeof(BLOCK_VarioTone))	// x + sizeof(mask)
 #define BLOCK_SIZE_VARIO_TONE_01	(sizeof(BLOCK_VarioTone))	// x + sizeof(mask)
@@ -39,6 +40,7 @@ enum EEPROM_BlockId
 	BLOCK_ID_PROFILE_PILOT,
 	BLOCK_ID_PROFILE_GLIDER,
 	BLOCK_ID_VARIO_SETTINGS,
+	BLOCK_ID_VARIO_TIMEZONE,
 	BLOCK_ID_VARIO_VOLUMNE,
 	BLOCK_ID_VARIO_TONE_00,
 	BLOCK_ID_VARIO_TONE_01,
@@ -63,6 +65,7 @@ enum EEPROM_BlockMask
 	BLOCK_MASK_PROFILE_PILOT	= 0x5302,
 	BLOCK_MASK_PROFILE_GLIDER	= 0x5303,
 	BLOCK_MASK_VARIO_SETTINGS	= 0x5405,
+	BLOCK_MASK_VARIO_TIMEZONE	= 0x5411,
 	BLOCK_MASK_VARIO_VOLUMNE	= 0x5451,
 	BLOCK_MASK_VARIO_TONE_00	= 0x54E1,
 	BLOCK_MASK_VARIO_TONE_01	= 0x54E2,
@@ -85,7 +88,7 @@ enum EEPROM_BlockMask
 //
 
 #define MAX_CONFIG_BLOCK_SIZE		(64)
-
+#define MAX_PROFILE_SIZE			(16)
 
 //
 // block relative structure definition
@@ -113,7 +116,7 @@ typedef struct tagBLOCK_Profile
 	unsigned short mask;
 	
 	//
-	unsigned char  name[16];
+	unsigned char  name[MAX_PROFILE_SIZE];
 
 } BLOCK_Profile;
 
@@ -131,6 +134,16 @@ typedef struct tagBLOCK_VarioSettings
 	unsigned char timezone;
 
 } BLOCK_VarioSettings;
+
+typedef struct tagBLOCK_VarioTimezone
+{
+	//
+	unsigned short mask;
+	
+	//
+	unsigned char timezone;
+
+} BLOCK_VarioTimezone;
 
 typedef struct tagBLOCK_VarioVolume
 {
@@ -189,8 +202,11 @@ public:
 	void				writeAll();
 	
 	boolean				readBlock(unsigned char blockId, EEPROM_Block * block);
+//	EEPROM_Block *		readBlock(unsigned char blockId);
 	boolean				writeBlock(unsigned char blockId, EEPROM_Block * block);
 	
+//	EEPROM_Block *		getBlock(); // return free block
+
 	boolean				writeProfile();
 	boolean				writeVarioSettings();
 	boolean				writeVarioVolume();
@@ -207,13 +223,13 @@ public:
 
 public:
 	// block: profile_model
-	char				profile_model[14];
+	char				profile_model[MAX_PROFILE_SIZE];
 	
 	// block: profile_pilot
-	char				profile_pilot[14];
+	char				profile_pilot[MAX_PROFILE_SIZE];
 	
 	// block: profile_glider
-	char				profile_glider[14];
+	char				profile_glider[MAX_PROFILE_SIZE];
 
 	// block: vario_settings
 	float				vario_sinkThreshold;
