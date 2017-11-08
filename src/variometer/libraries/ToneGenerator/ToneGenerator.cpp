@@ -53,7 +53,7 @@ void ToneGenerator::end()
 	tonePin = PIN_UNDEFINED;
 }
 
-void ToneGenerator::setTone(uint16 hz, uint8 volume)
+void ToneGenerator::setTone(uint16_t hz, uint8_t volume)
 {
 	if (tonePin == PIN_UNDEFINED)
 		return;
@@ -63,7 +63,7 @@ void ToneGenerator::setTone(uint16 hz, uint8 volume)
 	
 	if (hz > 0)
 	{
-		uint16 value = 1000000 / hz;
+		uint16_t value = 1000000 / hz;
 		
 		//
 		timer_set_reload(dev, value);

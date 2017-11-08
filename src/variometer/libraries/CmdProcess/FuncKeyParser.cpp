@@ -68,7 +68,7 @@ void FuncKeyParser::update()
 	if (inputCmd && (millis() - inputTick) > MAX_RESPONSE_INPUT_TIME)
 	{
 		// play cancel melody
-		Player.setMelodyEx(&toneCancel[0], sizeof(toneCancel)/sizeof(toneCancel[0]));
+		Player.setMelodyEx(&toneCancel[0], sizeof(toneCancel)/sizeof(toneCancel[0]), KEY_VOLUME);
 		
 		// reset input command
 		inputCmd = 0;
@@ -86,14 +86,14 @@ void FuncKeyParser::update()
 			inputCmd = CMD_MODE_SWITCH;
 			inputParam = PARAM_SW_UMS;
 			inputTick = millis();
-			Player.setMelodyEx(&toneMode[0], (value & 0xE0) >> 4);
+			Player.setMelodyEx(&toneMode[0], (value & 0xE0) >> 4, KEY_VOLUME);
 			Serial.println("change to UMS mode");
 			break;
 		case 0x64 : // count: 3, code: LSS	// mode change : Calibration
 			inputCmd = CMD_MODE_SWITCH;
 			inputParam = PARAM_SW_CALIBRATION;
 			inputTick = millis();
-			Player.setMelodyEx(&toneMode[0], (value & 0xE0) >> 4);
+			Player.setMelodyEx(&toneMode[0], (value & 0xE0) >> 4, KEY_VOLUME);
 			Serial.println("change to calibration mode");
 			break;
 		
@@ -101,21 +101,21 @@ void FuncKeyParser::update()
 			inputCmd = CMD_SOUND_LEVEL;
 			inputParam = PARAM_LV_LOUD;
 			inputTick = millis();
-			Player.setMelodyEx(&toneVolume[0], (value & 0xE0) >> 4);
+			Player.setMelodyEx(&toneVolume[0], (value & 0xE0) >> 4, KEY_VOLUME);
 			Serial.println("change volume to loud level");
 			break;
 		case 0x63 : // count: 3, code: SLL	// volume : quiet
 			inputCmd = CMD_SOUND_LEVEL;
 			inputParam = PARAM_LV_QUIET;
 			inputTick = millis();
-			Player.setMelodyEx(&toneVolume[0], (value & 0xE0) >> 4);
+			Player.setMelodyEx(&toneVolume[0], (value & 0xE0) >> 4, KEY_VOLUME);
 			Serial.println("change volume to quiet level");
 			break;
 		case 0x41 : // count: 2, code: SL	// volume : mute
 			inputCmd = CMD_SOUND_LEVEL;
 			inputParam = PARAM_LV_MUTE;
 			inputTick = millis();
-			Player.setMelodyEx(&toneVolume[0], (value & 0xE0) >> 4);
+			Player.setMelodyEx(&toneVolume[0], (value & 0xE0) >> 4, KEY_VOLUME);
 			Serial.println("change volume to mute level");
 			break;
 		
@@ -134,7 +134,7 @@ void FuncKeyParser::update()
 			if (inputCmd)
 			{
 				// play cancel melody
-				Player.setMelodyEx(&toneCancel[0], sizeof(toneCancel)/sizeof(toneCancel[0]));
+				Player.setMelodyEx(&toneCancel[0], sizeof(toneCancel)/sizeof(toneCancel[0]), KEY_VOLUME);
 				Serial.println("cancel!!");
 				
 				// reset input command
@@ -146,7 +146,7 @@ void FuncKeyParser::update()
 			{
 				// enqueue command & play ok melody
 				Stack.enqueue(Command(CMD_FROM_KEY, inputCmd, inputParam));
-				Player.setMelodyEx(&toneOK[0], sizeof(toneOK)/sizeof(toneOK[0]));
+				Player.setMelodyEx(&toneOK[0], sizeof(toneOK)/sizeof(toneOK[0]), KEY_VOLUME);
 				Serial.println("OK!!");
 				
 				// reset input command
@@ -157,11 +157,11 @@ void FuncKeyParser::update()
 		case 0xFF : // long long press
 			// command reset
 			Stack.enqueue(Command(CMD_FROM_KEY, CMD_DEVICE_RESET, 0));
-			//Player.setMelodyEx(&toneReset[0], sizeof(toneReset)/sizeof(toneReset[0]));
+			//Player.setMelodyEx(&toneReset[0], sizeof(toneReset)/sizeof(toneReset[0]), KEY_VOLUME);
 			break;
 			
 		default : // unsupport(unused) key-input
-			Player.setMelodyEx(&toneCancel[0], 2);
+			Player.setMelodyEx(&toneCancel[0], 2, KEY_VOLUME);
 			break;
 		}
 	}

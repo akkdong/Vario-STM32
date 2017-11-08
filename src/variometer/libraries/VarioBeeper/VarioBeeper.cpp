@@ -12,6 +12,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
+/*
 struct VarioTone
 {
 	double 	velocity;
@@ -50,7 +51,7 @@ static VarioTone varioTone[] =
 	{  10.00, 1687,  83,  50 },
 #endif
 };
-
+*/
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -108,28 +109,28 @@ void VarioBeeper::findTone(double velocity, int & freq, int & period, int & duty
 {
 	int index;
 	
-	for (index = 0; index < (sizeof(varioTone) / sizeof(varioTone[0])); index++)
+	for (index = 0; index < (sizeof(Config.vario_tone) / sizeof(Config.vario_tone[0])); index++)
 	{
-		if (velocity <= varioTone[index].velocity)
+		if (velocity <= Config.vario_tone[index].velocity)
 			break;
 	}
 	
-	if (index == 0 || index == (sizeof(varioTone) / sizeof(varioTone[0])))
+	if (index == 0 || index == (sizeof(Config.vario_tone) / sizeof(Config.vario_tone[0])))
 	{
 		if (index != 0)
 			index -= 1;
 		
-		freq = varioTone[index].freq;
-		period = varioTone[index].period;
-		duty = varioTone[index].duty;
+		freq = Config.vario_tone[index].freq;
+		period = Config.vario_tone[index].period;
+		duty = Config.vario_tone[index].duty;
 	}
 	else
 	{
-		double ratio = varioTone[index].velocity / velocity;
+		double ratio = Config.vario_tone[index].velocity / velocity;
 		
-		freq = (varioTone[index].freq - varioTone[index-1].freq) / (varioTone[index].velocity - varioTone[index-1].velocity) * (velocity - varioTone[index-1].velocity) + varioTone[index-1].freq;
-		period = (varioTone[index].period - varioTone[index-1].period) / (varioTone[index].velocity - varioTone[index-1].velocity) * (velocity - varioTone[index-1].velocity) + varioTone[index-1].period;
-		duty = (varioTone[index].duty - varioTone[index-1].duty) / (varioTone[index].velocity - varioTone[index-1].velocity) * (velocity - varioTone[index-1].velocity) + varioTone[index-1].duty;
+		freq = (Config.vario_tone[index].freq - Config.vario_tone[index-1].freq) / (Config.vario_tone[index].velocity - Config.vario_tone[index-1].velocity) * (velocity - Config.vario_tone[index-1].velocity) + Config.vario_tone[index-1].freq;
+		period = (Config.vario_tone[index].period - Config.vario_tone[index-1].period) / (Config.vario_tone[index].velocity - Config.vario_tone[index-1].velocity) * (velocity - Config.vario_tone[index-1].velocity) + Config.vario_tone[index-1].period;
+		duty = (Config.vario_tone[index].duty - Config.vario_tone[index-1].duty) / (Config.vario_tone[index].velocity - Config.vario_tone[index-1].velocity) * (velocity - Config.vario_tone[index-1].velocity) + Config.vario_tone[index-1].duty;
 	}
 	
 	//period = (int)(period * 1.0);

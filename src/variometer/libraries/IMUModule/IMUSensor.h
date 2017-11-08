@@ -100,7 +100,7 @@ public:
 	double *			getCalibration();
 	
 private:
-	double				calData[3]; // accel calibration data
+//	double				calData[3]; // accel calibration data
 	boolean				newData;
 	double				vertAccel;
 };

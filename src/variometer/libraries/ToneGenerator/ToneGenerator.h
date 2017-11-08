@@ -17,13 +17,13 @@ public:
 	ToneGenerator();
 	
 public:
-	void			begin(uint8 pin); // only one pin can be used in same timer
+	void			begin(uint8_t pin); // only one pin can be used in same timer
 	void			end();
 
-	void			setTone(uint16 hz, uint8 volume = 100);
+	void			setTone(uint16_t hz, uint8_t volume = 100);
 	
 private:
-	uint8			tonePin;
+	uint8_t			tonePin;
 };
 
 

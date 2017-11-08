@@ -36,6 +36,22 @@ EEPROM_BlockInfo BlockMap[] =
 	{0x0260, BLOCK_MASK_CALIBRATION_DATA, BLOCK_SIZE_CALIBRATION_DATA },	
 };
 
+static VarioTone default_Tone[TONE_TABLE_COUNT] =
+{
+	{ -10.0,   200, 200, 100 },
+	{  -3.0,   293, 200, 100 },
+	{  -2.0,   369, 200, 100 },
+	{  -1.0,   440, 200, 100 },
+	{  -0.5,   475, 600, 100 },
+	{   0.0,   493, 600,  50 },
+	{   0.37, 1000, 369,  50 },
+	{   0.92, 1193, 219,  50 },
+	{   1.90, 1324, 151,  50 },
+	{   3.01, 1428, 112,  50 },
+	{   5.35, 1567, 100,  50 },
+	{  10.00, 1687,  83,  50 },
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // class GlobalConfig
@@ -58,17 +74,17 @@ GlobalConfig::GlobalConfig(EEPROMDriver & driver, unsigned char addr) : eepromDr
 	//
 	vario_volume = VARIOMETER_BEEP_VOLUME; // 0 ~ 100
 	
-	//
 	// vario_tone_table 
+	memcpy(&vario_tone[0], &default_Tone[0], sizeof(default_Tone));
 	
 	//
 	kalman_sigmaP = POSITION_MEASURE_STANDARD_DEVIATION; // 0.1
 	kalman_sigmaA = ACCELERATION_MEASURE_STANDARD_DEVIATION; // 0.3
 	
 	// accel calibration data
-	accel[0] = 0.0; 
-	accel[1] = 0.0; 
-	accel[2] = 0.0; 
+	accel_calData[0] = 0.0; 
+	accel_calData[1] = 0.0; 
+	accel_calData[2] = 0.0; 
 	
 	//
 	dirty = false;
@@ -81,13 +97,13 @@ void GlobalConfig::readAll()
 
 	// profile_model
 	if (readBlock(BLOCK_ID_PROFILE_MODEL, block))
-		memcpy(&block->data[0], profile_model, BlockMap[BLOCK_ID_PROFILE_MODEL].length - sizeof(block->mask));
+		memcpy(profile_model, &block->data[0], BlockMap[BLOCK_ID_PROFILE_MODEL].length - sizeof(block->mask));
 	// profile_pilot
 	if (readBlock(BLOCK_ID_PROFILE_PILOT, block))
-		memcpy(&block->data[0], profile_pilot, BlockMap[BLOCK_ID_PROFILE_PILOT].length - sizeof(block->mask));
+		memcpy(profile_pilot, &block->data[0], BlockMap[BLOCK_ID_PROFILE_PILOT].length - sizeof(block->mask));
 	// profile_glider
 	if (readBlock(BLOCK_ID_PROFILE_GLIDER, block))
-		memcpy(&block->data[0], profile_glider, BlockMap[BLOCK_ID_PROFILE_GLIDER].length - sizeof(block->mask));
+		memcpy(profile_glider, &block->data[0], BlockMap[BLOCK_ID_PROFILE_GLIDER].length - sizeof(block->mask));
 
 	
 	// vario-settings
@@ -110,9 +126,15 @@ void GlobalConfig::readAll()
 		vario_volume = vario->volume;
 	}
 	// vario-tone-table
-	// for (i = 0; i < tone_counts; i++)
-	//    readBlock(BLOCK_ID_VARIO_TONE_00+i, block)
-	//    table[i] = block->tone_info;
+	for (int i = 0; i < TONE_TABLE_COUNT; i++)
+	{
+		if (readBlock(BLOCK_ID_VARIO_TONE_00+i, block))
+		{
+			BLOCK_VarioTone * vario = (BLOCK_VarioTone *)block;
+			
+			memcpy(&vario_tone[i], &vario->tone, sizeof(VarioTone));
+		}
+	}
 
 	//
 	if (readBlock(BLOCK_ID_KALMAN_PARAMS, block))
@@ -128,9 +150,9 @@ void GlobalConfig::readAll()
 	{
 		BLOCK_CalibrationData * data = (BLOCK_CalibrationData *)block;
 		
-		accel[0] = data->accel[0];
-		accel[1] = data->accel[1];
-		accel[2] = data->accel[2];
+		accel_calData[0] = data->accel[0];
+		accel_calData[1] = data->accel[1];
+		accel_calData[2] = data->accel[2];
 	}	
 
 	//
@@ -141,22 +163,22 @@ void GlobalConfig::writeAll()
 {
 	// write all parameters
 	writeProfile();
-	delay(10);
+	delay(1);
 
 	writeVarioSettings();
-	delay(10);
+	delay(1);
 
 	writeVarioVolume();
-	delay(10);
+	delay(1);
 
 	writeVarioToneTable();
-	delay(10);
+	delay(1);
 
 	writeKalmanParamters();
-	delay(10);
+	delay(1);
 
 	writeCalibrationData();
-	delay(10);
+	delay(1);
 	
 	//
 	dirty = false;
@@ -197,7 +219,7 @@ boolean GlobalConfig::writeProfile()
 		info = &BlockMap[BLOCK_ID_PROFILE_MODEL];
 
 		block->mask = info->mask;
-		memcpy(profile_model, block->name, sizeof(profile_model));
+		memcpy(block->name, profile_model, sizeof(profile_model));
 		
 		writeBlock(BLOCK_ID_PROFILE_MODEL, (EEPROM_Block *)block);
 	}
@@ -208,7 +230,7 @@ boolean GlobalConfig::writeProfile()
 		info = &BlockMap[BLOCK_ID_PROFILE_PILOT];
 
 		block->mask = info->mask;
-		memcpy(profile_pilot, block->name, sizeof(profile_pilot));
+		memcpy(block->name, profile_pilot, sizeof(profile_pilot));
 		
 		writeBlock(BLOCK_ID_PROFILE_PILOT, (EEPROM_Block *)block);
 	}
@@ -219,7 +241,7 @@ boolean GlobalConfig::writeProfile()
 		info = &BlockMap[BLOCK_ID_PROFILE_GLIDER];
 
 		block->mask = info->mask;
-		memcpy(profile_glider, block->name, sizeof(profile_glider));
+		memcpy(block->name, profile_glider, sizeof(profile_glider));
 		
 		writeBlock(BLOCK_ID_PROFILE_GLIDER, (EEPROM_Block *)block);
 	}
@@ -255,7 +277,19 @@ boolean GlobalConfig::writeVarioVolume()
 
 boolean GlobalConfig::writeVarioToneTable()
 {
-	return false;
+	for (int i = 0; i < TONE_TABLE_COUNT; i++)
+	{
+		EEPROM_BlockInfo * info = &BlockMap[BLOCK_ID_VARIO_TONE_00+i];
+		BLOCK_VarioTone * vario = (BLOCK_VarioTone *)&buffer[0];
+		
+		vario->mask = info->mask;
+		memcpy(&vario->tone, &vario_tone[i], sizeof(VarioTone));
+		
+		if (! writeBlock(BLOCK_ID_VARIO_TONE_00+i, (EEPROM_Block *)vario))
+			return false;
+	}
+	
+	return true;
 }
 
 boolean GlobalConfig::writeKalmanParamters()
@@ -276,15 +310,15 @@ boolean GlobalConfig::writeCalibrationData()
 	BLOCK_CalibrationData * block = (BLOCK_CalibrationData *)&buffer[0];
 	
 	block->mask = info->mask;
-	block->accel[0] = accel[0];
-	block->accel[1] = accel[1];
-	block->accel[2] = accel[2];
+	block->accel[0] = accel_calData[0];
+	block->accel[1] = accel_calData[1];
+	block->accel[2] = accel_calData[2];
 	
 	return writeBlock(BLOCK_ID_CALIBRATION_DATA, (EEPROM_Block *)block);
 }
 
 /*
-void GlobalConfig::updateVarioSettings(float sink, float climb, float sensitive, char vol)
+void GlobalConfig::updateVarioSettings(double sink, double climb, double sensitive, char vol)
 {
 	//
 	vario_sinkThreshold = sink;
@@ -301,9 +335,9 @@ void GlobalConfig::updateVarioSettings(float sink, float climb, float sensitive,
 void GlobalConfig::updateCalibrationData(double * calData)
 {
 	//
-	accel[0] = calData[0];
-	accel[1] = calData[1];
-	accel[2] = calData[2];
+	accel_calData[0] = calData[0];
+	accel_calData[1] = calData[1];
+	accel_calData[2] = calData[2];
 	
 	//
 	writeCalibrationData();

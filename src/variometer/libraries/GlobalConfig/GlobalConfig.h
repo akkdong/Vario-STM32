@@ -10,6 +10,15 @@
 
 
 //
+//
+//
+
+#define MAX_CONFIG_BLOCK_SIZE		(64)
+#define MAX_PROFILE_SIZE			(16)
+#define TONE_TABLE_COUNT			(12)
+
+
+//
 // EEPROM block map
 //
 
@@ -84,13 +93,6 @@ enum EEPROM_BlockMask
 };
 
 //
-//
-//
-
-#define MAX_CONFIG_BLOCK_SIZE		(64)
-#define MAX_PROFILE_SIZE			(16)
-
-//
 // block relative structure definition
 //
 
@@ -126,9 +128,9 @@ typedef struct tagBLOCK_VarioSettings
 	unsigned short mask;
 	
 	//
-	float sinkThreshold;
-	float climbThreshold;
-	float sensitivity;
+	double sinkThreshold;
+	double climbThreshold;
+	double sensitivity;
 	
 	unsigned char sentence;
 	unsigned char timezone;
@@ -155,16 +157,23 @@ typedef struct tagBLOCK_VarioVolume
 
 } BLOCK_VarioVolume;
 
+
+typedef struct tagVarioTone
+{
+	double 	velocity;
+	unsigned short 	freq;
+	unsigned short 	period;
+	unsigned short 	duty;
+	
+} VarioTone;
+
 typedef struct tagBLOCK_VarioTone
 {
 	//
 	unsigned short mask;
 	
 	//
-	float vertVel;
-	unsigned short freq;
-	unsigned short period;
-	unsigned short duty;
+	VarioTone tone;
 
 } BLOCK_VarioTone;
 
@@ -174,8 +183,8 @@ typedef struct tagBLOCK_KalmanParameters
 	unsigned short mask;
 	
 	//
-	float sigmaP;
-	float sigmaA;
+	double sigmaP;
+	double sigmaA;
 	
 } BLOCK_KalmanParameters;
 
@@ -185,9 +194,10 @@ typedef struct tagBLOCK_CalibrationData
 	unsigned short mask;
 	
 	//
-	float accel[3];
+	double accel[3];
 	
 } BLOCK_CalibrationData;
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -215,10 +225,10 @@ public:
 	boolean 			writeCalibrationData();
 	
 //	void				updateProfile();
-//	void				updateVarioSettings(float sink, float climb, float sensitive, char vol);
+//	void				updateVarioSettings(double sink, double climb, double sensitive, char vol);
 //	void				updateVarioVolume();
 //	void				updateVarioToneTable();
-//	void				updateKalmanParamters(float sigmaP, float sigmaA);
+//	void				updateKalmanParamters(double sigmaP, double sigmaA);
 	void 				updateCalibrationData(double * calData);
 
 public:
@@ -232,9 +242,9 @@ public:
 	char				profile_glider[MAX_PROFILE_SIZE];
 
 	// block: vario_settings
-	float				vario_sinkThreshold;
-	float				vario_climbThreshold;
-	float				vario_sensitivity;
+	double				vario_sinkThreshold;
+	double				vario_climbThreshold;
+	double				vario_sensitivity;
 	unsigned char		vario_sentence;		// sentence type: LK8 or LXNAV
 	unsigned char 		vario_timezone; 	// GMT+9
 	
@@ -242,14 +252,14 @@ public:
 	char				vario_volume;
 	
 	// vario_tone_table 
-	// ...
+	VarioTone			vario_tone[TONE_TABLE_COUNT];
 	
 	// block: kalman_paramters
-	float				kalman_sigmaP;
-	float				kalman_sigmaA;
+	double				kalman_sigmaP;
+	double				kalman_sigmaA;
 	
 	// bloack: accelerometer calibration data
-	float				accel[3]; 
+	double				accel_calData[3]; 
 	
 	// dirty flag
 	char				dirty;

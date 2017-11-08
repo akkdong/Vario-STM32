@@ -65,7 +65,7 @@ void SensorMPU6050::initSensor(boolean calibrateGyro)
 	}
 
 	/* init calibration settings */
-	readCalibration();
+	//readCalibration();
 
 	/* init data variables */
 	newData = false;	
@@ -92,9 +92,9 @@ boolean	SensorMPU6050::dataReady()
 		double accel[3]; 
 		double quat[4]; 
 
-		accel[0] = ((double)iaccel[0])/VERTACCEL_ACCEL_SCALE + calData[0];
-		accel[1] = ((double)iaccel[1])/VERTACCEL_ACCEL_SCALE + calData[1];
-		accel[2] = ((double)iaccel[2])/VERTACCEL_ACCEL_SCALE + calData[2];
+		accel[0] = ((double)iaccel[0])/VERTACCEL_ACCEL_SCALE + Config.accel_calData[0];
+		accel[1] = ((double)iaccel[1])/VERTACCEL_ACCEL_SCALE + Config.accel_calData[1];
+		accel[2] = ((double)iaccel[2])/VERTACCEL_ACCEL_SCALE + Config.accel_calData[2];
 
 		quat[0] = ((double)iquat[0])/VERTACCEL_QUAT_SCALE;
 		quat[1] = ((double)iquat[1])/VERTACCEL_QUAT_SCALE;
@@ -196,21 +196,21 @@ double SensorMPU6050::getVelocity()
 
 void SensorMPU6050::readCalibration()
 {
-	calData[0] = Config.accel[0];
-	calData[1] = Config.accel[1];
-	calData[2] = Config.accel[2];
+	//calData[0] = Config.accel[0];
+	//calData[1] = Config.accel[1];
+	//calData[2] = Config.accel[2];
 }
 
 void SensorMPU6050::saveCalibration(double * data)
 {
-	calData[0] = data[0];
-	calData[1] = data[1];
-	calData[2] = data[2];
+	Config.accel_calData[0] = data[0];
+	Config.accel_calData[1] = data[1];
+	Config.accel_calData[2] = data[2];
 	
-	Config.updateCalibrationData(data);
+	Config.writeCalibrationData();
 }
 
 double * SensorMPU6050::getCalibration()
 {
-	return calData;
+	return Config.accel_calData;
 }

@@ -23,7 +23,11 @@
 
 #define GAP_BETWEEN_TONE		(1)		// 1ms
 
-#define RECOVERY_TONE_VOLUME	(10)
+#define MIN_VOLUME				(0)
+#define MAX_VOLUME				(98)
+#define MID_VOLUME				(16)
+#define KEY_VOLUME				(10)
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 //
@@ -41,6 +45,7 @@ struct PlayContext
 	int				toneCount;
 	
 	//
+	int				playVolume;
 	int				playType;
 	
 	//
@@ -57,9 +62,9 @@ public:
 	TonePlayer(ToneGenerator & gen);
 	
 public:	
-	void			setMelody(Tone * tonePtr, int toneCount, int repeat = 1, int instant = 1);
-	void			setMelodyEx(Tone * tonePtr, int toneCount);
-	void			setBeep(int freq, int period, int duty); // duty --> ms, <= period
+	void			setMelody(Tone * tonePtr, int toneCount, int repeat = 1, int instant = 1, int volume = -1);
+	void			setMelodyEx(Tone * tonePtr, int toneCount, int volume = -1);
+	void			setBeep(int freq, int period, int duty, int volume = -1); // duty --> ms, <= period
 	void			setMute(int instant = 1);
 	
 	void			setTone(int freq = 0, int volume = -1);
@@ -98,8 +103,7 @@ public:
 	int				playCount;
 	
 	//
-	int				volume;
-	int				volumeRecovery;
+	int				playVolume;
 	
 	//
 	ToneGenerator &	toneGen;

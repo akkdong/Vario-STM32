@@ -555,7 +555,7 @@ void vario_setup()
 		ledFlasher.turnOn();
 
 	// start vario-loop
-	tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, 0);
+	tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, 0, KEY_VOLUME);
 }
 
 void vario_loop()
@@ -635,17 +635,16 @@ void vario_loop()
 			switch (cmd.param)
 			{
 			case PARAM_LV_LOUD 	: 
-				Serial.println("set volume to 90%");
-				tonePlayer.setVolume(90);
+				tonePlayer.setVolume(MAX_VOLUME);
+				tonePlayer.setBeep(460, 500, 0);
 				break;
 			case PARAM_LV_QUIET :
-				Serial.println("set volume to 10%");
-				tonePlayer.setVolume(10);
+				tonePlayer.setVolume(MID_VOLUME);
+				tonePlayer.setBeep(460, 500, 0);
 				break;
 			case PARAM_LV_MUTE	:
 			default				: 
-				Serial.println("set volume to mute");
-				tonePlayer.setVolume(0);
+				tonePlayer.setVolume(MIN_VOLUME);
 				break;
 			}
 			break;
@@ -741,7 +740,7 @@ void vario_loop()
 	if (batVolt.getVoltage() < LOW_BATTERY_THRESHOLD)
 	{
 		// alert & clean-up & power-off
-		tonePlayer.setMelody(&shutdownTone[0], sizeof(shutdownTone) / sizeof(shutdownTone[0]), 10, 0);
+		tonePlayer.setMelody(&shutdownTone[0], sizeof(shutdownTone) / sizeof(shutdownTone[0]), 10, 0, KEY_VOLUME);
 		varioMode = VARIO_MODE_SHUTDOWN;
 		varioTick = millis();
 		
@@ -760,7 +759,7 @@ void vario_loop()
 			logger.end();
 		
 		// beep~
-		tonePlayer.setBeep(460, 0, 0);
+		tonePlayer.setBeep(460, 0, 0, KEY_VOLUME);
 		while(1);
 	}
 }
@@ -769,6 +768,10 @@ void vario_loop()
 //
 //
 //
+
+void ums_setup()
+{
+}
 
 void ums_loop()
 {

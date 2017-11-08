@@ -52,8 +52,7 @@ TonePlayer::TonePlayer(ToneGenerator & gen) : toneGen(gen)
 	playCount 		= 0;
 	
 	//
-	volume			= 100;
-	volumeRecovery	= -1;
+	playVolume		= MAX_VOLUME;
 
 	//
 	//Timer.pause();
@@ -64,31 +63,30 @@ TonePlayer::TonePlayer(ToneGenerator & gen) : toneGen(gen)
 	//Timer.resume();
 }
 
-void TonePlayer::setMelody(Tone * tonePtr, int toneCount, int repeat, int instant)
+void TonePlayer::setMelody(Tone * tonePtr, int toneCount, int repeat, int instant, int volume)
 {
 	nextTone.tonePtr 		= tonePtr;
 	nextTone.toneCount		= toneCount;
 	nextTone.repeatCount	= repeat;
+	nextTone.playVolume		= volume;
 	nextTone.playType		= PLAY_MELODY;
 	
 	if (instant)
 		playNext();
 }
 
-void TonePlayer::setMelodyEx(Tone * tonePtr, int toneCount)
+void TonePlayer::setMelodyEx(Tone * tonePtr, int toneCount, int volume)
 {
 	nextTone.tonePtr 		= tonePtr;
 	nextTone.toneCount		= toneCount;
 	nextTone.repeatCount	= 1;
+	nextTone.playVolume		= volume;
 	nextTone.playType		= PLAY_MELODY;
-	
-	volumeRecovery = volume;
-	volume = RECOVERY_TONE_VOLUME;
 	
 	playNext();
 }
 
-void TonePlayer::setBeep(int freq, int period, int duty) 
+void TonePlayer::setBeep(int freq, int period, int duty, int volume) 
 {
 	// update next beep tone
 	beepToneNext[0].freq = freq;
@@ -101,6 +99,7 @@ void TonePlayer::setBeep(int freq, int period, int duty)
 	nextTone.tonePtr 		= &beepTone[0];	// beepToneNext? ??? ?? nextTone ???? beepTone?? ????.
 	nextTone.toneCount		= sizeof(beepTone) / sizeof(beepTone[0]); // 2
 	nextTone.repeatCount	= 0; // infinite repeat
+	nextTone.playVolume		= volume;
 	nextTone.playType		= PLAY_BEEP;
 }
 
@@ -109,75 +108,38 @@ void TonePlayer::setMute(int instant)
 	nextTone.tonePtr 		= &muteTone[0];
 	nextTone.toneCount		= sizeof(muteTone) / sizeof(muteTone[0]); // 1
 	nextTone.repeatCount	= 0; // infinite repeat
+	nextTone.playVolume		= -1;
 	nextTone.playType		= PLAY_MUTE;
 	
 	if (instant)
 		playNext();
 }
 
-void TonePlayer::setTone(int freq, int vol)
+void TonePlayer::setTone(int freq, int volume)
 {
-	if (vol > 0)
-		setVolume(vol);
+	if (volume < MIN_VOLUME)
+		volume = playVolume; // use default volume
 	
 	if (freq > 0)
-	{
-		/*
-		//
-		pinMode(PA8, PWM);
-		//
-		Timer.pause();
-		Timer.setMode(timerCh, TIMER_PWM);
-		Timer.setPeriod(1000000.0/freq); // 50Hz -> 1/50 period(s) -> 1/50*1000000 period(us)
-		Timer.setCompare(timerCh, Timer.getOverflow() * volume / 200.0); // 100% volume -> 50% duty cycle : overflow * 100 / (volume / 2)
-		Timer.refresh();
-		Timer.resume();
-		*/
-		
 		toneGen.setTone(freq, volume);
-	}
 	else
-	{
-		/*
-		//
-		pinMode(PA8, INPUT);
-		//
-		//Timer.pause();
-		Timer.setMode(timerCh, TIMER_DISABLED);
-		//Timer.resume();
-		*/
-		
 		toneGen.setTone(0);
-	}
 }
 
-void TonePlayer::setVolume(int value)
+void TonePlayer::setVolume(int volume)
 {
-	if (value < 0)
-		value = 0;
-	else if (value > 100)
-		value = 100;
-	
-	if (volumeRecovery >= 0)
-		volumeRecovery = value;
+	if (volume < MIN_VOLUME)
+		volume = MIN_VOLUME;
+	else if (volume > MAX_VOLUME)
+		volume = MAX_VOLUME;
 
-	volume = value;
+	playVolume = volume;
 }
 
 void TonePlayer::update()
 {
 	if (playCheck())
-	{
-		if (volumeRecovery >= 0)
-		{
-			int temp = volumeRecovery;
-			volumeRecovery = -1;
-			
-			setVolume(temp);
-		}
-		
 		playNext();
-	}
 }
 
 int TonePlayer::playCheck()
@@ -203,7 +165,7 @@ int TonePlayer::playCheck()
 			if (toneIndex < playTone.toneCount)
 			{
 				toneStartTick = now;
-				setTone(playTone.tonePtr[toneIndex].freq, volume);
+				setTone(playTone.tonePtr[toneIndex].freq, playTone.playVolume);
 			}
 			else
 			{
@@ -220,7 +182,7 @@ int TonePlayer::playCheck()
 					// else replay from first tone
 					toneIndex = 0;
 					toneStartTick = now;
-					setTone(playTone.tonePtr[toneIndex].freq, volume);
+					setTone(playTone.tonePtr[toneIndex].freq, playTone.playVolume);
 				}
 				else // repeatCount > 0 && playerCount == repeatCount
 				{
@@ -270,7 +232,7 @@ void TonePlayer::playNext()
 	toneStartTick = millis();
 	playCount = 0;
 	
-	setTone(playTone.tonePtr[toneIndex].freq, volume);
+	setTone(playTone.tonePtr[toneIndex].freq, playTone.playVolume);
 }
 
 // synchronous function
