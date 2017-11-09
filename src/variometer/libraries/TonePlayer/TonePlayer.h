@@ -64,11 +64,13 @@ public:
 public:	
 	void			setMelody(Tone * tonePtr, int toneCount, int repeat = 1, int instant = 1, int volume = -1);
 	void			setMelodyEx(Tone * tonePtr, int toneCount, int volume = -1);
-	void			setBeep(int freq, int period, int duty, int volume = -1); // duty --> ms, <= period
+	void			setBeep(int freq, int period, int duty, int repeat = 0, int volume = -1); // duty --> ms, <= period
 	void			setMute(int instant = 1);
 	
 	void			setTone(int freq = 0, int volume = -1);
 	void			setVolume(int value);
+	
+	int				getVolume();
 	
 	void			update();
 	
@@ -108,5 +110,9 @@ public:
 	//
 	ToneGenerator &	toneGen;
 };
+
+// inline members
+inline int TonePlayer::getVolume()
+	{ return playVolume; }
 
 #endif // __TONEPLAYER_H__

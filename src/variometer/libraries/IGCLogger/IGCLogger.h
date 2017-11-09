@@ -23,6 +23,7 @@ public:
 	int					init();
 	
 	int					begin(uint32_t date); // date = DDMMYY
+	int					begin(time_t date); // date = seconds since 1900
 	void				end();
 	
 	int					write(uint8_t ch);
@@ -36,7 +37,7 @@ private:
 	void				reset();
 	
 	const char *		makeFileName(char * buf, uint32_t date);
-	const char *		makeFileNameEx(char * buf, time_t date);
+	const char *		makeFileName(char * buf, time_t date);
 	void				writeHeader(uint32_t date);
 
 private:

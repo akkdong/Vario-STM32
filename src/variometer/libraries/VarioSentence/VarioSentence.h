@@ -14,7 +14,7 @@
 class IVarioSentence
 {
 public:
-	virtual void		begin(double height, double vel, double temp, double bat);
+	virtual void		begin(float height, float vel, float temp, float bat);
 	
 	virtual int			available();
 	virtual int			read();
@@ -27,16 +27,16 @@ public:
 class LK8Sentence : public IVarioSentence
 {
 public:
-	virtual void		begin(double height, double vel, double temp, double bat);
+	virtual void		begin(float height, float vel, float temp, float bat);
 	
 	virtual int			available();
 	virtual int			read();
 	
 private:
-	double				altimeter;
-	double				vario;
-	double				temperature;
-	double				voltage;
+	float				altimeter;
+	float				vario;
+	float				temperature;
+	float				voltage;
 	
 	Digit 				valueDigit;
 	HexDigit 			parityDigit;
@@ -54,13 +54,13 @@ private:
 class LxNavSentence : public IVarioSentence
 {
 public:
-	virtual void		begin(double height, double vel, double temp, double bat);
+	virtual void		begin(float height, float vel, float temp, float bat);
 	
 	virtual int			available();
 	virtual int			read();
 	
 private:
-	double				vario;
+	float				vario;
 	
 	Digit 				valueDigit;
 	HexDigit 			parityDigit;
@@ -81,7 +81,7 @@ public:
 	VarioSentence(char type);
 	
 public:
-	void				begin(double height, double vel, double temp, double bat);
+	void				begin(float height, float vel, float temp, float bat);
 	
 	int					available();	
 	int					read();

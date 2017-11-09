@@ -38,7 +38,7 @@ void Digit::setNegative(void) {
   digitState_set(DISPLAY_MINUS);
 }
 
-void Digit::applySign(double& value) {
+void Digit::applySign(float& value) {
   if( value < 0.0 ) {
     value *= -1.0;
     setNegative();
@@ -80,7 +80,7 @@ void Digit::computeExponent(void) {
 /*******************************/
 
 /* apply precision and save precision power */
-double Digit::applyPrecision(double value, uint8_t precision) {
+float Digit::applyPrecision(float value, uint8_t precision) {
 
   exp = 1; 
   for( uint8_t i = 0; i<precision; i++) {
@@ -91,7 +91,7 @@ double Digit::applyPrecision(double value, uint8_t precision) {
   return value;
 }
 
-void Digit::buildForPrecision(double value, uint8_t precision) {
+void Digit::buildForPrecision(float value, uint8_t precision) {
 
   /* check sign */
   applySign(value);
@@ -113,7 +113,7 @@ void Digit::buildForPrecision(double value, uint8_t precision) {
 /* Public methods */
 /******************/
 
-void Digit::begin(double value, uint8_t precision) {
+void Digit::begin(float value, uint8_t precision) {
 
   value = applyPrecision(value, precision);
   buildForPrecision(value, precision);
@@ -143,11 +143,11 @@ void Digit::begin(long value) {
 }
 
 
-void FPDigit::begin(double value) {
+void FPDigit::begin(float value) {
   Digit::begin(value, precision);
 }
 
-bool FPSDigit::begin(double value) {
+bool FPSDigit::begin(float value) {
   
   /* treat value for precision */
   value = applyPrecision(value, precision);
@@ -167,7 +167,7 @@ bool FPSDigit::begin(double value) {
 
   /* save displayed value */
   /*
-  lastDisplayValue = (double)ival;
+  lastDisplayValue = (float)ival;
   if( digitState_isset(DISPLAY_MINUS) ) {
     lastDisplayValue *= -1.0;
   }

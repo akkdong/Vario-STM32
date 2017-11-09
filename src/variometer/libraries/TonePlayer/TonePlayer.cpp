@@ -86,7 +86,7 @@ void TonePlayer::setMelodyEx(Tone * tonePtr, int toneCount, int volume)
 	playNext();
 }
 
-void TonePlayer::setBeep(int freq, int period, int duty, int volume) 
+void TonePlayer::setBeep(int freq, int period, int duty, int repeat, int volume) 
 {
 	// update next beep tone
 	beepToneNext[0].freq = freq;
@@ -98,7 +98,7 @@ void TonePlayer::setBeep(int freq, int period, int duty, int volume)
 	//
 	nextTone.tonePtr 		= &beepTone[0];	// beepToneNext? ??? ?? nextTone ???? beepTone?? ????.
 	nextTone.toneCount		= sizeof(beepTone) / sizeof(beepTone[0]); // 2
-	nextTone.repeatCount	= 0; // infinite repeat
+	nextTone.repeatCount	= repeat; // infinite repeat
 	nextTone.playVolume		= volume;
 	nextTone.playType		= PLAY_BEEP;
 }

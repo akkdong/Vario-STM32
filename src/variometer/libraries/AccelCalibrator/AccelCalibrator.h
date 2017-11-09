@@ -85,21 +85,21 @@ public:
 
 
 private:
-	void computeCenter(double* v1, double* v2, double* v3, double radius, double* center);
-	double computeDistanceVariance(double *v, double* center);
+	void computeCenter(float* v1, float* v2, float* v3, float radius, float* center);
+	float computeDistanceVariance(float *v, float* center);
 
 public:
 	/* for one measure */
-	double measuredAccel[3];  //computed by measure()
-	double measuredAccelSD;   //accel standard deviation
+	float measuredAccel[3];  //computed by measure()
+	float measuredAccelSD;   //accel standard deviation
 
 	/* store measure for calibration */
-	double accelList[3*ACCEL_CALIBRATOR_ORIENTATION_COUNT]; //all possible orientations
+	float accelList[3*ACCEL_CALIBRATOR_ORIENTATION_COUNT]; //all possible orientations
 	boolean accelListDone[ACCEL_CALIBRATOR_ORIENTATION_COUNT];
-	double accelListSD[ACCEL_CALIBRATOR_ORIENTATION_COUNT]; //record strandard deviation
+	float accelListSD[ACCEL_CALIBRATOR_ORIENTATION_COUNT]; //record strandard deviation
 
 	/* final calibration data */
-	double calibration[3]; 
+	float calibration[3]; 
 	boolean calibrated;
 	
 	//

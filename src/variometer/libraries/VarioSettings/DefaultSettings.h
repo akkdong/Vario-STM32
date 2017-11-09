@@ -82,6 +82,14 @@
 #define VARIOMETER_SENTENCE_DELAY				(1000)
 
 
+// Auto shutdown threshold
+//
+
+#define STABLE_SINKING_THRESHOLD				(-0.2)
+#define STABLE_CLIMBING_THRESHOLD				(0.2)
+#define AUTO_SHUTDOWN_THRESHOLD					(600000)	// 10min (600s)
+
+
 // Low battery threshold
 //
 

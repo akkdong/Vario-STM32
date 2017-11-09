@@ -201,23 +201,23 @@ void SensorMS5611::updateData()
 	//p >>= 15 !!! done with doubles, see below
 
 	// save result
-	compensatedTemperature = (double)temp/100;
-	compensatedPressure = ((double)p / (double)32768)/(double)100;  //32768 = 2^15	
+	compensatedTemperature = (float)temp/100;
+	compensatedPressure = ((float)p / (float)32768)/(float)100;  //32768 = 2^15	
 }
 
-double SensorMS5611::getTemperature()
+float SensorMS5611::getTemperature()
 {
 	return compensatedTemperature;
 }
 
-double SensorMS5611::getPressure()
+float SensorMS5611::getPressure()
 {
 	return compensatedPressure;
 }
 
-double SensorMS5611::getAltitude()
+float SensorMS5611::getAltitude()
 {
-	double alti;
+	float alti;
 	
 	alti = pow((compensatedPressure/(MS5611_BASE_SEA_PRESSURE)), 0.1902949572); //0.1902949572 = 1/5.255
 	alti = (1-alti)*(288.15/0.0065);

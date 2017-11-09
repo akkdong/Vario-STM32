@@ -241,11 +241,23 @@ enum _VarioMode
 	VARIO_MODE_SHUTDOWN,		// (3)
 };
 
+enum _CAL_MODE
+{
+	CAL_MODE_INIT = 0,
+	CAL_MODE_MEASURE_DELAY,
+	CAL_MODE_MEASURE,
+	CAL_MODE_COMPLETION,
+	CAL_MODE_DONE,
+};
+
 
 uint8_t deviceMode = DEVICE_MODE_VARIO;
 
-uint8_t	varioMode = VARIO_MODE_INIT;
+uint8_t	varioMode;
+uint8_t	calibMode;
+
 uint32_t varioTick;
+uint32_t calibTick;
 
 void (* main_loop)(void) = 0;
 
@@ -257,7 +269,6 @@ void configuration_setup();
 void vario_loop();
 void ums_loop();
 void calibration_loop();
-void configuration_loop();
 
 
 //
@@ -452,6 +463,7 @@ void board_init()
 	//keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_ACTIVE);
 	// state beacon
 	ledFlasher.begin(PIN_MCU_STATE, ACTIVE_LOW);
+	ledFlasher.turnOn();
 #endif
 }
 
@@ -547,15 +559,25 @@ void vario_setup()
 	keyPowerBT.enable();
 
 	// led flash as init-state
-	if (! logger.isInitialized())
-		ledFlasher.blink(BLINK_SD_FAIELD);
-	//else if (! imu.isReady())
-	//	ledFlasher.blink(BLINK_IMU_FAILED);
-	else
-		ledFlasher.turnOn();
+	ledFlasher.blink(BTYPE_LONG_ON_SHORT_OFF);
 
 	// start vario-loop
 	tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, 0, KEY_VOLUME);
+}
+
+void shutdown_vario()
+{
+	// alert & clean-up & power-off
+	varioMode = VARIO_MODE_SHUTDOWN;
+	varioTick = millis();
+	
+	//
+	ledFlasher.blink(BTYPE_BLINK_3_LONG_OFF);
+	tonePlayer.setMelody(&shutdownTone[0], sizeof(shutdownTone) / sizeof(shutdownTone[0]), 10, 0, KEY_VOLUME);
+
+	//
+	if (logger.isLogging())
+		logger.end();
 }
 
 void vario_loop()
@@ -568,10 +590,28 @@ void vario_loop()
 
 		//
 		vertVel.update(imu.getAltitude(), imu.getVelocity(), millis());
+
+		//
+		float velocity = vertVel.getVelocity();
+		float position = vertVel.getPosition();
 		
-		//sensorReporter.setData(...);
-		varioBeeper.setVelocity(vertVel.getVelocity());		
-		logger.update(vertVel.getPosition());
+		varioBeeper.setVelocity(velocity);
+		logger.update(position);
+		
+		//
+		if (varioMode != VARIO_MODE_SHUTDOWN)
+		{
+			static uint32_t tick = millis();
+
+			if (velocity < STABLE_SINKING_THRESHOLD || STABLE_CLIMBING_THRESHOLD < velocity)
+				tick = millis(); // reset tick because it's not quiet.
+			
+			if ((millis() - tick) > AUTO_SHUTDOWN_THRESHOLD)
+			{
+				Serial.println("Now process auto-shutdown!!");
+				shutdown_vario();
+			}
+		}
 	}
 	
 	// read & prase gps sentence
@@ -634,19 +674,24 @@ void vario_loop()
 		case CMD_SOUND_LEVEL 	:
 			switch (cmd.param)
 			{
-			case PARAM_LV_LOUD 	: 
+			case PARAM_LV_LOUD 	:
 				tonePlayer.setVolume(MAX_VOLUME);
-				tonePlayer.setBeep(460, 500, 0);
+				tonePlayer.setBeep(460, 800, 400, 3);
 				break;
 			case PARAM_LV_QUIET :
 				tonePlayer.setVolume(MID_VOLUME);
-				tonePlayer.setBeep(460, 500, 0);
+				tonePlayer.setBeep(460, 800, 400, 3);
 				break;
 			case PARAM_LV_MUTE	:
 			default				: 
 				tonePlayer.setVolume(MIN_VOLUME);
 				break;
 			}
+
+			// save volume
+			//Config.vario_volume = tonePlayer.getVolume();
+			//Config.writeVarioVolume();
+			Config.updateVarioVolume(tonePlayer.getVolume());
 			break;
 		case CMD_DEVICE_RESET 	:
 			break;
@@ -665,17 +710,25 @@ void vario_loop()
 		
 		// now ready to fly~~~
 		varioMode = VARIO_MODE_LANDING;
+
+		//		
+		ledFlasher.blink(BTYPE_LONG_ON_OFF);
+		// play reday melody~~~
+		//
 	}
 	else if (varioMode == VARIO_MODE_LANDING)
 	{
 		if (nmeaParser.getSpeed() > FLIGHT_START_MIN_SPEED)
 		{
-			// start logging & change mode
-			logger.begin(nmeaParser.getDate());
+			//
 			varioMode = VARIO_MODE_FLYING;
 			
+			ledFlasher.blink(BTYPE_SHORT_ON_OFF);
 			// play take-off melody
 			// ...
+			
+			// start logging & change mode
+			logger.begin(nmeaParser.getDateTime());
 			
 			//
 			varioTick = millis();
@@ -687,12 +740,17 @@ void vario_loop()
 		{
 			if ((millis() - varioTick) > FLIGHT_LANDING_THRESHOLD)
 			{
-				// stop logging & change mode
-				logger.end();
+				//
 				varioMode = VARIO_MODE_LANDING;
 				
+				//
+				ledFlasher.blink(BTYPE_LONG_ON_OFF);
 				// play landing melody
 				// ...
+				
+				// stop logging & change mode
+				logger.end();
+				
 			}
 		}
 		else
@@ -736,21 +794,19 @@ void vario_loop()
 	// MCU State : LED Blinking
 	ledFlasher.update();
 	
-	//
-	if (batVolt.getVoltage() < LOW_BATTERY_THRESHOLD)
+	// low battery!!
+	if (varioMode != VARIO_MODE_SHUTDOWN)
 	{
-		// alert & clean-up & power-off
-		tonePlayer.setMelody(&shutdownTone[0], sizeof(shutdownTone) / sizeof(shutdownTone[0]), 10, 0, KEY_VOLUME);
-		varioMode = VARIO_MODE_SHUTDOWN;
-		varioTick = millis();
-		
-		if (logger.isLogging())
-			logger.end();
-		
-		ledFlasher.blink(BLINK_FIRMWARE_UPDATE);
+		if (batVolt.getVoltage() < LOW_BATTERY_THRESHOLD)
+		{
+			Serial.println("!!Alert!!");
+			Serial.println("It's low battery. Device will be shutdown now!!");
+			
+			shutdown_vario();
+		}
 	}
 	
-	//
+	// check shutdown interrupts and prepare shutdown
 	if (keyShutdown.read() == INPUT_ACTIVE)
 	{
 		// shutdown interrupt trigged by LTC2950
@@ -759,8 +815,10 @@ void vario_loop()
 			logger.end();
 		
 		// beep~
-		tonePlayer.setBeep(460, 0, 0, KEY_VOLUME);
-		while(1);
+		//tonePlayer.setBeep(420, 0, 0, KEY_VOLUME);
+		tonePlayer.setTone(360, KEY_VOLUME);
+		while(1)
+			tonePlayer.update();
 	}
 }
 
@@ -771,10 +829,18 @@ void vario_loop()
 
 void ums_setup()
 {
+	//
+	ledFlasher.blink(BTYPE_BLINK_2_LONG_ON);
+	//tonePlayer.setMelody(&startUMS[0], sizeof(startUMS) / sizeof(startUMS[0]), 1, 0, KEY_VOLUME);	
 }
 
 void ums_loop()
 {
+	ledFlasher.update();
+	tonePlayer.update();
+	
+	// key process : ker processing routine must be used with other mode loop
+	// ...
 }
 
 
@@ -791,21 +857,86 @@ void ums_loop()
 
 void calibration_setup()
 {
+	//
+	calibMode = CAL_MODE_INIT;
+	
+	//
 	accelCalibrator.init();
 	
 	//
-	tonePlayer.beep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION, 3);
+	ledFlasher.blink(BTYPE_BLINK_3_LONG_ON);
+	tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 2, BASE_BEEP_DURATION, 3, KEY_VOLUME);
+	
+	//
+	//tonePlayer.beep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION, 3);
+	
+	calibMode = CAL_MODE_MEASURE_DELAY;
+	calibTick = millis();
 }
 
-void check_completion()
+void calibration_loop()
 {
-	ledFlasher.blink(BLINK_MEASURE_INVALID);
+	//
+	ledFlasher.update();
+	tonePlayer.update();
+	keyFunc.update();
 	
-	do
+	if (calibMode == CAL_MODE_MEASURE_DELAY)
 	{
-		keyFunc.update();
-		ledFlasher.update();
+		if (millis() - calibTick > MEASURE_DELAY)
+			calibMode = CAL_MODE_MEASURE;
+	}
+	else if (calibMode == CAL_MODE_MEASURE)
+	{
+		// make measure
+		accelCalibrator.measure();
 		
+		// get orientation
+		int orient = accelCalibrator.getMeasureOrientation();
+		
+		if (orient == ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION)
+		{
+			// the reversed position launch calibration 
+			//
+			if( !accelCalibrator.canCalibrate() )
+			{
+				// can't calibrate. try again~
+				tonePlayer.setBeep(LOW_BEEP_FREQ, BASE_BEEP_DURATION * 2, BASE_BEEP_DURATION, 3, KEY_VOLUME);
+			}
+			else
+			{
+				// calibrate & save result
+				accelCalibrator.calibrate();
+
+				// play completion melody & confirm
+				calibMode = CAL_MODE_COMPLETION;
+				
+				tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 2, BASE_BEEP_DURATION, 3, KEY_VOLUME);
+				ledFlasher.blink(BTYPE_SHORT_ON_OFF);
+			}
+		}
+		else
+		{
+			// push measure
+			boolean measureValid = accelCalibrator.pushMeasure();
+
+			// make corresponding beep
+			if (measureValid)
+				tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 1, KEY_VOLUME);
+			else 
+				tonePlayer.setBeep(LOW_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 1, KEY_VOLUME);
+		}
+
+		if (calibMode == CAL_MODE_MEASURE)
+		{
+			// go back measure delay
+			calibMode = CAL_MODE_MEASURE_DELAY;
+			// reset delay tick
+			calibTick = millis();
+		}
+	}
+	else if (calibMode == CAL_MODE_COMPLETION)
+	{
 		if (keyFunc.fired())
 		{
 			uint8_t value = keyFunc.getValue();
@@ -813,79 +944,23 @@ void check_completion()
 			if (value == 0x21)
 			{
 				// jobs done. reset now!
-				tonePlayer.beep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION*4, 1);
+				tonePlayer.setTone(LOW_BEEP_FREQ, KEY_VOLUME);
+				delay(BASE_BEEP_DURATION * 4);
 				
+				// reset!!
 				nvic_sys_reset();
 				while(1);
 			}
+			
 			if (value == 0x40)
 			{
-				// continue calibration
-				tonePlayer.beep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION, 3);
-				break; // 
+				calibMode = CAL_MODE_MEASURE_DELAY;
+
+				// re-calibration
+				tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 2, BASE_BEEP_DURATION, 3, KEY_VOLUME);
+				// reset delay tick
+				calibTick = millis();		
 			}
 		}
-		
-	} while(1);
-}
-
-void calibration_loop()
-{
-	//
-	// make measure repeatedly
-	//
-
-	// wait for positionning accelerometer
-	delay(MEASURE_DELAY);
-
-	// make measure
-	accelCalibrator.measure();
-
-	//
-	// the reversed position launch calibration 
-	//
-
-	// get orientation
-	int orient = accelCalibrator.getMeasureOrientation();
-	
-	if( orient == ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION )
-	{
-
-		/**********************/
-		/* launch calibration */
-		/**********************/
-		if( !accelCalibrator.canCalibrate() )
-		{
-			tonePlayer.beep(LOW_BEEP_FREQ, BASE_BEEP_DURATION, 3);
-		}
-		else
-		{
-			accelCalibrator.calibrate();
-			
-			tonePlayer.beep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION, 3);
-			//tonePlayer.setMemody(melodyCal, ...);
-			check_completion();
-		}
 	}
-	else
-	{
-		// push measure
-		boolean measureValid = accelCalibrator.pushMeasure();
-
-		// make corresponding beep
-		if( measureValid )
-			tonePlayer.beep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 3, 1);
-		else 
-			tonePlayer.beep(LOW_BEEP_FREQ, BASE_BEEP_DURATION * 3, 1);
-			
-	}
-}
-
-
-//
-//
-//
-
-void configuration_loop()
-{
 }

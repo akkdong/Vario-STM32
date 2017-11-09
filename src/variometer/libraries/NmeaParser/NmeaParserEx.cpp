@@ -358,7 +358,7 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 		switch(fieldIndex)
 		{
 		case 0 : // Time (HHMMSS.sss UTC)
-			timeStr2TmStruct(&mTm, &mBuffer[startPos]);
+			timeStr2TmStruct(&mTmStruct, &mBuffer[startPos]);
 			break;
 		case 1 : // Navigation receiver warning A = OK, V = warning
 			if (mBuffer[startPos] == 'A')
@@ -379,8 +379,8 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			mHeading = (uint32_t)(strToFloat(startPos) + 0.5);
 			break;
 		case 8 : // Date of fix  (DDMMYY)
-			dateStr2TmStruct(&mTm, &mBuffer[startPos]);
-			mDateTime = mktime(&mTm);
+			dateStr2TmStruct(&mTmStruct, &mBuffer[startPos]);
+			mDateTime = mktime(&mTmStruct);
 			mDate = strToNum(startPos);
 			break;
 		}
@@ -504,9 +504,9 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 	}
 }
 
-double NmeaParserEx::strToFloat(int startPos)
+float NmeaParserEx::strToFloat(int startPos)
 {
-	double value = 0.0, div = 0;
+	float value = 0.0, div = 0;
 	
 	for (int i = startPos; ;)
 	{

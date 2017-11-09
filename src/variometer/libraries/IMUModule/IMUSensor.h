@@ -25,9 +25,9 @@ public:
 	boolean				dataReady();
 	void				updateData();
 	
-	double				getTemperature();
-	double				getPressure();
-	double				getAltitude();
+	float				getTemperature();
+	float				getPressure();
+	float				getAltitude();
 	
 	static void			UnlockI2C(); // I2CDevicel call this function when it's unlocked
 	static void			TimerProc(); // Timer interrupt handler call this function when it's called
@@ -63,8 +63,8 @@ private:
 	// compensated values
 	boolean 			deviceReset;
 	uint16_t 			c1, c2, c3, c4, c5, c6; //PROM factors
-	double 				compensatedTemperature;
-	double 				compensatedPressure;
+	float 				compensatedTemperature;
+	float 				compensatedPressure;
 };
 
 
@@ -85,24 +85,37 @@ public:
 	void				initSensor(boolean calibrateGyro = true);
 	
 	boolean				dataReady();
-	boolean				rawReady(double * accel, double * uv, double * va);
+	boolean				rawReady(float * accel, float * uv, float * va);
 	
 	void				updateData();
 	
-	double				getVelocity();
+	float				getVelocity();
+	float *				getRawAccel();
+	float *				getRawGyro();
 	
 	//
 	// calibration stubs.
 	// 
 	void				readCalibration();
-	void				saveCalibration(double * data);
+	void				saveCalibration(float * data);
 	
-	double *			getCalibration();
+	float *				getCalibration();
 	
 private:
-//	double				calData[3]; // accel calibration data
+//	float				calData[3]; // accel calibration data
 	boolean				newData;
-	double				vertAccel;
+	float				vertAccel;
+	
+	// raw data
+	float				accelData[3];
+	float				gyroData[3];
 };
+
+// inline members
+inline float * SensorMPU6050::getRawAccel()
+	{ return accelData; }
+	
+inline float * SensorMPU6050::getRawGyro()
+	{ return gyroData; }
 
 #endif // __IMUSENSOR_H__

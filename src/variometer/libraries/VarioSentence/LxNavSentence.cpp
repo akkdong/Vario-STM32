@@ -21,7 +21,7 @@
 const char * LxNavSentence::LxNavTag = LXNAV_SENTENCE_TAG;
 
 
-void LxNavSentence::begin(double height, double vel, double temp, double bat)
+void LxNavSentence::begin(float height, float vel, float temp, float bat)
 {
   vario = vel; //vario is in cm/s
   valueDigit.begin(height, LXNAV_SENTENCE_ALTI_PRECISION);

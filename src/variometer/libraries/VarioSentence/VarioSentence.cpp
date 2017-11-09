@@ -16,7 +16,7 @@ VarioSentence::VarioSentence(char type) : sentenceType(type)
 	lastTick = millis();
 }
 	
-void VarioSentence::begin(double height, double vel, double temp, double bat)
+void VarioSentence::begin(float height, float vel, float temp, float bat)
 {
 	varioSentence->begin(height, vel, temp, bat);
 }

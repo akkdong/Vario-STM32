@@ -19,15 +19,15 @@ public:
 	VarioBeeper(TonePlayer & sp);
 	
 public:
-//	void			setThreshold(double climbingThreshold, double sinkingThreshold);
-	void			setVelocity(double velocity);
+//	void			setThreshold(float climbingThreshold, float sinkingThreshold);
+	void			setVelocity(float velocity);
 	
 private:
-	void 			findTone(double velocity, int & freq, int & period, int & duty);
+	void 			findTone(float velocity, int & freq, int & period, int & duty);
 
 private:
-//	double 			climbingThreshold;
-//	double			sinkingThreshold;
+//	float 			climbingThreshold;
+//	float			sinkingThreshold;
 	
 	//
 	TonePlayer &	player;

@@ -15,12 +15,14 @@
 /* accelerometer parameters */
 #define VERTACCEL_G_TO_MS 		(9.80665)
 
-#define VERTACCEL_GIRO_FSR 		(2000)
+#define VERTACCEL_GYRO_FSR 		(2000)
 #define VERTACCEL_ACCEL_FSR 	(4)
 #define VERTACCEL_FIFO_RATE 	(100)
 
 /* 4G ~= 2^15 */
 #define VERTACCEL_ACCEL_SCALE 	(8192.0)
+/* 2000 degree/s ~= 16.4 */
+#define VERTACCEL_GYRO_SCALE	(16.4)
 
 
 /* 2^30 */
@@ -32,6 +34,8 @@
 
 SensorMPU6050::SensorMPU6050()
 {
+	accelData[0] = accelData[1] = accelData[2] = 0.0;
+	gyroData[0] = gyroData[1] = gyroData[2] = 0.0;
 }
 
 SensorMPU6050 & SensorMPU6050::GetInstance()
@@ -48,7 +52,7 @@ void SensorMPU6050::initSensor(boolean calibrateGyro)
 	//mpu_init_structures();
 	mpu_init(NULL);
 	mpu_set_sensors(INV_XYZ_GYRO|INV_XYZ_ACCEL); 
-	mpu_set_gyro_fsr(VERTACCEL_GIRO_FSR);
+	mpu_set_gyro_fsr(VERTACCEL_GYRO_FSR);
 	mpu_set_accel_fsr(VERTACCEL_ACCEL_FSR);
 	mpu_configure_fifo(INV_XYZ_GYRO|INV_XYZ_ACCEL);
 
@@ -59,7 +63,7 @@ void SensorMPU6050::initSensor(boolean calibrateGyro)
 	dmp_set_fifo_rate(VERTACCEL_FIFO_RATE);
 	mpu_set_dmp_state(1);
 	if( calibrateGyro ) {
-		dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT|DMP_FEATURE_SEND_RAW_ACCEL|DMP_FEATURE_GYRO_CAL); 
+		dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT|DMP_FEATURE_SEND_RAW_GYRO|DMP_FEATURE_SEND_RAW_ACCEL|DMP_FEATURE_GYRO_CAL); 
 	} else {
 		dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT|DMP_FEATURE_SEND_RAW_ACCEL);
 	}
@@ -73,14 +77,14 @@ void SensorMPU6050::initSensor(boolean calibrateGyro)
 
 boolean	SensorMPU6050::dataReady()
 {
-	short iaccel[3];
+	short iaccel[3], igyro[3];
 	long iquat[4];
 	unsigned long timestamp;
 	short sensors;
 	unsigned char fifoCount;
 
 	/* check if we have new data from imu */
-	while( dmp_read_fifo(NULL,iaccel,iquat,&timestamp,&sensors,&fifoCount) == 0 ) {
+	while( dmp_read_fifo(igyro,iaccel,iquat,&timestamp,&sensors,&fifoCount) == 0 ) {
 		newData = true;
 	}
 
@@ -89,34 +93,38 @@ boolean	SensorMPU6050::dataReady()
 		/***************************/
 		/* normalize and calibrate */
 		/***************************/
-		double accel[3]; 
-		double quat[4]; 
+		//float accel[3]; 
+		//float gyro[3];
+		float quat[4]; 
 
-		accel[0] = ((double)iaccel[0])/VERTACCEL_ACCEL_SCALE + Config.accel_calData[0];
-		accel[1] = ((double)iaccel[1])/VERTACCEL_ACCEL_SCALE + Config.accel_calData[1];
-		accel[2] = ((double)iaccel[2])/VERTACCEL_ACCEL_SCALE + Config.accel_calData[2];
+		accelData[0] = ((float)iaccel[0])/VERTACCEL_ACCEL_SCALE + Config.accel_calData[0];
+		accelData[1] = ((float)iaccel[1])/VERTACCEL_ACCEL_SCALE + Config.accel_calData[1];
+		accelData[2] = ((float)iaccel[2])/VERTACCEL_ACCEL_SCALE + Config.accel_calData[2];
+		
+		gyroData[0] = ((float)igyro[0])/VERTACCEL_GYRO_SCALE;
+		gyroData[1] = ((float)igyro[1])/VERTACCEL_GYRO_SCALE;
+		gyroData[2] = ((float)igyro[2])/VERTACCEL_GYRO_SCALE;
 
-		quat[0] = ((double)iquat[0])/VERTACCEL_QUAT_SCALE;
-		quat[1] = ((double)iquat[1])/VERTACCEL_QUAT_SCALE;
-		quat[2] = ((double)iquat[2])/VERTACCEL_QUAT_SCALE;
-		quat[3] = ((double)iquat[3])/VERTACCEL_QUAT_SCALE;
+		quat[0] = ((float)iquat[0])/VERTACCEL_QUAT_SCALE;
+		quat[1] = ((float)iquat[1])/VERTACCEL_QUAT_SCALE;
+		quat[2] = ((float)iquat[2])/VERTACCEL_QUAT_SCALE;
+		quat[3] = ((float)iquat[3])/VERTACCEL_QUAT_SCALE;
 
 		/******************************/
 		/* real and vert acceleration */
 		/******************************/
 
 		/* compute upper direction from quaternions */
-		double ux, uy, uz;
+		float ux, uy, uz;
 		ux = 2*(quat[1]*quat[3]-quat[0]*quat[2]);
 		uy = 2*(quat[2]*quat[3]+quat[0]*quat[1]);
 		uz = 2*(quat[0]*quat[0]+quat[3]*quat[3])-1;
 
 		/* compute real acceleration (without gravity) */
-		double rax, ray, raz;
-		rax = accel[0] - ux;
-		ray = accel[1] - uy;
-		raz = accel[2] - uz;
-
+		float rax, ray, raz;
+		rax = accelData[0] - ux;
+		ray = accelData[1] - uy;
+		raz = accelData[2] - uz;
 
 		/* compute vertical acceleration */
 		vertAccel = (ux*rax + uy*ray + uz*raz);
@@ -125,16 +133,16 @@ boolean	SensorMPU6050::dataReady()
 	return newData;	
 }
 
-boolean	SensorMPU6050::rawReady(double * accel, double * uv, double * va)
+boolean	SensorMPU6050::rawReady(float * accel, float * uv, float * va)
 {
-	short iaccel[3];
+	short iaccel[3], igyro[3];
 	long iquat[4];
 	unsigned long timestamp;
 	short sensors;
 	unsigned char fifoCount;
 
 	/* check if we have new data from imu */
-	while( dmp_read_fifo(NULL,iaccel,iquat,&timestamp,&sensors,&fifoCount) == 0 ) {
+	while( dmp_read_fifo(igyro,iaccel,iquat,&timestamp,&sensors,&fifoCount) == 0 ) {
 		newData = true;
 	}
 
@@ -143,16 +151,16 @@ boolean	SensorMPU6050::rawReady(double * accel, double * uv, double * va)
 		/*************/
 		/* normalize */
 		/*************/ 
-		double quat[4]; 
+		float quat[4]; 
 
-		accel[0] = ((double)iaccel[0])/VERTACCEL_ACCEL_SCALE;
-		accel[1] = ((double)iaccel[1])/VERTACCEL_ACCEL_SCALE;
-		accel[2] = ((double)iaccel[2])/VERTACCEL_ACCEL_SCALE;
+		accel[0] = ((float)iaccel[0])/VERTACCEL_ACCEL_SCALE;
+		accel[1] = ((float)iaccel[1])/VERTACCEL_ACCEL_SCALE;
+		accel[2] = ((float)iaccel[2])/VERTACCEL_ACCEL_SCALE;
 
-		quat[0] = ((double)iquat[0])/VERTACCEL_QUAT_SCALE;
-		quat[1] = ((double)iquat[1])/VERTACCEL_QUAT_SCALE;
-		quat[2] = ((double)iquat[2])/VERTACCEL_QUAT_SCALE;
-		quat[3] = ((double)iquat[3])/VERTACCEL_QUAT_SCALE;
+		quat[0] = ((float)iquat[0])/VERTACCEL_QUAT_SCALE;
+		quat[1] = ((float)iquat[1])/VERTACCEL_QUAT_SCALE;
+		quat[2] = ((float)iquat[2])/VERTACCEL_QUAT_SCALE;
+		quat[3] = ((float)iquat[3])/VERTACCEL_QUAT_SCALE;
 
 
 		/******************************/
@@ -160,13 +168,13 @@ boolean	SensorMPU6050::rawReady(double * accel, double * uv, double * va)
 		/******************************/
 
 		/* compute upper direction from quaternions */
-		double ux, uy, uz;
+		float ux, uy, uz;
 		ux = 2*(quat[1]*quat[3]-quat[0]*quat[2]);
 		uy = 2*(quat[2]*quat[3]+quat[0]*quat[1]);
 		uz = 2*(quat[0]*quat[0]+quat[3]*quat[3])-1;
 
 		/* compute real acceleration (without gravity) */
-		double rax, ray, raz;
+		float rax, ray, raz;
 		rax = accel[0] - ux;
 		ray = accel[1] - uy;
 		raz = accel[2] - uz;
@@ -189,7 +197,7 @@ void SensorMPU6050::updateData()
 	newData = false;
 }
 
-double SensorMPU6050::getVelocity()
+float SensorMPU6050::getVelocity()
 {
 	return vertAccel * VERTACCEL_G_TO_MS;
 }
@@ -201,7 +209,7 @@ void SensorMPU6050::readCalibration()
 	//calData[2] = Config.accel[2];
 }
 
-void SensorMPU6050::saveCalibration(double * data)
+void SensorMPU6050::saveCalibration(float * data)
 {
 	Config.accel_calData[0] = data[0];
 	Config.accel_calData[1] = data[1];
@@ -210,7 +218,7 @@ void SensorMPU6050::saveCalibration(double * data)
 	Config.writeCalibrationData();
 }
 
-double * SensorMPU6050::getCalibration()
+float * SensorMPU6050::getCalibration()
 {
 	return Config.accel_calData;
 }

@@ -33,8 +33,9 @@ public:
 	//
 	uint32_t			getDate();  	// DDMMYY
 	uint32_t			getTime();		// HHMMSS
-	double				getLatitude();
-	double				getLongitude();
+	time_t				getDateTime();
+	float				getLatitude();
+	float				getLongitude();
 	int32_t				getAltitude();
 	uint32_t			getSpeed();
 	uint32_t			getHeading();
@@ -45,7 +46,7 @@ private:
 	
 	void				parseField(int fieldIndex, int startPos);
 	
-	double				strToFloat(int startPos);
+	float				strToFloat(int startPos);
 	long				strToNum(int startPos);
 	
 private:
@@ -67,11 +68,11 @@ private:
 	uint32_t			mDate;
 	uint32_t			mTime;
 	
-	struct tm 			mTm;
+	struct tm 			mTmStruct;
 	time_t				mDateTime;
 	
-	double				mLatitude;
-	double				mLongitude;
+	float				mLatitude;
+	float				mLongitude;
 	uint32_t			mAltitude;	
 	uint32_t			mSpeed;
 	uint32_t			mHeading;
@@ -92,10 +93,13 @@ inline uint32_t NmeaParserEx::getDate()
 inline uint32_t	NmeaParserEx::getTime()
 	{ return mTime; }
 	
-inline double NmeaParserEx::getLatitude()
+inline time_t	NmeaParserEx::getDateTime()
+	{ return mDateTime; }
+	
+inline float NmeaParserEx::getLatitude()
 	{ return mLatitude; }
 	
-inline double NmeaParserEx::getLongitude()
+inline float NmeaParserEx::getLongitude()
 	{ return mLongitude; }
 	
 inline int32_t NmeaParserEx::getAltitude()

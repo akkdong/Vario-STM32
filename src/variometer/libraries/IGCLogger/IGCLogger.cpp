@@ -122,6 +122,35 @@ int	IGCLogger::begin(uint32_t date)
 	return false;
 }
 
+int	IGCLogger::begin(time_t date)
+{
+	if (IS_SET(LOGGER_INIT_FAILED))
+		return false;
+	
+	// create new file // YYYY-MM-DD-NRC-STM-nn.igc
+	char name[26];
+	
+	if (! makeFileName(name, date))
+	{
+		// no valid file room
+		SET_STATE(LOGGER_INIT_FAILED);
+		return false;
+	}
+
+	if (sdFile.open(name, O_CREAT | O_WRITE | O_EXCL))
+	{
+		//
+		SET_STATE(LOGGER_WORKING);
+		
+		// write header
+		writeHeader(date);
+		
+		return true;
+	}
+	
+	return false;
+}
+
 void IGCLogger::end()
 {
 	if (! IS_SET(LOGGER_WORKING))
@@ -223,7 +252,7 @@ const char * IGCLogger::makeFileName(char * buf, uint32_t date)
 	return NULL;
 }
 
-const char * IGCLogger::makeFileNameEx(char * buf, time_t date)
+const char * IGCLogger::makeFileName(char * buf, time_t date)
 {
 	// name format : YYYY-MM-DD-NRC-STM-nn.igc
 	// ...

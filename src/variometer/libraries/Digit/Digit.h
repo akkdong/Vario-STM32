@@ -11,7 +11,7 @@ class Digit {
 
  public:
   Digit(boolean plusDisplay = false);
-  void begin(double value, uint8_t precision); //display double
+  void begin(float value, uint8_t precision); //display float
   void begin(unsigned long value);             //display unsigned integer
   void begin(long value);                      //diplay signed integer
   unsigned size(unsigned signSize = 1, unsigned digitSize = 1, unsigned dotSize = 1); //!! work only just after begin
@@ -23,11 +23,11 @@ class Digit {
  protected:
   void setPositive(void);
   void setNegative(void);
-  void applySign(double& value);
+  void applySign(float& value);
   void applySign(long& value);
   void computeExponent(void);
-  double applyPrecision(double value, uint8_t precision);
-  void buildForPrecision(double value, uint8_t precision);
+  float applyPrecision(float value, uint8_t precision);
+  void buildForPrecision(float value, uint8_t precision);
   uint8_t state;
   unsigned long ival;
   unsigned long exp;
@@ -41,7 +41,7 @@ class FPDigit : public Digit {
   FPDigit(uint8_t precision, boolean plusDisplay = false)
     : Digit(plusDisplay), precision(precision) { }
 
-  void begin(double value);
+  void begin(float value);
   
  protected:
   uint8_t precision;
@@ -53,11 +53,11 @@ class FPSDigit : public FPDigit {
   FPSDigit(uint8_t precision, boolean plusDisplay = false)
     : FPDigit(precision, plusDisplay), lastDisplayValue(100000000000.5) { }
 
-  bool begin(double value); //return true if the stabilized value has changed
+  bool begin(float value); //return true if the stabilized value has changed
   void rebuild(void); //rebuild with the last displayed value
 
  private:
-  double lastDisplayValue;
+  float lastDisplayValue;
 
 };
      

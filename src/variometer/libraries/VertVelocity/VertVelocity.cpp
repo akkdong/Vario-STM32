@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-void VertVelocity::init(double startp, double starta, double sigmap, double sigmaa, unsigned long timestamp) {
+void VertVelocity::init(float startp, float starta, float sigmap, float sigmaa, unsigned long timestamp) {
 
   /* init base values */
   p = startp;
@@ -22,13 +22,13 @@ void VertVelocity::init(double startp, double starta, double sigmap, double sigm
   p22 = 0;
 }
 
-void VertVelocity::update(double mp, double ma, unsigned long timestamp) {
+void VertVelocity::update(float mp, float ma, unsigned long timestamp) {
 
   /**************/
   /* delta time */
   /**************/
   unsigned long deltaTime = timestamp - t;
-  double dt = ((double)deltaTime)/1000.0;
+  float dt = ((float)deltaTime)/1000.0;
   t = timestamp;
 
   /**************/
@@ -37,13 +37,13 @@ void VertVelocity::update(double mp, double ma, unsigned long timestamp) {
 
   /* values */
   a = ma;  // we use the last acceleration value for prediction 
-  double dtPower = dt * dt; //dt^2
+  float dtPower = dt * dt; //dt^2
   p += dt*v + dtPower*a/2;
   v += dt*a;
   //a = ma; // uncomment to use the previous acceleration value 
 
   /* covariance */
-  double inc;
+  float inc;
   
   dtPower *= dt;  // now dt^3
   inc = dt*p22+dtPower*vara/2;
@@ -58,7 +58,7 @@ void VertVelocity::update(double mp, double ma, unsigned long timestamp) {
   /********************/
 
   /* kalman gain */
-  double s, k11, k12, y;
+  float s, k11, k12, y;
 
   s = p11 + varp;
   k11 = p11/s;
@@ -75,22 +75,22 @@ void VertVelocity::update(double mp, double ma, unsigned long timestamp) {
  
 }
 
-double VertVelocity::getPosition() {
+float VertVelocity::getPosition() {
 
   return p;
 }
 
-double VertVelocity::getCalibratedPosition() {
+float VertVelocity::getCalibratedPosition() {
 
   return (p + calibrationDrift);
 }
 
-double VertVelocity::getVelocity() {
+float VertVelocity::getVelocity() {
 
   return v;
 }
 
-double VertVelocity::getAcceleration() {
+float VertVelocity::getAcceleration() {
 
   return a;
 }
@@ -100,7 +100,7 @@ unsigned long VertVelocity::getTimestamp() {
   return t;
 }
 
-void VertVelocity::calibratePosition(double newPosition) {
+void VertVelocity::calibratePosition(float newPosition) {
 
   calibrationDrift = newPosition - p;
 }

@@ -13,21 +13,26 @@ typedef struct tagBlinkPattern
 	int16_t *	pattern;
 } BlinkPattern;
 
-int16_t pattern1[] = { 400, -100, 100, -100, 100, -100, 100, -100 };
-int16_t pattern2[] = { 400, -100, 100, -100, 100, -100 };
-int16_t pattern3[] = { 400, -400 };
-int16_t pattern4[] = { 400, -100 };
-int16_t pattern5[] = { 100, -400 };
-int16_t pattern6[] = { 100, -100 };
+int16_t pattern1[] = { 500, -500 };
+int16_t pattern2[] = { 100, -100 };
+int16_t pattern3[] = { 500, -100 };
+int16_t pattern4[] = { 100, -500 };
+
+int16_t pattern5[] = { 100, -100, 100, -100, 600, -100 };
+int16_t pattern6[] = { 100, -100, 100, -100, 100, -100, 600, -100 };
+int16_t pattern7[] = { 100, -100, 100, -600 };
+int16_t pattern8[] = { 100, -100, 100, -100, 100, -600 };
 
 BlinkPattern blinkPattern[] = 
 {
-	{ 8, pattern1 },	// BLINK_IMU_FAILED	
-	{ 6, pattern2 },	// BLINK_SD_FAIELD		
-	{ 2, pattern3 },	// BLINK_ACCEL_MEASURE	
-	{ 2, pattern4 },	// BLINK_MEASURE_VALID	
-	{ 2, pattern5 },	// BLINK_MEASURE_INVALID
-	{ 2, pattern6 },	// BLINK_FIRMWARE_UPDATE
+	{ 2, pattern1 },	// BTYPE_LONG_ON_OFF
+	{ 2, pattern2 },	// BTYPE_SHORT_ON_OFF
+	{ 2, pattern3 },	// BTYPE_LONG_ON_SHORT_OFF
+	{ 2, pattern4 },	// BTYPE_SHORT_ON_LONG_OFF
+	{ 6, pattern5 },	// BTYPE_BLINK_2_LONG_ON
+	{ 8, pattern6 },	// BTYPE_BLINK_3_LONG_ON
+	{ 4, pattern7 },	// BTYPE_BLINK_2_LONG_OFF
+	{ 6, pattern8 },	// BTYPE_BLINK_3_LONG_OFF
 };
 
 
@@ -71,12 +76,14 @@ void LEDFlasher::blink(uint8_t type)
 {
 	switch (type)
 	{
-	case BLINK_IMU_FAILED		:
-	case BLINK_SD_FAIELD		:
-	case BLINK_ACCEL_MEASURE	:
-	case BLINK_MEASURE_VALID	:
-	case BLINK_MEASURE_INVALID	:
-	case BLINK_FIRMWARE_UPDATE	:
+	case BTYPE_LONG_ON_OFF		:
+	case BTYPE_SHORT_ON_OFF		:
+	case BTYPE_LONG_ON_SHORT_OFF		:
+	case BTYPE_SHORT_ON_LONG_OFF		:
+	case BTYPE_BLINK_2_LONG_ON		:
+	case BTYPE_BLINK_3_LONG_ON		:
+	case BTYPE_BLINK_2_LONG_OFF		:
+	case BTYPE_BLINK_3_LONG_OFF		:
 		blinkType = type;
 		indexPattern = 0;
 		blinkInterval = blinkPattern[blinkType].pattern[0];

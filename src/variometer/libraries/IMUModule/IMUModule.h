@@ -19,20 +19,20 @@ public:
 	void				init(boolean calibrateGyro = true);
 	
 	boolean				dataReady();
-	boolean				rawReady(double * accel, double * upVector, double*  vertAccel);
+	boolean				rawReady(float * accel, float * upVector, float*  vertAccel);
 	
 	void				updateData();
 	
-	double				getAltitude();
-	double				getTemperature();
+	float				getAltitude();
+	float				getTemperature();
 
-	double				getVelocity();
+	float				getVelocity();
 	
 	//
 	void				initCalibration();
 	
-	double *			getCalibration();
-	void				saveCalibration(double * calData);
+	float *			getCalibration();
+	void				saveCalibration(float * calData);
 	
 	
 private:

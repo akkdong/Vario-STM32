@@ -24,28 +24,31 @@ boolean IMUModule::dataReady()
 	return ms5611.dataReady() && mpu6050.dataReady();
 }
 
-boolean IMUModule::rawReady(double* accel, double* upVector, double* vertAccel)
+boolean IMUModule::rawReady(float* accel, float* upVector, float* vertAccel)
 {
 	return mpu6050.rawReady(accel, upVector, vertAccel);
 }
 
-void IMUModule::updateData()
+void IMUModule::updateData(/*SensorReporter & reporter*/)
 {
 	mpu6050.updateData();
 	ms5611.updateData();
+	
+	//reporter.setData(ms5611.getPressure(), ms5611.getTemperature(), 
+	//				mpu6050.getRawAccel(), mpu6050.getRawGyro());
 }
 
-double IMUModule::getAltitude()
+float IMUModule::getAltitude()
 {
 	return ms5611.getAltitude();
 }
 
-double IMUModule::getTemperature()
+float IMUModule::getTemperature()
 {
 	return ms5611.getTemperature();
 }
 
-double IMUModule::getVelocity()
+float IMUModule::getVelocity()
 {
 	return mpu6050.getVelocity();
 }
@@ -56,12 +59,12 @@ void IMUModule::initCalibration()
 	mpu6050.initSensor(false);
 }
 
-double * IMUModule::getCalibration()
+float * IMUModule::getCalibration()
 {
 	return mpu6050.getCalibration();
 }
 
-void IMUModule::saveCalibration(double * calData)
+void IMUModule::saveCalibration(float * calData)
 {
 	mpu6050.saveCalibration(calData);
 }

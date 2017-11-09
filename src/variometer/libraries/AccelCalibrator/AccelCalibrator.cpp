@@ -23,7 +23,7 @@ void AccelCalibrator::init(void)
 	imu.initCalibration();
 
 	/* get the values stored in EEPROM */
-	double* cal = imu.getCalibration();
+	float* cal = imu.getCalibration();
 	
 	calibration[0] = cal[0];
 	calibration[1] = cal[1];
@@ -42,9 +42,9 @@ void AccelCalibrator::reset(void)
   
 void AccelCalibrator::measure(void)
 {
-	double accel[3];
-	double upVector[3];
-	double va;
+	float accel[3];
+	float upVector[3];
+	float va;
 
 	/* empty the FIFO and stabilize the accelerometer */
 	unsigned long currentTime = millis();
@@ -59,7 +59,7 @@ void AccelCalibrator::measure(void)
 	measuredAccel[0] = 0.0;
 	measuredAccel[1] = 0.0;
 	measuredAccel[2] = 0.0;
-	double accelSquareMean[3] = {0.0, 0.0, 0.0}; //to compute standard deviation
+	float accelSquareMean[3] = {0.0, 0.0, 0.0}; //to compute standard deviation
 
 	while( count < ACCEL_CALIBRATOR_FILTER_SIZE )
 	{
@@ -79,14 +79,14 @@ void AccelCalibrator::measure(void)
 	}
 
 	/* compute mean accel */
-	measuredAccel[0] /= (double)count;
-	measuredAccel[1] /= (double)count;
-	measuredAccel[2] /= (double)count;
+	measuredAccel[0] /= (float)count;
+	measuredAccel[1] /= (float)count;
+	measuredAccel[2] /= (float)count;
 
 	/* compute mean square */
-	accelSquareMean[0] /= (double)count;
-	accelSquareMean[1] /= (double)count;
-	accelSquareMean[2] /= (double)count;
+	accelSquareMean[0] /= (float)count;
+	accelSquareMean[1] /= (float)count;
+	accelSquareMean[2] /= (float)count;
 
 	/* compute standard deviation */
 	measuredAccelSD = sqrt(accelSquareMean[0] - measuredAccel[0]*measuredAccel[0]);
@@ -191,17 +191,17 @@ void AccelCalibrator::calibrate(void)
 	/****************************/
 	/* make radius optimization */
 	/****************************/
-	double calibrationCenter[3];
-	double baseRadius = ACCEL_CALIBRATOR_BASE_RADIUS;
-	double baseRadiusDrift = ACCEL_CALIBRATOR_BASE_RADIUS_DRIFT;
-	double baseStep = ACCEL_CALIBRATOR_BASE_RADIUS_STEP;
-	double bestDistance = 100000.0;
-	double bestRadius;
+	float calibrationCenter[3];
+	float baseRadius = ACCEL_CALIBRATOR_BASE_RADIUS;
+	float baseRadiusDrift = ACCEL_CALIBRATOR_BASE_RADIUS_DRIFT;
+	float baseStep = ACCEL_CALIBRATOR_BASE_RADIUS_STEP;
+	float bestDistance = 100000.0;
+	float bestRadius;
 
 	while( baseStep > ACCEL_CALIBRATOR_OPTIMIZATION_PRECISION )
 	{
-		double currentRadius = baseRadius - baseRadiusDrift;
-		double currentDistance;
+		float currentRadius = baseRadius - baseRadiusDrift;
+		float currentDistance;
 
 		while( currentRadius <  baseRadius + baseRadiusDrift )
 		{
@@ -251,11 +251,11 @@ void AccelCalibrator::calibratedMeasure(void)
 
 
 /* given three vector and a radius, find the sphere's center */
-void AccelCalibrator::computeCenter(double* v1, double* v2, double* v3, double radius, double* center)
+void AccelCalibrator::computeCenter(float* v1, float* v2, float* v3, float radius, float* center)
 {
 	/* compute midppoints */
-	double m1[3];
-	double m2[3];
+	float m1[3];
+	float m2[3];
 
 	m1[0] = (v1[0]+v2[0])/2.0;
 	m1[1] = (v1[1]+v2[1])/2.0;
@@ -265,8 +265,8 @@ void AccelCalibrator::computeCenter(double* v1, double* v2, double* v3, double r
 	m2[2] = (v1[2]+v3[2])/2.0;
 
 	/* compute plane equations */
-	double eq1[4];
-	double eq2[4];
+	float eq1[4];
+	float eq2[4];
 
 	eq1[0] = v2[0] - v1[0];
 	eq1[1] = v2[1] - v1[1];
@@ -279,7 +279,7 @@ void AccelCalibrator::computeCenter(double* v1, double* v2, double* v3, double r
 	eq2[3] = eq2[0]*m2[0] + eq2[1]*m2[1] + eq2[2]*m2[2];
 
 	/* simplify equ2 */
-	double fac = eq2[0]/eq1[0];
+	float fac = eq2[0]/eq1[0];
 	eq2[0] -= eq1[0]*fac;
 	eq2[1] -= eq1[1]*fac;
 	eq2[2] -= eq1[2]*fac;
@@ -300,15 +300,15 @@ void AccelCalibrator::computeCenter(double* v1, double* v2, double* v3, double r
 	eq1[0] /= eq1[0];
 
 	/* get quadratic equation */
-	double q[3];
+	float q[3];
 	q[0]= eq1[1]*eq1[1] + 1 + eq2[1]*eq2[1];
 	q[1]= 2*eq1[1]*(v1[0]-eq1[3])-2*v1[1]+2*eq2[1]*(v1[2]-eq2[3]);
 	q[2]= (v1[0]-eq1[3])*(v1[0]-eq1[3]) + v1[1]*v1[1] + (v1[2]-eq2[3])*(v1[2]-eq2[3])-radius;
 
 	/* solve quadratic */
-	double d = q[1]*q[1] - 4*q[0]*q[2];
-	double y1 = (-q[1]-sqrt(d))/(2*q[0]);
-	double y2 = (-q[1]+sqrt(d))/(2*q[0]);
+	float d = q[1]*q[1] - 4*q[0]*q[2];
+	float y1 = (-q[1]-sqrt(d))/(2*q[0]);
+	float y2 = (-q[1]+sqrt(d))/(2*q[0]);
 
 	/* compute points */
 	if( -0.1 < y1 && y1 < 0.1 )
@@ -327,22 +327,22 @@ void AccelCalibrator::computeCenter(double* v1, double* v2, double* v3, double r
 
 
 /* given 6 vectors and a sphere center, compute distance from center variance */
-double AccelCalibrator::computeDistanceVariance(double *v, double* center)
+float AccelCalibrator::computeDistanceVariance(float *v, float* center)
 {
 	/* compute distances */
-	double pointDistance[ACCEL_CALIBRATOR_ORIENTATION_COUNT];
+	float pointDistance[ACCEL_CALIBRATOR_ORIENTATION_COUNT];
 
 	for( int i = 0; i<ACCEL_CALIBRATOR_ORIENTATION_COUNT; i++ )
 	{
 		if( i != ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION )
 		{
-			double* val = &v[i*3];
+			float* val = &v[i*3];
 			pointDistance[i] = sqrt( (val[0]-center[0])*(val[0]-center[0]) + (val[1]-center[1])*(val[1]-center[1]) + (val[2]-center[2])*(val[2]-center[2]) );
 		}
 	}
 
 	/* compute mean */
-	double mean = 0.0;
+	float mean = 0.0;
 
 	for( int i = 0; i<ACCEL_CALIBRATOR_ORIENTATION_COUNT; i++ )
 	{
@@ -354,7 +354,7 @@ double AccelCalibrator::computeDistanceVariance(double *v, double* center)
 	mean /= ACCEL_CALIBRATOR_ORIENTATION_COUNT - 1;
 
 	/* compute var */
-	double var = 0.0;
+	float var = 0.0;
 
 	for( int i = 0; i<ACCEL_CALIBRATOR_ORIENTATION_COUNT; i++ )
 	{

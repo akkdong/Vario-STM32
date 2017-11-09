@@ -21,7 +21,7 @@ void BatteryVoltage::begin(uint8_t pin)
 	//
 	pinMode(pin, INPUT_ANALOG);
 	
-	double total = 0;
+	float total = 0;
 	for (int32_t i = 0; i < ADC_MEASURE_COUNT; i++)
 		total += analogRead(pin);
 	
@@ -35,12 +35,12 @@ void BatteryVoltage::update()
 {
 	if ((millis() - lastTick) > ADC_MEASURE_INTERVAL)
 	{
-		double value = ADC_TO_VOLTAGE(analogRead(adcPin));
+		float value = ADC_TO_VOLTAGE(analogRead(adcPin));
 		measVoltage = value * ADC_LPF_FACTOR + measVoltage * (1 - ADC_LPF_FACTOR);
 	}
 }
 
-double BatteryVoltage::getVoltage()
+float BatteryVoltage::getVoltage()
 {
 	return measVoltage;
 }

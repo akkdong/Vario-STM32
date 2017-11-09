@@ -17,10 +17,10 @@ public:
 	void						begin(uint8_t pin);
 	void						update();
 	
-	double						getVoltage();
+	float						getVoltage();
 	
 private:
-	double						measVoltage;
+	float						measVoltage;
 	
 	uint8_t						adcPin;
 	uint32_t					lastTick;

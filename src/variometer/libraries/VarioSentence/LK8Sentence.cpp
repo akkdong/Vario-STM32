@@ -25,14 +25,14 @@
 const char * LK8Sentence::LK8Tag = LK8_SENTENCE_TAG;
 
 
-void LK8Sentence::begin(double height, double vel, double temp, double bat)
+void LK8Sentence::begin(float height, float vel, float temp, float bat)
 {
 	altimeter = height;
 	vario = vel * 100.0; // cm/s
 	temperature = temp;
 	voltage = bat;
 	
-	double pressure = LK8_BASE_SEA_PRESSURE * 100.0 * pow(1 - (0.0065/288.15)*altimeter, 5.255); 
+	float pressure = LK8_BASE_SEA_PRESSURE * 100.0 * pow(1 - (0.0065/288.15)*altimeter, 5.255); 
 	valueDigit.begin(pressure, LK8_SENTENCE_PRESSURE_PRECISION);
 	
 	parity = '$';

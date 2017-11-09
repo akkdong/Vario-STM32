@@ -15,7 +15,7 @@
 /*
 struct VarioTone
 {
-	double 	velocity;
+	float 	velocity;
 	int 	freq;
 	int 	period;
 	int 	duty;
@@ -60,7 +60,7 @@ VarioBeeper::VarioBeeper(TonePlayer & tp) :	player(tp)
 {
 }
 
-void VarioBeeper::setVelocity(double velocity)
+void VarioBeeper::setVelocity(float velocity)
 {
 	boolean typeChanged = false;
 	
@@ -105,7 +105,7 @@ void VarioBeeper::setVelocity(double velocity)
 	}
 }
 
-void VarioBeeper::findTone(double velocity, int & freq, int & period, int & duty)
+void VarioBeeper::findTone(float velocity, int & freq, int & period, int & duty)
 {
 	int index;
 	
@@ -126,7 +126,7 @@ void VarioBeeper::findTone(double velocity, int & freq, int & period, int & duty
 	}
 	else
 	{
-		double ratio = Config.vario_tone[index].velocity / velocity;
+		float ratio = Config.vario_tone[index].velocity / velocity;
 		
 		freq = (Config.vario_tone[index].freq - Config.vario_tone[index-1].freq) / (Config.vario_tone[index].velocity - Config.vario_tone[index-1].velocity) * (velocity - Config.vario_tone[index-1].velocity) + Config.vario_tone[index-1].freq;
 		period = (Config.vario_tone[index].period - Config.vario_tone[index-1].period) / (Config.vario_tone[index].velocity - Config.vario_tone[index-1].velocity) * (velocity - Config.vario_tone[index-1].velocity) + Config.vario_tone[index-1].period;
