@@ -15,8 +15,8 @@ IMUModule::IMUModule() :
 
 void IMUModule::init(boolean calibrateGyro)
 {
-	mpu6050.initSensor(calibrateGyro);
 	ms5611.initSensor();
+	mpu6050.initSensor(calibrateGyro);
 }
 
 boolean IMUModule::dataReady()
@@ -34,6 +34,10 @@ void IMUModule::updateData(/*SensorReporter & reporter*/)
 	mpu6050.updateData();
 	ms5611.updateData();
 	
+	//Serial.print(ms5611.getPressure());
+	//Serial.print(", ");
+	//Serial.print(ms5611.getTemperature());
+	//Serial.println("");
 	//reporter.setData(ms5611.getPressure(), ms5611.getTemperature(), 
 	//				mpu6050.getRawAccel(), mpu6050.getRawGyro());
 }

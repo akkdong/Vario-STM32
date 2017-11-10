@@ -5,6 +5,7 @@
 #define __IMUMODULE_H__
 
 #include "IMUSensor.h"
+#include "SensorReporter.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -18,7 +19,7 @@ public:
 public:
 	void				init(boolean calibrateGyro = true);
 	
-	boolean				dataReady();
+	boolean				dataReady(/*SensorReporter & reporter*/);
 	boolean				rawReady(float * accel, float * upVector, float*  vertAccel);
 	
 	void				updateData();
@@ -31,7 +32,7 @@ public:
 	//
 	void				initCalibration();
 	
-	float *			getCalibration();
+	float *				getCalibration();
 	void				saveCalibration(float * calData);
 	
 	

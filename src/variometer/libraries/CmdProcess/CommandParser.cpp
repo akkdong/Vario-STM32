@@ -7,7 +7,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // class CommandParser
 
-CommandParser::CommandParser(Stream & strm, CommandStack & stack) : Strm(strm), Stack(stack)
+CommandParser::CommandParser(uint8_t src, Stream & strm, CommandStack & stack) : StrmSouce(src), Strm(strm), Stack(stack)
 {
 }
 
@@ -17,8 +17,132 @@ void CommandParser::update()
 	{
 		int c = Strm.read();
 		
-		// ...
+		// command format
+		// #XX<,FIELD>\r\n
 		//
-		// Stack.enqueue(cmd);
+		
+		if (parseStep < 0 && c != '#')
+			continue;
+		
+		if (c == '#')
+		{
+			// leading character... start parsing
+			parseStep = 0;
+			
+			fieldIndex = 0;
+			fieldData[0] = '\0';
+			
+			cmdCode = 0;
+		}
+		else
+		{
+			if (parseStep == 0)
+			{
+				// first command identifier
+				cmdCode = c;
+				//
+				parseStep = 1;
+			}
+			else if (parseStep == 1)
+			{
+				// second command identifier
+				cmdCode = (cmdCode << 8) + c;
+				//
+				parseStep = 2;
+			}
+			else if (parseStep == 2)
+			{
+				if (c == ',' || c == '\r' || c == '\r')
+				{
+					switch (cmdCode)
+					{
+					case CMD_MODE_SWITCH	: // 'SW'
+					case CMD_DEVICE_STATUS	: // 'DS'
+					case CMD_SENSOR_DUMP	: // 'DU'
+					case CMD_NMEA_SENTENCE	: // 'NM'
+					case CMD_TONE_TEST		: // 'TT'
+					case CMD_SOUND_LEVEL	: // 'LV'
+					case CMD_DEVICE_RESET	: // 'RS'
+					case CMD_QUERY_PARAM	: // 'QU'
+					case CMD_UPDATE_PARAM	: // 'UD'
+						// known command
+						if (c == ',')
+							parseStep = 3; // next is field
+						else if (c == '\r')
+							parseStep = 4; // next is '\n'
+						else
+							parseStep = 5; // end of command string
+						break;
+					default :
+						// unknown command
+						parseStep = -1;
+						break;
+					}
+				}
+				else
+				{
+					// invalid command string
+					parseStep = -1;
+				}
+			}
+			else if (parseStep == 3)
+			{
+				// field
+				if (c != '\r' && c != '\n')
+				{
+					if (fieldIndex < MAX_FIELD_LEN - 1)
+					{
+						fieldData[fieldIndex++] = c;
+						fieldData[fieldIndex] = '\0';
+					}
+					else
+					{
+						// too long field : invalid command string
+						parseStep = -1;
+					}
+				}
+				else
+				{
+					if (c == '\r')
+						parseStep = 4; // next is '\n'
+					else
+						parseStep = 5; // end of command string
+				}
+			}
+			else if (parseStep == 4)
+			{
+				if (c == '\n')
+					parseStep = 5; // end of command string
+				else
+					parseStep = -1; // invalid
+			}
+			
+			if (parseStep == 5)
+			{
+				// parse field & enqueue command to stack
+				Command cmd(StrmSouce, cmdCode, toNum(fieldData));
+				
+				Stack.enqueue(cmd);
+				
+				// begin again
+				parseStep = -1;
+			}
+		}
 	}
+}
+
+uint32_t CommandParser::toNum(const char * str)
+{
+	uint32_t value = 0;
+	
+	while (*str)
+	{
+		if (*str < '0' && *str < '9')
+			break;
+		
+		value = value * 10 + (*str - '0');
+		str++;
+	}
+	
+	return value;
 }

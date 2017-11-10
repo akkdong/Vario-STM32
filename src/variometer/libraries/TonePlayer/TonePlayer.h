@@ -28,6 +28,9 @@
 #define MID_VOLUME				(16)
 #define KEY_VOLUME				(10)
 
+#define PLAY_COOPERATIVE		(0)
+#define PLAY_PREEMPTIVE			(1)
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 //
@@ -62,10 +65,10 @@ public:
 	TonePlayer(ToneGenerator & gen);
 	
 public:	
-	void			setMelody(Tone * tonePtr, int toneCount, int repeat = 1, int instant = 1, int volume = -1);
+	void			setMelody(Tone * tonePtr, int toneCount, int repeat = 1, int preemptive = 1, int volume = -1);
 	void			setMelodyEx(Tone * tonePtr, int toneCount, int volume = -1);
 	void			setBeep(int freq, int period, int duty, int repeat = 0, int volume = -1); // duty --> ms, <= period
-	void			setMute(int instant = 1);
+	void			setMute(int preemptive = 1);
 	
 	void			setTone(int freq = 0, int volume = -1);
 	void			setVolume(int value);

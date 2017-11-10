@@ -7,11 +7,10 @@
 #include <I2CDevice.h>
 #include <VertVelocity.h>
 #include <IMUModule.h>
+#include <GlobalConfig.h>
+#include <EEPROMDriver.h>
 
-
-VertVelocity vertVel;
-IMUModule imu;
-
+//
 HardWire Wire1(1, I2C_FAST_MODE);
 HardWire Wire2(2, I2C_FAST_MODE);
 
@@ -20,6 +19,17 @@ HardWire & I2CDevice::Wire = Wire1;
 
 // set unlock callback function
 UnlockCallback I2CDevice::cbUnlock = SensorMS5611::UnlockI2C;
+
+// EEPROMDriver
+EEPROMDriver eeprom(Wire2);
+
+// global configuration
+GlobalConfig Config(eeprom, EEPROM_ADDRESS);
+
+//
+VertVelocity vertVel;
+IMUModule imu;
+
 
 
 void scan(HardWire & HWire)
@@ -77,17 +87,38 @@ void setup()
 	scan(Wire1);
 	scan(Wire2);
 	
+	//
+	Config.readAll();
+	
+	Serial.print("Kalman filter sigmaP = "); Serial.println(Config.kalman_sigmaP);
+	Serial.print("Kalman filter sigmaA = "); Serial.println(Config.kalman_sigmaA);
+	Serial.print("Accelerometer calibration data = [");
+	Serial.print(Config.accel_calData[0], 10); Serial.print(", ");
+	Serial.print(Config.accel_calData[1], 10); Serial.print(", ");
+	Serial.print(Config.accel_calData[2], 10); Serial.println("]");
+	Serial.println("");
+	
 	// initialize imu module & measure first data
 	imu.init();
 	Serial.println("imu.init()");
+	#if 1
+	for (int i = 0; i < 100; i++)
+	{
+		while (! imu.dataReady());
+		imu.updateData();
+		//Serial.print("Altitude = "); Serial.println(imu.getAltitude());
+	}
+	#else
 	while (! imu.dataReady());
+	imu.updateData();
+	#endif
 	Serial.println("imu.dataReady()");
 	
 	// initialize kalman filtered vertical velocity calculator
 	vertVel.init(imu.getAltitude(), 
 				imu.getVelocity(),
-				POSITION_MEASURE_STANDARD_DEVIATION,
-				ACCELERATION_MEASURE_STANDARD_DEVIATION,
+				Config.kalman_sigmaP, // POSITION_MEASURE_STANDARD_DEVIATION,
+				Config.kalman_sigmaA, // ACCELERATION_MEASURE_STANDARD_DEVIATION,
 				millis());	
 	Serial.println("vertVel.init()");
 }
@@ -102,7 +133,11 @@ void loop()
 		
 		//Serial.print(imu.getAltitude()); Serial.print(", ");
 		//Serial.print(imu.getVelocity()); Serial.print(", ");
-		Serial.print(vertVel.getVelocity());
+		
+		Serial.print(vertVel.getVelocity() * 100.0); 
+		//Serial.print(", ");
+		//Serial.print(vertVel.getPosition());
+		
 		Serial.println("");
 	}
 }

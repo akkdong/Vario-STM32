@@ -52,6 +52,14 @@
 #define ACCEL_CALIBRATOR_OPTIMIZATION_PRECISION 0.000001
 
 
+//
+//
+//
+//
+
+#define USE_ALL_ORIENTATION
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 // class AccelCalibrator
 

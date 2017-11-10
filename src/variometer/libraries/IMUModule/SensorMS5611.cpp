@@ -38,7 +38,7 @@
 	#endif
 #elif defined ARDUINO_ARCH_STM32F1
 	// F_CPU : 72MHz
-	#define MS5611_INTERRUPT_COMPARE	(590)
+	#define MS5611_INTERRUPT_COMPARE	(600) // 600 ~= 8.5ms, 590 ~= 8.39ms
 	
 	#define MS5611_TIMER_PRESCALER		(1024)
 	#define MS5611_TIMER_CHANNEL		(1)
@@ -269,6 +269,7 @@ void SensorMS5611::TimerProc()
 	
 		// read at stable frequency
 		THIS.readStep();
+//		THIS.restartTimer();
 	}
 }
 

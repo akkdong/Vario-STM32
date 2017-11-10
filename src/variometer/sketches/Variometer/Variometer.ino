@@ -187,7 +187,7 @@ GPIO_PINMODE gpio_mode[] =
 //            1~n : each field
 //         response
 //            "*PARAM,[DATA1],[DATA2],...,[DATAn]\r\n"
-//            DATAx -> {FIELD:VALUE}
+//               DATAx -> {FIELD:VALUE}
 //    7. update parameter
 //         "#UD,FIELD,VALUE\r\n"
 //            FIELD : ...
@@ -230,7 +230,7 @@ enum _DeviceMode
 	DEVICE_MODE_VARIO = 0,		// (0)
 	DEVICE_MODE_UMS,			// (1)
 	DEVICE_MODE_CALIBRATION,	// (2)
-	DEVICE_MODE_CONFIGURATION,	// (3)
+	DEVICE_MODE_SHUTDOWN,		// (3)
 };
 
 enum _VarioMode
@@ -238,10 +238,10 @@ enum _VarioMode
 	VARIO_MODE_INIT = 0,		// (0)
 	VARIO_MODE_LANDING,			// (1)
 	VARIO_MODE_FLYING,			// (2)
-	VARIO_MODE_SHUTDOWN,		// (3)
+//	VARIO_MODE_SHUTDOWN,		// (3)
 };
 
-enum _CAL_MODE
+enum _CalibrationMode
 {
 	CAL_MODE_INIT = 0,
 	CAL_MODE_MEASURE_DELAY,
@@ -253,28 +253,31 @@ enum _CAL_MODE
 
 uint8_t deviceMode = DEVICE_MODE_VARIO;
 
-uint8_t	varioMode;
-uint8_t	calibMode;
+uint8_t	varioMode; 		// sub-mode of vario-mode
+uint8_t	calibMode;		// sub-mode of calibration-mode
 
-uint32_t varioTick;
-uint32_t calibTick;
+uint32_t deviceTick;	// global tick count
 
 void (* main_loop)(void) = 0;
 
 void vario_setup();
 void ums_setup();
 void calibration_setup();
-void configuration_setup();
+void shutdown_setup();
 
 void vario_loop();
 void ums_loop();
 void calibration_loop();
+void shutdown_loop();
+
+// common functions
+void processLowBattery();
+void processShutdownInterrupt();
+void processCommand();
 
 
 //
 // Kalman Filter based Vertical Velocity Calculator
-//
-//
 //
 
 VertVelocity vertVel;
@@ -409,8 +412,8 @@ GlobalConfig	Config(eeprom, EEPROM_ADDRESS);
 
 CommandStack cmdStack;
 
-CommandParser cmdParser1(Serial, cmdStack); // USB serial parser
-CommandParser cmdParser2(Serial1, cmdStack); // BT serial parser
+CommandParser cmdParser1(CMD_FROM_USB, Serial, cmdStack); // USB serial parser
+CommandParser cmdParser2(CMD_FROM_BT, Serial1, cmdStack); // BT serial parser
 FuncKeyParser keyParser(keyFunc, cmdStack, tonePlayer);
 
 
@@ -487,12 +490,13 @@ void changeDeviceMode(int mode)
 		calibration_setup();
 		main_loop = calibration_loop;
 		break;
-	case DEVICE_MODE_CONFIGURATION :
-		// not support
-		while(1);
+	case DEVICE_MODE_SHUTDOWN :
+		shutdown_setup();
+		main_loop = shutdown_loop;
 		break;
 	}
 }
+
 
 //
 //
@@ -502,13 +506,24 @@ void setup()
 {
 	//
 	board_init();
+	delay(100); // some delay for peripheral
 	
 	//
 	Config.readAll();
 
 	// initialize imu module & measure first data
 	imu.init();
+	
+	#if 1
+	for (int i = 0; i < 100; i++)
+	{
+		while (! imu.dataReady());
+		imu.updateData();
+	}
+	#else
 	while (! imu.dataReady());
+	imu.updateData();
+	#endif
 	
 	// initialize kalman filtered vertical velocity calculator
 	vertVel.init(imu.getAltitude(), 
@@ -520,9 +535,12 @@ void setup()
 	// Initialize IGC Logger
 	logger.init();
 	
+	// enable BT & GPS if it's startted inactive state
+	//		keyPowerBT.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_INACTIVE);
+	// 		keyPowerGPS.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_INACTIVE);
 	//
-	// keyPowerBT.begin(PIN_KILL_PWR, ACTIVE_LOW, OUPUT_HIGH); // how about OUTPUT_ACTIVE & OUTPUT_INACTIVE
 	// keyPowerBT.enable();
+	// keyPowerGPS.enable();
 	
 	// ToneGenerator uses PIN_PWM_H(PA8 : Timer1, Channel1)
 	toneGen.begin(PIN_PWM_H);
@@ -534,101 +552,77 @@ void setup()
 	changeDeviceMode(DEVICE_MODE_VARIO);
 }
 
-
-//
-//
-//
-
 void loop()
 {
+	// main-loop for each mode
 	main_loop();
-}
 
-
-//
-//
-//
-
-void vario_setup()
-{
-	//
-	varioMode = VARIO_MODE_INIT;
-	
-	// turn-on GPS & BT
-	keyPowerGPS.enable();
-	keyPowerBT.enable();
-
-	// led flash as init-state
-	ledFlasher.blink(BTYPE_LONG_ON_SHORT_OFF);
-
-	// start vario-loop
-	tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, 0, KEY_VOLUME);
-}
-
-void shutdown_vario()
-{
-	// alert & clean-up & power-off
-	varioMode = VARIO_MODE_SHUTDOWN;
-	varioTick = millis();
 	
 	//
-	ledFlasher.blink(BTYPE_BLINK_3_LONG_OFF);
-	tonePlayer.setMelody(&shutdownTone[0], sizeof(shutdownTone) / sizeof(shutdownTone[0]), 10, 0, KEY_VOLUME);
-
+	// commont functions
 	//
-	if (logger.isLogging())
-		logger.end();
+	
+	// process command from serial or key
+	processCommand();
+	
+	// low battery!!
+	processLowBattery();
+	
+	// check shutdown interrupts and prepare shutdown
+	processShutdownInterrupt();	
 }
 
-void vario_loop()
+
+//
+// process low battery
+//
+
+void processLowBattery()
 {
-	//
-	if (imu.dataReady())
+	if (batVolt.getVoltage() < LOW_BATTERY_THRESHOLD)
 	{
-		//
-		imu.updateData(/* &sensorReporter */);
+		Serial.println("!!Alert!!");
+		Serial.println("It's low battery. Device will be shutdown now!!");
 
-		//
-		vertVel.update(imu.getAltitude(), imu.getVelocity(), millis());
-
-		//
-		float velocity = vertVel.getVelocity();
-		float position = vertVel.getPosition();
-		
-		varioBeeper.setVelocity(velocity);
-		logger.update(position);
-		
-		//
-		if (varioMode != VARIO_MODE_SHUTDOWN)
-		{
-			static uint32_t tick = millis();
-
-			if (velocity < STABLE_SINKING_THRESHOLD || STABLE_CLIMBING_THRESHOLD < velocity)
-				tick = millis(); // reset tick because it's not quiet.
-			
-			if ((millis() - tick) > AUTO_SHUTDOWN_THRESHOLD)
-			{
-				Serial.println("Now process auto-shutdown!!");
-				shutdown_vario();
-			}
-		}
+		changeDeviceMode(DEVICE_MODE_SHUTDOWN);
 	}
-	
-	// read & prase gps sentence
-	nmeaParser.update();
-	
-	// update vario sentence periodically
-	if (varioNmea.checkInterval())
-		varioNmea.begin(vertVel.getPosition(), vertVel.getVelocity(), imu.getTemperature(), batVolt.getVoltage());
+}
 
-	// send any prepared sentence to BT
-	btMan.update();
 
+//
+// process shutdown interrupt (from LTC2950)
+//
+
+void processShutdownInterrupt()
+{
+	if (keyShutdown.read() == INPUT_ACTIVE)
+	{
+		// shutdown interrupt trigged by LTC2950
+		// clean-up & wait power-off(LTC2750 will turn off power)		
+		if (logger.isLogging())
+			logger.end();
+		
+		// beep~
+		//tonePlayer.setBeep(420, 0, 0, KEY_VOLUME);
+		tonePlayer.setTone(360, KEY_VOLUME);
+		while(1)
+			tonePlayer.update();
+	}
+}
+
+
+//
+// process command from serial or key
+//
+
+void processCommand()
+{
 	//
 	cmdParser1.update();
 	cmdParser2.update();
 	keyParser.update();
 	
+	//
 	while(cmdStack.getSize())
 	{
 		Command cmd = cmdStack.dequeue();
@@ -700,7 +694,73 @@ void vario_loop()
 		case CMD_UPDATE_PARAM 	:
 			break;
 		}
+	}	
+}
+
+//
+// variometer main function
+//
+
+void vario_setup()
+{
+	//
+	varioMode = VARIO_MODE_INIT;
+	
+	// turn-on GPS & BT
+	keyPowerGPS.enable();
+	keyPowerBT.enable();
+
+	// led flash as init-state
+	ledFlasher.blink(BTYPE_LONG_ON_SHORT_OFF);
+
+	// start vario-loop
+	tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, PLAY_PREEMPTIVE, KEY_VOLUME);
+}
+
+void vario_loop()
+{
+	//
+	if (imu.dataReady())
+	{
+		//
+		imu.updateData(/* &sensorReporter */);
+
+		//
+		vertVel.update(imu.getAltitude(), imu.getVelocity(), millis());
+
+		//
+		float velocity = vertVel.getVelocity();
+		float position = vertVel.getCalibratedPosition(); // vertVel.getPosition();
+		
+		varioBeeper.setVelocity(velocity);
+		logger.update(position);
+		
+		//
+		//if (varioMode != VARIO_MODE_SHUTDOWN)
+		{
+			static uint32_t tick = millis();
+
+			if (velocity < STABLE_SINKING_THRESHOLD || STABLE_CLIMBING_THRESHOLD < velocity)
+				tick = millis(); // reset tick because it's not quiet.
+			
+			if ((millis() - tick) > AUTO_SHUTDOWN_THRESHOLD)
+			{
+				Serial.println("Now process auto-shutdown!!");
+				
+				changeDeviceMode(DEVICE_MODE_SHUTDOWN);
+			}
+		}
 	}
+	
+	// read & prase gps sentence
+	nmeaParser.update();
+	
+	// update vario sentence periodically
+	if (varioNmea.checkInterval())
+		varioNmea.begin(vertVel.getPosition(), vertVel.getVelocity(), imu.getTemperature(), batVolt.getVoltage());
+
+	// send any prepared sentence to BT
+	btMan.update();
 	
 	// IGC setence is available when it received a valid GGA. -> altitude is valid
 	if (varioMode == VARIO_MODE_INIT  && nmeaParser.availableIGC())
@@ -731,14 +791,14 @@ void vario_loop()
 			logger.begin(nmeaParser.getDateTime());
 			
 			//
-			varioTick = millis();
+			deviceTick = millis();
 		}
 	}
 	else if (varioMode == VARIO_MODE_FLYING)
 	{
 		if (nmeaParser.getSpeed() < FLIGHT_START_MIN_SPEED)
 		{
-			if ((millis() - varioTick) > FLIGHT_LANDING_THRESHOLD)
+			if ((millis() - deviceTick) > FLIGHT_LANDING_THRESHOLD)
 			{
 				//
 				varioMode = VARIO_MODE_LANDING;
@@ -755,20 +815,20 @@ void vario_loop()
 		}
 		else
 		{
-			// reset varioTick
-			varioTick = millis();
+			// reset deviceTick
+			deviceTick = millis();
 		}
 	}
-	else if (varioMode == VARIO_MODE_SHUTDOWN)
-	{
-		if (millis() - varioTick > SHUTDOWN_HOLD_TIME)
-		{
-			tonePlayer.setMute();
-			keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_ACTIVE);
-			
-			while(1);
-		}
-	}
+	//else if (varioMode == VARIO_MODE_SHUTDOWN)
+	//{
+	//	if (millis() - deviceTick > SHUTDOWN_HOLD_TIME)
+	//	{
+	//		tonePlayer.setMute();
+	//		keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_ACTIVE);
+	//		
+	//		while(1);
+	//	}
+	//}
 
 	// check logging state
 	if (logger.isLogging())
@@ -793,33 +853,6 @@ void vario_loop()
 	
 	// MCU State : LED Blinking
 	ledFlasher.update();
-	
-	// low battery!!
-	if (varioMode != VARIO_MODE_SHUTDOWN)
-	{
-		if (batVolt.getVoltage() < LOW_BATTERY_THRESHOLD)
-		{
-			Serial.println("!!Alert!!");
-			Serial.println("It's low battery. Device will be shutdown now!!");
-			
-			shutdown_vario();
-		}
-	}
-	
-	// check shutdown interrupts and prepare shutdown
-	if (keyShutdown.read() == INPUT_ACTIVE)
-	{
-		// shutdown interrupt trigged by LTC2950
-		// clean-up & wait power-off(LTC2750 will turn off power)		
-		if (logger.isLogging())
-			logger.end();
-		
-		// beep~
-		//tonePlayer.setBeep(420, 0, 0, KEY_VOLUME);
-		tonePlayer.setTone(360, KEY_VOLUME);
-		while(1)
-			tonePlayer.update();
-	}
 }
 
 
@@ -831,16 +864,13 @@ void ums_setup()
 {
 	//
 	ledFlasher.blink(BTYPE_BLINK_2_LONG_ON);
-	//tonePlayer.setMelody(&startUMS[0], sizeof(startUMS) / sizeof(startUMS[0]), 1, 0, KEY_VOLUME);	
+	//tonePlayer.setMelody(&startUMS[0], sizeof(startUMS) / sizeof(startUMS[0]), 1, PLAY_PREEMPTIVE, KEY_VOLUME);	
 }
 
 void ums_loop()
 {
 	ledFlasher.update();
 	tonePlayer.update();
-	
-	// key process : ker processing routine must be used with other mode loop
-	// ...
 }
 
 
@@ -867,11 +897,8 @@ void calibration_setup()
 	ledFlasher.blink(BTYPE_BLINK_3_LONG_ON);
 	tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 2, BASE_BEEP_DURATION, 3, KEY_VOLUME);
 	
-	//
-	//tonePlayer.beep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION, 3);
-	
 	calibMode = CAL_MODE_MEASURE_DELAY;
-	calibTick = millis();
+	deviceTick = millis();
 }
 
 void calibration_loop()
@@ -883,7 +910,7 @@ void calibration_loop()
 	
 	if (calibMode == CAL_MODE_MEASURE_DELAY)
 	{
-		if (millis() - calibTick > MEASURE_DELAY)
+		if (millis() - deviceTick > MEASURE_DELAY)
 			calibMode = CAL_MODE_MEASURE;
 	}
 	else if (calibMode == CAL_MODE_MEASURE)
@@ -932,7 +959,7 @@ void calibration_loop()
 			// go back measure delay
 			calibMode = CAL_MODE_MEASURE_DELAY;
 			// reset delay tick
-			calibTick = millis();
+			deviceTick = millis();
 		}
 	}
 	else if (calibMode == CAL_MODE_COMPLETION)
@@ -959,8 +986,42 @@ void calibration_loop()
 				// re-calibration
 				tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 2, BASE_BEEP_DURATION, 3, KEY_VOLUME);
 				// reset delay tick
-				calibTick = millis();		
+				deviceTick = millis();		
 			}
 		}
+	}
+}
+
+void icalibration_loop()
+{
+}
+
+
+//
+// shutdown : alsert, clean-up & power-off
+//
+
+void shutdown_setup()
+{
+	//
+	ledFlasher.blink(BTYPE_BLINK_3_LONG_OFF);
+	tonePlayer.setMelody(&shutdownTone[0], sizeof(shutdownTone) / sizeof(shutdownTone[0]), 10, PLAY_PREEMPTIVE, KEY_VOLUME);
+
+	//
+	if (logger.isLogging())
+		logger.end();
+	
+	//
+	deviceTick = millis();
+}
+
+void shutdown_loop()
+{
+	if (millis() - deviceTick > SHUTDOWN_HOLD_TIME)
+	{
+		tonePlayer.setMute();
+		keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_ACTIVE);
+		
+		while(1);
 	}
 }

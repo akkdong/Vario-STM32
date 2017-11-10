@@ -65,7 +65,7 @@ void SensorMPU6050::initSensor(boolean calibrateGyro)
 	if( calibrateGyro ) {
 		dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT|DMP_FEATURE_SEND_RAW_GYRO|DMP_FEATURE_SEND_RAW_ACCEL|DMP_FEATURE_GYRO_CAL); 
 	} else {
-		dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT|DMP_FEATURE_SEND_RAW_ACCEL);
+		dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT|DMP_FEATURE_SEND_RAW_GYRO|DMP_FEATURE_SEND_RAW_ACCEL);
 	}
 
 	/* init calibration settings */

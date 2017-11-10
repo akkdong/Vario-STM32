@@ -63,7 +63,7 @@ TonePlayer::TonePlayer(ToneGenerator & gen) : toneGen(gen)
 	//Timer.resume();
 }
 
-void TonePlayer::setMelody(Tone * tonePtr, int toneCount, int repeat, int instant, int volume)
+void TonePlayer::setMelody(Tone * tonePtr, int toneCount, int repeat, int preemptive, int volume)
 {
 	nextTone.tonePtr 		= tonePtr;
 	nextTone.toneCount		= toneCount;
@@ -71,7 +71,7 @@ void TonePlayer::setMelody(Tone * tonePtr, int toneCount, int repeat, int instan
 	nextTone.playVolume		= volume;
 	nextTone.playType		= PLAY_MELODY;
 	
-	if (instant)
+	if (preemptive)
 		playNext();
 }
 
@@ -103,7 +103,7 @@ void TonePlayer::setBeep(int freq, int period, int duty, int repeat, int volume)
 	nextTone.playType		= PLAY_BEEP;
 }
 
-void TonePlayer::setMute(int instant)
+void TonePlayer::setMute(int preemptive)
 {
 	nextTone.tonePtr 		= &muteTone[0];
 	nextTone.toneCount		= sizeof(muteTone) / sizeof(muteTone[0]); // 1
@@ -111,7 +111,7 @@ void TonePlayer::setMute(int instant)
 	nextTone.playVolume		= -1;
 	nextTone.playType		= PLAY_MUTE;
 	
-	if (instant)
+	if (preemptive)
 		playNext();
 }
 

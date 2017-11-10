@@ -128,6 +128,13 @@ int AccelCalibrator::getMeasureOrientation(void)
 	}
 
 	/* compute the position in the list */
+	// x y z
+	// 2 2 0 : 0 -> +z : face up
+	// 2 2 1 : 1 -> -z : face bottom
+	// 2 0 2 : 2 -> +y : face right
+	// 2 1 2 : 3 -> -y : face left
+	// 0 2 2 : 4 -> +x : face back
+	// 1 2 2 : 5 -> -x : face front
 	int orient = 0;
 	int i = 0;
 	
@@ -172,7 +179,11 @@ boolean AccelCalibrator::canCalibrate(void)
 	/* the reversed position are done */
 	for( int i=0; i<ACCEL_CALIBRATOR_ORIENTATION_COUNT; i++)
 	{
+		#ifdef USE_ALL_ORIENTATION
+		if( !accelListDone[i] )
+		#else
 		if( i != ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION && !accelListDone[i] )
+		#endif
 		{
 			return false;
 		}
@@ -206,15 +217,17 @@ void AccelCalibrator::calibrate(void)
 		while( currentRadius <  baseRadius + baseRadiusDrift )
 		{
 			computeCenter(&accelList[ACCEL_CALIBRATOR_ORIENTATION_P1*3],
-			&accelList[ACCEL_CALIBRATOR_ORIENTATION_P2*3],
-			&accelList[ACCEL_CALIBRATOR_ORIENTATION_P3*3],
-			currentRadius, calibrationCenter); 
+							&accelList[ACCEL_CALIBRATOR_ORIENTATION_P2*3],
+							&accelList[ACCEL_CALIBRATOR_ORIENTATION_P3*3],
+							currentRadius, calibrationCenter); 
 			currentDistance = computeDistanceVariance(accelList, calibrationCenter);
+			
 			if( currentDistance <  bestDistance )
 			{
 				bestDistance = currentDistance;
 				bestRadius = currentRadius;
 			}
+			
 			currentRadius += baseStep;
 		}
 
@@ -225,9 +238,9 @@ void AccelCalibrator::calibrate(void)
 
 	/* compute center with best radius */
 	computeCenter(&accelList[ACCEL_CALIBRATOR_ORIENTATION_P1*3],
-	&accelList[ACCEL_CALIBRATOR_ORIENTATION_P2*3],
-	&accelList[ACCEL_CALIBRATOR_ORIENTATION_P3*3],
-	bestRadius, calibrationCenter);
+					&accelList[ACCEL_CALIBRATOR_ORIENTATION_P2*3],
+					&accelList[ACCEL_CALIBRATOR_ORIENTATION_P3*3],
+					bestRadius, calibrationCenter);
 
 	/* save calibration */
 	calibration[0] = -calibrationCenter[0];
@@ -238,7 +251,6 @@ void AccelCalibrator::calibrate(void)
 	imu.saveCalibration(calibration);
 	calibrated = true;
 }
-
 
 void AccelCalibrator::calibratedMeasure(void)
 {
@@ -334,7 +346,10 @@ float AccelCalibrator::computeDistanceVariance(float *v, float* center)
 
 	for( int i = 0; i<ACCEL_CALIBRATOR_ORIENTATION_COUNT; i++ )
 	{
+		#ifdef USE_ALL_ORIENTATION
+		#else
 		if( i != ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION )
+		#endif // USE_ALL_ORIENTATION
 		{
 			float* val = &v[i*3];
 			pointDistance[i] = sqrt( (val[0]-center[0])*(val[0]-center[0]) + (val[1]-center[1])*(val[1]-center[1]) + (val[2]-center[2])*(val[2]-center[2]) );
@@ -346,27 +361,40 @@ float AccelCalibrator::computeDistanceVariance(float *v, float* center)
 
 	for( int i = 0; i<ACCEL_CALIBRATOR_ORIENTATION_COUNT; i++ )
 	{
+		#ifdef USE_ALL_ORIENTATION
+		#else
 		if( i != ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION )
+		#endif // USE_ALL_ORIENTATION
 		{
 			mean += pointDistance[i];
 		}
 	}
+	
+	#ifdef USE_ALL_ORIENTATION
+	mean /= ACCEL_CALIBRATOR_ORIENTATION_COUNT;
+	#else
 	mean /= ACCEL_CALIBRATOR_ORIENTATION_COUNT - 1;
+	#endif // USE_ALL_ORIENTATION
 
 	/* compute var */
 	float var = 0.0;
 
 	for( int i = 0; i<ACCEL_CALIBRATOR_ORIENTATION_COUNT; i++ )
 	{
+		#ifdef USE_ALL_ORIENTATION
+		#else
 		if( i != ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION )
+		#endif // USE_ALL_ORIENTATION
 		{
 			var += (pointDistance[i] - mean)*(pointDistance[i] - mean);
 		}
 	}
+	
+	#ifdef USE_ALL_ORIENTATION
+	var /= ACCEL_CALIBRATOR_ORIENTATION_COUNT;
+	#else
 	var /= ACCEL_CALIBRATOR_ORIENTATION_COUNT - 1;
+	#endif // USE_ALL_ORIENTATION
 
 	return var;
 }
-
-
-
