@@ -35,11 +35,20 @@ public:
 	float *				getCalibration();
 	void				saveCalibration(float * calData);
 	
+	SensorMS5611 &		getPressureSensor();
+	SensorMPU6050 &		getAccelerometerSensor();
 	
 private:
 	SensorMPU6050 &		mpu6050;
 	SensorMS5611 &		ms5611;
 };
 
+// inline members
 
+inline SensorMS5611 & IMUModule::getPressureSensor()
+	{ return ms5611; }
+	
+inline SensorMPU6050 & IMUModule::getAccelerometerSensor()
+	{ return mpu6050; }
+	
 #endif // __IMUMODULE_H__

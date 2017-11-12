@@ -25,8 +25,8 @@
 
 #define MIN_VOLUME				(0)
 #define MAX_VOLUME				(98)
-#define MID_VOLUME				(16)
-#define KEY_VOLUME				(10)
+#define MID_VOLUME				(8)
+#define KEY_VOLUME				(6)
 
 #define PLAY_COOPERATIVE		(0)
 #define PLAY_PREEMPTIVE			(1)

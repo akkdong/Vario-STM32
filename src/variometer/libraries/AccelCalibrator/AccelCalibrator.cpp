@@ -51,6 +51,7 @@ void AccelCalibrator::measure(void)
 	while( millis() - currentTime < ACCEL_CALIBRATOR_WAIT_DURATION )
 	{
 		//vertaccel_rawReady(accel, upVector, &va);
+		delay(10);
 		imu.rawReady(accel, upVector, &va);
 	}
 
@@ -63,6 +64,7 @@ void AccelCalibrator::measure(void)
 
 	while( count < ACCEL_CALIBRATOR_FILTER_SIZE )
 	{
+		delay(10);
 		//if( vertaccel_rawReady(accel, upVector, &va) )
 		if (imu.rawReady(accel, upVector, &va))
 		{

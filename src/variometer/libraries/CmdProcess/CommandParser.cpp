@@ -3,6 +3,9 @@
 
 #include "CommandParser.h"
 
+#define PARSE_STEP_WAIT			(-1)	// wait command
+#define PARSE_STEP_CMD_1ST
+#define PARSE_STEP_
 
 /////////////////////////////////////////////////////////////////////////////
 // class CommandParser
@@ -18,7 +21,7 @@ void CommandParser::update()
 		int c = Strm.read();
 		
 		// command format
-		// #XX<,FIELD>\r\n
+		// #XX[,PARAM[,VALUE]]\r\n
 		//
 		
 		if (parseStep < 0 && c != '#')
@@ -33,6 +36,8 @@ void CommandParser::update()
 			fieldData[0] = '\0';
 			
 			cmdCode = 0;
+			cmdParam = 0;
+			cmdValue = 0;
 		}
 		else
 		{
@@ -67,11 +72,11 @@ void CommandParser::update()
 					case CMD_UPDATE_PARAM	: // 'UD'
 						// known command
 						if (c == ',')
-							parseStep = 3; // next is field
+							parseStep = 3; // next is param field
 						else if (c == '\r')
-							parseStep = 4; // next is '\n'
+							parseStep = 5; // next is '\n'
 						else
-							parseStep = 5; // end of command string
+							parseStep = 6; // end of command string
 						break;
 					default :
 						// unknown command
@@ -87,8 +92,22 @@ void CommandParser::update()
 			}
 			else if (parseStep == 3)
 			{
-				// field
-				if (c != '\r' && c != '\n')
+				// param field
+				if (c == '\r' || c == '\n' || c == ',')
+				{
+					cmdParam = toNum(fieldData);
+
+					fieldIndex = 0;
+					fieldData[0] = '\0';
+					
+					if (c == ',')
+						parseStep = 4; // next is vale field
+					else if (c == '\r')
+						parseStep = 5; // next is '\n'
+					else
+						parseStep = 6; // end of command string
+				}
+				else
 				{
 					if (fieldIndex < MAX_FIELD_LEN - 1)
 					{
@@ -101,26 +120,45 @@ void CommandParser::update()
 						parseStep = -1;
 					}
 				}
-				else
-				{
-					if (c == '\r')
-						parseStep = 4; // next is '\n'
-					else
-						parseStep = 5; // end of command string
-				}
 			}
 			else if (parseStep == 4)
 			{
+				// param field
+				if (c == '\r' || c == '\n')
+				{
+					cmdValue = toNum(fieldData);
+
+					if (c == '\r')
+						parseStep = 5; // next is '\n'
+					else
+						parseStep = 6; // end of command string
+				}
+				else
+				{
+					if (fieldIndex < MAX_FIELD_LEN - 1)
+					{
+						fieldData[fieldIndex++] = c;
+						fieldData[fieldIndex] = '\0';
+					}
+					else
+					{
+						// too long field : invalid command string
+						parseStep = -1;
+					}
+				}
+			}
+			else if (parseStep == 5)
+			{
 				if (c == '\n')
-					parseStep = 5; // end of command string
+					parseStep = 6; // end of command string
 				else
 					parseStep = -1; // invalid
 			}
 			
-			if (parseStep == 5)
+			if (parseStep == 6)
 			{
 				// parse field & enqueue command to stack
-				Command cmd(StrmSouce, cmdCode, toNum(fieldData));
+				Command cmd(StrmSouce, cmdCode, cmdParam, cmdValue);
 				
 				Stack.enqueue(cmd);
 				

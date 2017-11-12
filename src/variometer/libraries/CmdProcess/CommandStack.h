@@ -62,7 +62,40 @@
 #define PARAM_RS_NOW			(0)
 #define PARAM_RS_AFTER_SAVE		(1)
 
+// query paramater
+#define PARAM_QU_VARIO_SINK_THRESHOLD	(1)
+#define PARAM_QU_VARIO_CLIMB_THRESHOLD	(2)
+#define PARAM_QU_VARIO_SENSITIVITY		(3)
+#define PARAM_QU_NMEA_SENTENCE			(4)
+#define PARAM_QU_TIME_ZONE              (5)
+#define PARAM_QU_KALMAN_SIGMA_P			(6)
+#define PARAM_QU_KALMAN_SIGMA_A			(7)
+#define PARAM_QU_CALIBRATION_X			(8)
+#define PARAM_QU_CALIBRATION_Y			(9)
+#define PARAM_QU_CALIBRATION_Z			(10)
+#define PARAM_QU_PROFILE_MODEL			(11)
+#define PARAM_QU_PROFILE_PILOT			(12)
+#define PARAM_QU_PROFILE_GLIDER			(13)
+#define PARAM_QU_TONE_TABLE				(14)
 
+// update paramater
+#define PARAM_UD_VARIO_SINK_THRESHOLD	(1)
+#define PARAM_UD_VARIO_CLIMB_THRESHOLD	(2)
+#define PARAM_UD_VARIO_SENSITIVITY		(3)
+#define PARAM_UD_NMEA_SENTENCE			(4)
+#define PARAM_UD_TIME_ZONE              (5)
+#define PARAM_UD_KALMAN_SIGMA_P			(6)
+#define PARAM_UD_KALMAN_SIGMA_A			(7)
+#define PARAM_UD_CALIBRATION_X			(8)
+#define PARAM_UD_CALIBRATION_Y			(9)
+#define PARAM_UD_CALIBRATION_Z			(10)
+#define PARAM_UD_PROFILE_MODEL			(100) // 100 ~ 1xx : each character of string
+#define PARAM_UD_PROFILE_PILOT			(200) // 200 ~ 2xx : each character of string
+#define PARAM_UD_PROFILE_GLIDER			(300) // 300 ~ 3xx : each character of string
+#define PARAM_UD_TONE_TABLE_VELOCITY	(400) // 400 ~ 411
+#define PARAM_UD_TONE_TABLE_FREQUENCY	(420) // 420 ~ 431
+#define PARAM_UD_TONE_TABLE_PERIOD		(440) // 440 ~ 451
+#define PARAM_UD_TONE_TABLE_DUTY		(460) // 460 ~ 471
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -72,14 +105,15 @@ class Command
 {
 public:
 	Command() 
-		{ from = code = param = 0; }
-	Command(uint8_t f, uint16_t c, uint8_t p)
-		{ from = f; code = c; param = p; }
+		{ from = code = param = value = 0; }
+	Command(uint16_t f, uint16_t c, uint32_t p, uint32_t v = 0)
+		{ from = f; code = c; param = p; value = v; }
 	
 public:
 	uint16_t	code;	// command code;
 	uint16_t	from; 	// this command received from BT or USB or KEY
 	uint32_t	param;	// command specific parameter
+	uint32_t	value;	// 
 };
 
 

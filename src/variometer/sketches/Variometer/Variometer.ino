@@ -2,9 +2,6 @@
 //
 
 #include <DefaultSettings.h>
-#include <Arduino.h>
-#include <Wire.h>
-#include <SPI.h>
 #include <I2CDevice.h>
 #include <EEPROMDriver.h>
 #include <VertVelocity.h>
@@ -20,7 +17,9 @@
 #include <SerialEx.h>
 #include <VarioSentence.h>
 #include <BluetoothMan.h>
+#ifdef FEATURE_IGCLOGGING_ENALBE
 #include <IGCLogger.h>
+#endif // FEATURE_IGCLOGGING_ENALBE
 #include <BatteryVoltage.h>
 #include <CommandParser.h>
 #include <FuncKeyParser.h>
@@ -221,6 +220,47 @@ GPIO_PINMODE gpio_mode[] =
 // 
 //
 
+
+// parameter map
+
+
+typedef struct tagParameterMap
+{
+	uint8_t		id;
+	uint8_t		type;
+	
+	void *		dest;
+	
+} ParameterMap;
+
+enum ParameterId
+{
+	PARAMID_VARIO_SINK_THRESHOLD,
+	PARAMID_VARIO_CLIMB_THRESHOLD,
+	PARAMID_VARIO_SENSITIVITY,
+	PARAMID_VARIO_TIMEZONE,
+	
+};
+
+enum ParameterType
+{
+	PARAMTYPE_INT8,
+	PARAMTYPE_INT16,
+	PARAMTYPE_INT32,
+	PARAMTYPE_UINT8,
+	PARAMTYPE_UINT16,
+	PARAMTYPE_UINT32,
+	PARAMTYPE_FLOAT,
+	PARAMTYPE_STRING,
+};
+
+ParameterMap paramMap[] =
+{
+	{ PARAMID_VARIO_SINK_THRESHOLD, PARAMTYPE_FLOAT, &Config.vario_sinkThreshold },
+};
+
+
+
 //
 //
 //
@@ -298,8 +338,8 @@ AccelCalibrator accelCalibrator(imu);
 // I2C2 is used by EEPROM
 //
 
-HardWire Wire1(1);
-HardWire Wire2(2);
+HardWire Wire1(1, I2C_FAST_MODE);
+HardWire Wire2(2, I2C_FAST_MODE);
 
 // initialize some static member of I2CDevice(I2C1)
 //
@@ -346,8 +386,9 @@ BluetoothMan btMan(SerialEx1, nmeaParser, varioNmea, sensorReporter);
 // IGC Logger
 //
 
+#ifdef FEATURE_IGCLOGGING_ENALBE
 IGCLogger logger;
-
+#endif // FEATURE_IGCLOGGING_ENALBE
 
 //
 // Digital & Analog Input/Output
@@ -436,10 +477,10 @@ void board_init()
 	
 	// Initialize I2C
 	Wire1.begin();
-	Wire1.setClock(400000); // 400KHz
+	//Wire1.setClock(400000); // 400KHz
 	
 	Wire2.begin();
-	Wire2.setClock(400000); // 400KHz
+	//Wire2.setClock(400000); // 400KHz
 	
 	// Initialize GPIO
 #if 0
@@ -482,10 +523,12 @@ void changeDeviceMode(int mode)
 		vario_setup();
 		main_loop = vario_loop;	
 		break;
+	#ifdef FEATURE_IGCLOGGING_ENALBE
 	case DEVICE_MODE_UMS :
 		ums_setup();
 		main_loop = ums_loop;
 		break;
+	#endif // FEATURE_IGCLOGGING_ENALBE
 	case DEVICE_MODE_CALIBRATION :
 		calibration_setup();
 		main_loop = calibration_loop;
@@ -533,7 +576,9 @@ void setup()
 				millis());
 	
 	// Initialize IGC Logger
+	#ifdef FEATURE_IGCLOGGING_ENALBE
 	logger.init();
+	#endif // FEATURE_IGCLOGGING_ENALBE
 	
 	// enable BT & GPS if it's startted inactive state
 	//		keyPowerBT.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_INACTIVE);
@@ -598,9 +643,11 @@ void processShutdownInterrupt()
 	if (keyShutdown.read() == INPUT_ACTIVE)
 	{
 		// shutdown interrupt trigged by LTC2950
-		// clean-up & wait power-off(LTC2750 will turn off power)		
+		// clean-up & wait power-off(LTC2750 will turn off power)
+		#ifdef FEATURE_IGCLOGGING_ENALBE
 		if (logger.isLogging())
 			logger.end();
+		#endif // FEATURE_IGCLOGGING_ENALBE
 		
 		// beep~
 		//tonePlayer.setBeep(420, 0, 0, KEY_VOLUME);
@@ -644,14 +691,16 @@ void processCommand()
 				case PARAM_SW_CALIBRATION  :
 					changeDeviceMode(DEVICE_MODE_CALIBRATION);
 					return;
+				#ifdef FEATURE_IGCLOGGING_ENALBE
 				case PARAM_SW_UMS          :
 					if (keyUSB.read() && logger.isInitialized())
 					{
 						changeDeviceMode(DEVICE_MODE_UMS);
 						return;
 					}
-					// cann't change mode : warning beep~~
+					// else cann't change mode : warning beep~~
 					break;
+				#endif // FEATURE_IGCLOGGING_ENALBE
 				}
 			}
 			break;
@@ -690,6 +739,53 @@ void processCommand()
 		case CMD_DEVICE_RESET 	:
 			break;
 		case CMD_QUERY_PARAM 	:
+			switch (cmd.param)
+			{
+			case PARAM_QU_VARIO_SINK_THRESHOLD	: // (1)
+				Serial.print("%QU,"); Serial.print(cmd.param); Serial.print(","); Serial.println(Config.vario_sinkThreshold);
+				break;
+			case PARAM_QU_VARIO_CLIMB_THRESHOLD	: // (2)
+				Serial.print("%QU,"); Serial.print(cmd.param); Serial.print(","); Serial.println(Config.vario_climbThreshold);
+				break;
+			case PARAM_QU_VARIO_SENSITIVITY		: // (3)
+				Serial.print("%QU,"); Serial.print(cmd.param); Serial.print(","); Serial.println(Config.vario_sensitivity);
+				break;
+			//case PARAM_QU_NMEA_SENTENCE			: // (4)
+			//	Serial.print("%QU,"); Serial.print(cmd.param); Serial.print(","); Serial.println(Config.vario_sentence);
+			//	break;
+			case PARAM_QU_TIME_ZONE             : // (5)
+				Serial.print("%QU,"); Serial.print(cmd.param); Serial.print(","); Serial.println(Config.vario_timezone);
+				break;
+			case PARAM_QU_KALMAN_SIGMA_P		: // (6)
+				Serial.print("%QU,"); Serial.print(cmd.param); Serial.print(","); Serial.println(Config.kalman_sigmaP);
+				break;
+			case PARAM_QU_KALMAN_SIGMA_A		: // (7)
+				Serial.print("%QU,"); Serial.print(cmd.param); Serial.print(","); Serial.println(Config.kalman_sigmaA);
+				break;
+			case PARAM_QU_CALIBRATION_X			: // (8)
+				Serial.print("%QU,"); Serial.print(cmd.param); Serial.print(","); Serial.println(Config.accel_calData[0]);
+				break;
+			case PARAM_QU_CALIBRATION_Y			: // (9)
+				Serial.print("%QU,"); Serial.print(cmd.param); Serial.print(","); Serial.println(Config.accel_calData[1]);
+				break;
+			case PARAM_QU_CALIBRATION_Z			: // (10)
+				Serial.print("%QU,"); Serial.print(cmd.param); Serial.print(","); Serial.println(Config.accel_calData[2]);
+				break;
+			case PARAM_QU_PROFILE_MODEL			: // (11)
+				Serial.print("%QU,"); Serial.print(cmd.param); Serial.print(","); Serial.println(Config.profile_model);
+				break;
+			case PARAM_QU_PROFILE_PILOT			: // (12)
+				Serial.print("%QU,"); Serial.print(cmd.param); Serial.print(","); Serial.println(Config.profile_pilot);
+				break;
+			case PARAM_QU_PROFILE_GLIDER		: // (13)
+				Serial.print("%QU,"); Serial.print(cmd.param); Serial.print(","); Serial.println(Config.profile_glider);
+				break;
+			case PARAM_QU_TONE_TABLE			: // (14)
+				break;
+			default                             :
+				Serial.println("!ERR");
+				break;
+			}
 			break;
 		case CMD_UPDATE_PARAM 	:
 			break;
@@ -700,6 +796,8 @@ void processCommand()
 //
 // variometer main function
 //
+
+uint32_t lastTick;
 
 void vario_setup()
 {
@@ -715,6 +813,7 @@ void vario_setup()
 
 	// start vario-loop
 	tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, PLAY_PREEMPTIVE, KEY_VOLUME);
+	//lastTick = millis();
 }
 
 void vario_loop()
@@ -727,13 +826,21 @@ void vario_loop()
 
 		//
 		vertVel.update(imu.getAltitude(), imu.getVelocity(), millis());
+		
+		//Serial.println(millis() -  lastTick);
+		//lastTick = millis();
 
 		//
 		float velocity = vertVel.getVelocity();
-		float position = vertVel.getCalibratedPosition(); // vertVel.getPosition();
-		
 		varioBeeper.setVelocity(velocity);
+		#if 1
+		Serial.println(velocity * 100.0, 2);
+		#endif
+		
+		#ifdef FEATURE_IGCLOGGING_ENALBE
+		float position = vertVel.getCalibratedPosition(); // vertVel.getPosition();
 		logger.update(position);
+		#endif // FEATURE_IGCLOGGING_ENALBE
 		
 		//
 		//if (varioMode != VARIO_MODE_SHUTDOWN)
@@ -787,8 +894,10 @@ void vario_loop()
 			// play take-off melody
 			// ...
 			
+			#ifdef FEATURE_IGCLOGGING_ENALBE
 			// start logging & change mode
 			logger.begin(nmeaParser.getDateTime());
+			#endif // FEATURE_IGCLOGGING_ENALBE
 			
 			//
 			deviceTick = millis();
@@ -808,9 +917,10 @@ void vario_loop()
 				// play landing melody
 				// ...
 				
+				#ifdef FEATURE_IGCLOGGING_ENALBE
 				// stop logging & change mode
 				logger.end();
-				
+				#endif // FEATURE_IGCLOGGING_ENALBE
 			}
 		}
 		else
@@ -830,6 +940,7 @@ void vario_loop()
 	//	}
 	//}
 
+	#ifdef FEATURE_IGCLOGGING_ENALBE
 	// check logging state
 	if (logger.isLogging())
 	{
@@ -844,12 +955,13 @@ void vario_loop()
 				logger.write(nmeaParser.readIGC());
 		}
 	}
+	#endif // FEATURE_IGCLOGGING_ENALBE
 	
 	// beep beep beep!
 	tonePlayer.update();
 	
 	// start voltage measurement periodically
-	batVolt.update();
+	//batVolt.update();
 	
 	// MCU State : LED Blinking
 	ledFlasher.update();
@@ -860,6 +972,7 @@ void vario_loop()
 //
 //
 
+#ifdef FEATURE_IGCLOGGING_ENALBE
 void ums_setup()
 {
 	//
@@ -872,6 +985,7 @@ void ums_loop()
 	ledFlasher.update();
 	tonePlayer.update();
 }
+#endif // FEATURE_IGCLOGGING_ENALBE
 
 
 //
@@ -1008,8 +1122,10 @@ void shutdown_setup()
 	tonePlayer.setMelody(&shutdownTone[0], sizeof(shutdownTone) / sizeof(shutdownTone[0]), 10, PLAY_PREEMPTIVE, KEY_VOLUME);
 
 	//
+	#ifdef FEATURE_IGCLOGGING_ENALBE
 	if (logger.isLogging())
 		logger.end();
+	#endif // FEATURE_IGCLOGGING_ENALBE
 	
 	//
 	deviceTick = millis();
