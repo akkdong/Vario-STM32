@@ -17,21 +17,32 @@ protected:
 	VarioCalculator();
 	
 public:
-	int							begin();
+	int							begin(float sigmaP, float sigmaA, int calibrateGyro = true);
 	void						end();
 	
 	int							available();
 	void						flush();
 	
 	int							update();
+	
+	float						getPressure();
+	float						getTemperature();
+	float						getAltitude();
+	float						getCalibratedAltitude();
+	float						getVelocity();
+	float						getAcceleration();
+	
+	uint32_t					getTimestamp();
+	
+	void						calibrateAltitude(float altitudeRef);
 
 public:
 	static VarioCalculator &	getInstance();
-	
 	static void					unlockI2C_();
-	void						unlockI2C();
-	
 	static void					timerProc_();
+	
+protected:
+	void						unlockI2C();
 	void						timerProc();
 
 private:
@@ -39,8 +50,10 @@ private:
 	int							initBaro();
 	
 	void						resetBaro();
+	
 	uint16_t					getPROMValue(int address);
 	uint32_t					getDigitalValue();
+	float						getAltitude(float pressure);
 	
 	void						convertNext();
 	void						convertD1(); // read temperature
@@ -54,14 +67,14 @@ private:
 	
 	
 	// motion tracking
-	int							initAccel();
+	int							initAccel(int calibrateGyro);
 
 	void						updateVerticalAccel();
 	
 	// kalman
-	int							initKalman();
+	void						initKalman(float startP, float startA, float sigmaP, float sigmaA, uint32_t timestamp);
 	
-	int							updateKalman();
+	void						updateKalman(float measureP, float measureA, uint32_t timestamp);
 	
 private:
 	volatile uint32_t			d1i;
@@ -71,19 +84,20 @@ private:
 	volatile int				baroUpdated;
 	
 	volatile int				interruptWait;
-	
+
 	uint16_t					c1, c2, c3, c4, c5, c6; // PROM factors
 	float						compensatedTemperature;
 	float						compensatedPressure;
+//	float						baroAltitude;
 
 private:
-	float						vertAccel;
+//	float						vertAccel;
 	
 	int							accumulateCount;
 	float						accumulateAccel;
 	
 	float						accelData[3];
-	float						gyroData[3];
+//	float						gyroData[3];
 	float						quadData[4];
 	
 private:
@@ -99,7 +113,34 @@ private:
 	
 	// covariance matrix
 	float						p11, p12, p21, p22;
+	
+	//
+	int							varioUpdated;
 };
+
+
+// inlines members
+
+inline float VarioCalculator::getPressure()
+	{ return compensatedPressure; }
+	
+inline float VarioCalculator::getTemperature()
+	{ return compensatedTemperature; }
+
+inline float VarioCalculator::getAltitude()
+	{ return p; }
+
+inline float VarioCalculator::getCalibratedAltitude()
+	{ return (p + calibrationDrift); }
+
+inline float VarioCalculator::getVelocity()
+	{ return v; }
+
+inline float VarioCalculator::getAcceleration()
+	{ return a; }
+
+inline uint32_t					getTimestamp();
+inline void						calibrateAltitude(float altitudeRef);
 
 #endif // __VARIOCALCULATOR_H__
 
