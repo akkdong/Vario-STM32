@@ -19,8 +19,14 @@
 #define VERTACCEL_ACCEL_FSR 	(4)
 #define VERTACCEL_FIFO_RATE 	(100)
 
-/* 4G ~= 2^15 */
+/*  2G ~= 16384 2^14 */
+/*  4G ~=  8192 2^13 */
+/*  8G ~=  4096 2^12 */
+/* 16G ~=  2048 2^11 */
 #define VERTACCEL_ACCEL_SCALE 	(8192.0)
+/*  250 degree/s ~= 131 */
+/*  500 degree/s ~= 65.5 */
+/* 1000 degree/s ~= 32.8 */
 /* 2000 degree/s ~= 16.4 */
 #define VERTACCEL_GYRO_SCALE	(16.4)
 
