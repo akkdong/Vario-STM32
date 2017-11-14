@@ -38,6 +38,8 @@ private:
 	uint8_t			fieldIndex;
 	
 	uint16_t		cmdCode;
+	uint32_t		cmdParam;
+	uint32_t		cmdValue;
 };
 
 #endif // __COMMANDPARSER_H__

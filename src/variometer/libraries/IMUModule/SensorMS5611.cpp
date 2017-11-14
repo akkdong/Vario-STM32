@@ -265,11 +265,11 @@ void SensorMS5611::TimerProc()
 	else
 	{
 		// reenable interrupts for i2c
-		interrupts();
+		//interrupts();
 	
 		// read at stable frequency
 		THIS.readStep();
-//		THIS.restartTimer();
+		THIS.restartTimer();
 	}
 }
 
@@ -392,7 +392,7 @@ void SensorMS5611::restartTimer()
 		TCNT3 = 0;
 	#endif
 #elif defined ARDUINO_ARCH_STM32F1
-	Timer2.setCount(0);
+	Timer2.refresh();
 #else
 	//#error This architecture is not supported!
 #endif 

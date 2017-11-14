@@ -13,15 +13,15 @@ typedef struct tagBlinkPattern
 	int16_t *	pattern;
 } BlinkPattern;
 
-int16_t pattern1[] = { 500, -500 };
-int16_t pattern2[] = { 100, -100 };
-int16_t pattern3[] = { 500, -100 };
-int16_t pattern4[] = { 100, -500 };
+int16_t pattern1[] = { 800, -800 };
+int16_t pattern2[] = { 200, -200 };
+int16_t pattern3[] = { 800, -200 };
+int16_t pattern4[] = { 200, -800 };
 
-int16_t pattern5[] = { 100, -100, 100, -100, 600, -100 };
-int16_t pattern6[] = { 100, -100, 100, -100, 100, -100, 600, -100 };
-int16_t pattern7[] = { 100, -100, 100, -600 };
-int16_t pattern8[] = { 100, -100, 100, -100, 100, -600 };
+int16_t pattern5[] = { 200, -200, 200, -200, 800, -200 };
+int16_t pattern6[] = { 200, -200, 200, -200, 200, -200, 800, -200 };
+int16_t pattern7[] = { 200, -200, 200, -800 };
+int16_t pattern8[] = { 200, -200, 200, -200, 200, -800 };
 
 BlinkPattern blinkPattern[] = 
 {

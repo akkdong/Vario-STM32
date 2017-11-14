@@ -19,8 +19,8 @@ void CommandStack::enqueue(Command cmd)
 	
 	fifo[front] = cmd;
 	front = (front + 1) % MAX_STACKSIZE;
-	Serial.print("enqueue : front = "); Serial.print(front);
-	Serial.print(", rear = "); Serial.print(rear);
+	//Serial.print("enqueue : front = "); Serial.print(front);
+	//Serial.print(", rear = "); Serial.print(rear);
 }
 
 Command CommandStack::dequeue()
@@ -32,8 +32,8 @@ Command CommandStack::dequeue()
 		cmd = fifo[rear];
 		rear = (rear + 1) % MAX_STACKSIZE;
 		
-		Serial.print("dequeue : front = "); Serial.print(front);
-		Serial.print(", rear = "); Serial.print(rear);		
+		//Serial.print("dequeue : front = "); Serial.print(front);
+		//Serial.print(", rear = "); Serial.print(rear);		
 	}
 	
 	return cmd;
