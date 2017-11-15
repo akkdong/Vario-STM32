@@ -624,12 +624,15 @@ void loop()
 
 void processLowBattery()
 {
-	if (batVolt.getVoltage() < LOW_BATTERY_THRESHOLD)
+	if (deviceMode != DEVICE_MODE_SHUTDOWN)
 	{
-		Serial.println("!!Alert!!");
-		Serial.println("It's low battery. Device will be shutdown now!!");
+		if (batVolt.getVoltage() < LOW_BATTERY_THRESHOLD)
+		{
+			Serial.println("!!Alert!!");
+			Serial.println("It's low battery. Device will be shutdown now!!");
 
-		changeDeviceMode(DEVICE_MODE_SHUTDOWN);
+			changeDeviceMode(DEVICE_MODE_SHUTDOWN);
+		}
 	}
 }
 
@@ -855,6 +858,7 @@ void vario_loop()
 				Serial.println("Now process auto-shutdown!!");
 				
 				changeDeviceMode(DEVICE_MODE_SHUTDOWN);
+				return;
 			}
 		}
 	}

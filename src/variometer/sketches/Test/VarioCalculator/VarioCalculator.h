@@ -30,20 +30,20 @@ public:
 	float						getAltitude();
 	float						getCalibratedAltitude();
 	float						getVelocity();
-	float						getAcceleration();
-	
+	float						getAcceleration();	
 	uint32_t					getTimestamp();
 	
 	void						calibrateAltitude(float altitudeRef);
 
 public:
 	static VarioCalculator &	getInstance();
-	static void					unlockI2C_();
-	static void					timerProc_();
+	
+	static void					unlockI2C();
+	static void					timerProc();
 	
 protected:
-	void						unlockI2C();
-	void						timerProc();
+	void						unlockI2CInternal();
+	void						timerProcInternal();
 
 private:
 	// baro

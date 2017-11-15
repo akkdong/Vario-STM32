@@ -87,14 +87,13 @@ int VarioCalculator::begin(float sigmaP, float sigmaA, int calibrateGyro)
 {
 	if (initBaro() && initAccel(calibrateGyro))
 	{
-		//
+		// start measurement
 		convertD1();
+		// measure digital value on timer proc
 		startTimer();
-		
-		// delay to stabilize the device
-		//delay(MS5611_INTERRUPT_START_DELAY);		
 
-		//
+		// read dummy data 10 times
+		// it may be stabilize data...
 		float va, ba;
 		int count = 0;
 		
@@ -122,7 +121,7 @@ int VarioCalculator::begin(float sigmaP, float sigmaA, int calibrateGyro)
 		}
 		
 		//
-		initKalman(compensatedPressure, va, sigmaP, sigmaA, millis());
+		initKalman(ba, va * MPU6050_G_TO_MS, sigmaP, sigmaA, millis());
 		//Serial.println("initKalman");
 		
 		return 1;
@@ -160,7 +159,9 @@ int VarioCalculator::update()
 	if (baroUpdated && accumulateCount > 0)
 	{
 		//
-		updateKalman(compensatedPressure, accumulateAccel / accumulateCount, millis());
+		updateKalman(getAltitude(compensatedPressure), 
+					(accumulateAccel / accumulateCount) * MPU6050_G_TO_MS, 
+					millis());
 
 		//
 		accumulateCount = 0;
@@ -181,12 +182,12 @@ VarioCalculator & VarioCalculator::getInstance()
 	return vario;
 }
 
-void VarioCalculator::unlockI2C_()
+void VarioCalculator::unlockI2C()
 {
-	getInstance().unlockI2C();
+	getInstance().unlockI2CInternal();
 }
 
-void VarioCalculator::unlockI2C()
+void VarioCalculator::unlockI2CInternal()
 {
 	if (interruptWait)
 	{
@@ -196,12 +197,12 @@ void VarioCalculator::unlockI2C()
 	}
 }
 	
-void VarioCalculator::timerProc_()
+void VarioCalculator::timerProc()
 {
-	getInstance().timerProc();
+	getInstance().timerProcInternal();
 }
 
-void VarioCalculator::timerProc()
+void VarioCalculator::timerProcInternal()
 {
 	if (I2CDevice::locked)
 	{
@@ -219,7 +220,7 @@ void VarioCalculator::startTimer()
 	Timer2.setMode(MS5611_TIMER_CHANNEL, TIMER_OUTPUT_COMPARE);
 	Timer2.setPrescaleFactor(MS5611_TIMER_PRESCALER);
 	Timer2.setCompare(MS5611_TIMER_CHANNEL, MS5611_INTERRUPT_COMPARE);
-	Timer2.attachInterrupt(MS5611_TIMER_CHANNEL, timerProc_);
+	Timer2.attachInterrupt(MS5611_TIMER_CHANNEL, timerProc);
 	Timer2.refresh();
 	Timer2.resume();	
 }
@@ -308,7 +309,7 @@ float VarioCalculator::getAltitude(float pressure)
 
 void VarioCalculator::convertNext()
 {
-	if (baroState == MS5611_STEP_READ_TEMP)
+	if (baroState == MS5611_STEP_READ_PRESSURE)
 	{
 		d1i = getDigitalValue();
 		convertD2();
@@ -317,42 +318,45 @@ void VarioCalculator::convertNext()
 	{
 		d2i = getDigitalValue();
 		convertD1();
-		
-		updateBaro();
 	}
 	
 	resetTimer();
+
+	if (baroState == MS5611_STEP_READ_PRESSURE)
+		updateBaro();
 }
 
 void VarioCalculator::convertD1()
 {
 	I2CDevice::writeBytes(MS5611_ADDRESS, MS5611_CMD_CONV_D1, 0, NULL, false);
-	baroState = MS5611_STEP_READ_TEMP;
+	baroState = MS5611_STEP_READ_PRESSURE;
 }
 
 void VarioCalculator::convertD2()
 {
 	I2CDevice::writeBytes(MS5611_ADDRESS, MS5611_CMD_CONV_D2, 0, NULL, false);
-	baroState = MS5611_STEP_READ_PRESSURE;
+	baroState = MS5611_STEP_READ_TEMP;
 }
 
 void VarioCalculator::updateBaro()
 {
+	#if 0 // timerProc never be called in updateBaro --> so.... no needs mutex lock
 	// lock the mutex to get the values
 	uint32_t d1;
 	uint32_t d2;
 	
-	//I2CDevice::lockDevice();
+	I2CDevice::lockDevice();
 	d1 = d1i;
 	d2 = d2i;
-	//I2CDevice::unlockDevice();
+	I2CDevice::unlockDevice();
+	#endif
 
 	// compute temperature
 	int32_t dt, temp;
 
 	int32_t c5s = c5;
 	c5s <<= 8;
-	dt = d2 - c5s;
+	dt = d2i - c5s;
 
 	int32_t c6s = c6;
 	c6s *= dt;
@@ -417,7 +421,7 @@ void VarioCalculator::updateBaro()
 	// compute pressure
 	int64_t p;
 
-	p = d1 * sens;
+	p = d1i * sens;
 	p >>= 21;
 	p -= off;
 	//p >>= 15 !!! done with doubles, see below

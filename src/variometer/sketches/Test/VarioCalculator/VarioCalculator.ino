@@ -17,7 +17,7 @@ HardWire Wire2(2, I2C_FAST_MODE);
 HardWire & I2CDevice::Wire = Wire1;
 
 // set unlock callback function
-UnlockCallback I2CDevice::cbUnlock = VarioCalculator::unlockI2C_;
+UnlockCallback I2CDevice::cbUnlock = VarioCalculator::unlockI2C;
 
 //
 EEPROMDriver eeprom(Wire2);
@@ -64,7 +64,7 @@ void setup()
     while (Serial.available() && Serial.read()); // empty buffer again
 
 	//
-	vario.begin(Config.kalman_sigmaP, Config.kalman_sigmaA);
+	vario.begin(Config.kalman_sigmaP, Config.kalman_sigmaA/*, calibrateGyro = true*/);
 	
 	//
 	lastTick = micros();
