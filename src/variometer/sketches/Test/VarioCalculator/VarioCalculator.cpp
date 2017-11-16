@@ -130,6 +130,11 @@ int VarioCalculator::begin(float sigmaP, float sigmaA, int calibrateGyro)
 	return 0;
 }
 
+int VarioCalculator::beginCalibration()
+{
+	return initAccel(false);
+}
+
 void VarioCalculator::end()
 {
 	//
@@ -173,6 +178,27 @@ int VarioCalculator::update()
 	}
 	
 	return 0;
+}
+
+int VarioCalculator::getRawAcceleration(float * accel)
+{
+	short igyro[3], iaccel[3];
+	long iquat[4];
+	unsigned long timestamp;
+	short sensors;
+	unsigned char fifoCount;
+	
+	if (dmp_read_fifo(igyro,iaccel,iquat,&timestamp,&sensors,&fifoCount))
+		return 0;
+	
+	if (! sensors)
+		return 0;
+
+	accel[0] = ((float)iaccel[0])/MPU6050_ACCEL_SCALE;
+	accel[1] = ((float)iaccel[1])/MPU6050_ACCEL_SCALE;
+	accel[2] = ((float)iaccel[2])/MPU6050_ACCEL_SCALE;
+
+	return 1;
 }
 
 VarioCalculator & VarioCalculator::getInstance()

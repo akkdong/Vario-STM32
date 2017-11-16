@@ -18,6 +18,7 @@ protected:
 	
 public:
 	int							begin(float sigmaP, float sigmaA, int calibrateGyro = true);
+	int							beginCalibration();
 	void						end();
 	
 	int							available();
@@ -32,6 +33,8 @@ public:
 	float						getVelocity();
 	float						getAcceleration();	
 	uint32_t					getTimestamp();
+	
+	int							getRawAcceleration(float * accel);
 	
 	void						calibrateAltitude(float altitudeRef);
 

@@ -66,7 +66,7 @@
 class AccelCalibrator
 {
 public:
-	AccelCalibrator(IMUModule mod);
+	AccelCalibrator(IMUModule & mod);
 
 	void init(void);
 
@@ -111,7 +111,7 @@ public:
 	boolean calibrated;
 	
 	//
-	IMUModule imu;
+	IMUModule & imu;
 };
 
 #endif // __ACCELCALIBRATOR_H__

@@ -624,6 +624,7 @@ void loop()
 
 void processLowBattery()
 {
+	#if 0
 	if (deviceMode != DEVICE_MODE_SHUTDOWN)
 	{
 		if (batVolt.getVoltage() < LOW_BATTERY_THRESHOLD)
@@ -634,6 +635,7 @@ void processLowBattery()
 			changeDeviceMode(DEVICE_MODE_SHUTDOWN);
 		}
 	}
+	#endif
 }
 
 

@@ -6,7 +6,7 @@
 ////////////////////////////////////////////////////////////////////////////////////
 // class AccelCalibrator
 
-AccelCalibrator::AccelCalibrator(IMUModule mod) : imu(mod)
+AccelCalibrator::AccelCalibrator(IMUModule & mod) : imu(mod)
 {
 	/* init vars */
 	for( int i=0; i<ACCEL_CALIBRATOR_ORIENTATION_COUNT; i++ )
