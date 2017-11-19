@@ -13,7 +13,7 @@
 
 class VarioCalculator
 {
-protected:
+public:
 	VarioCalculator();
 	
 public:
@@ -39,7 +39,7 @@ public:
 	void						calibrateAltitude(float altitudeRef);
 
 public:
-	static VarioCalculator &	getInstance();
+//	static VarioCalculator &	getInstance();
 	
 	static void					unlockI2C();
 	static void					timerProc();
@@ -112,7 +112,7 @@ private:
 	uint32_t					t;
 	
 	// altitude calibration
-	float						calibrationDrift;
+	float						altitudeDrift;
 	
 	// covariance matrix
 	float						p11, p12, p21, p22;
@@ -134,7 +134,7 @@ inline float VarioCalculator::getAltitude()
 	{ return p; }
 
 inline float VarioCalculator::getCalibratedAltitude()
-	{ return (p + calibrationDrift); }
+	{ return (p + altitudeDrift); }
 
 inline float VarioCalculator::getVelocity()
 	{ return v; }
@@ -142,8 +142,21 @@ inline float VarioCalculator::getVelocity()
 inline float VarioCalculator::getAcceleration()
 	{ return a; }
 
-inline uint32_t					getTimestamp();
-inline void						calibrateAltitude(float altitudeRef);
+inline uint32_t VarioCalculator::getTimestamp()
+	{ return t; }
+	
+inline void VarioCalculator::calibrateAltitude(float altitudeRef)
+	{ altitudeDrift = altitudeRef - p; }
+
+
+
+//
+//
+//
+
+extern VarioCalculator Vario;
+
+
 
 #endif // __VARIOCALCULATOR_H__
 

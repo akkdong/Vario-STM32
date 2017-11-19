@@ -1,6 +1,8 @@
 // IMUTest.ino
 //
 
+#if TEST_IMU
+
 #include <DefaultSettings.h>
 #include <I2CDevice.h>
 #include <EEPROMDriver.h>
@@ -20,7 +22,7 @@ void dummy()
 }
 
 // set unlock callback function
-UnlockCallback I2CDevice::cbUnlock = dummy;
+unlockCallback I2CDevice::cbUnlock = dummy;
 
 // EEPROMDriver
 EEPROMDriver eeprom(Wire2);
@@ -81,3 +83,99 @@ void loop()
 		Serial.println("");
 	}
 }
+
+#else // test IMUModule
+
+#include <DefaultSettings.h>
+#include <I2CDevice.h>
+#include <EEPROMDriver.h>
+#include <VertVelocity.h>
+#include <IMUModule.h>
+#include <GlobalConfig.h>
+
+//
+// declare I2C instance
+//
+// I2C1 is used by IMU : I2CDevice is proxy interface of I2C1
+// I2C2 is used by EEPROM
+//
+
+HardWire Wire1(1, I2C_FAST_MODE);
+HardWire Wire2(2, I2C_FAST_MODE);
+
+// initialize some static member of I2CDevice(I2C1)
+//
+
+// set wire reference member to I2C1
+HardWire & I2CDevice::Wire = Wire1;
+
+// set unlock callback function
+unlockCallback I2CDevice::cbUnlock = SensorMS5611::unlockI2C;
+
+// declare EEPROMDriver
+EEPROMDriver eeprom(Wire2);
+
+//
+IMUModule imu;
+
+//
+VertVelocity vertVel;
+
+//
+GlobalConfig Config(eeprom, EEPROM_ADDRESS);
+
+
+//
+//
+//
+
+void setup()
+{
+	//
+	Serial.begin();
+	while (! Serial);
+	delay(1000);
+	
+	//
+	Wire1.begin();
+	Wire2.begin();
+	
+	//
+	Config.readAll();
+	
+	//
+	imu.init();
+	
+	for (int i = 0; i < 100; i++)
+	{
+		while (! imu.dataReady());
+		imu.updateData();
+	}
+	
+	// initialize kalman filtered vertical velocity calculator
+	vertVel.init(imu.getAltitude(), 
+				imu.getVelocity(),
+				Config.kalman_sigmaP, // POSITION_MEASURE_STANDARD_DEVIATION,
+				Config.kalman_sigmaA, // ACCELERATION_MEASURE_STANDARD_DEVIATION,
+				millis());
+
+				
+}
+
+void loop()
+{
+	if (imu.dataReady())
+	{
+		//
+		imu.updateData(/* &sensorReporter */);
+
+		//
+		vertVel.update(imu.getAltitude(), imu.getVelocity(), millis());
+
+		//
+		float velocity = vertVel.getVelocity();
+		Serial.println(velocity * 100.0, 2);
+	}		
+}
+
+#endif

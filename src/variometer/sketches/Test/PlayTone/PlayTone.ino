@@ -36,7 +36,7 @@ HardWire Wire1(1, I2C_FAST_MODE);
 HardWire Wire2(2, I2C_FAST_MODE);
 
 HardWire & I2CDevice::Wire = Wire1;
-UnlockCallback I2CDevice::cbUnlock = SensorMS5611::UnlockI2C;
+unlockCallback I2CDevice::cbUnlock = SensorMS5611::UnlockI2C;
 
 EEPROMDriver eeprom(Wire2);
 GlobalConfig Config(eeprom, EEPROM_ADDRESS);

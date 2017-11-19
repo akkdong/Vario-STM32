@@ -39,8 +39,8 @@ public:
 	SensorMPU6050 &		getAccelerometerSensor();
 	
 private:
-	SensorMPU6050 &		mpu6050;
-	SensorMS5611 &		ms5611;
+//	SensorMPU6050 &		mpu6050_;
+//	SensorMS5611 &		ms5611_;
 };
 
 // inline members

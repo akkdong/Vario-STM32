@@ -49,6 +49,11 @@
 #define MS5611_INTERRUPT_START_DELAY (1000)
 
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+SensorMS5611 ms5611;
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // class SensorMS5611
@@ -59,12 +64,14 @@ SensorMS5611::SensorMS5611()
 	deviceReset = false;
 }
 
+#if 0
 SensorMS5611 & SensorMS5611::GetInstance()
 {
 	static SensorMS5611 ms5611;
 	
 	return ms5611;
 }
+#endif
 
 void SensorMS5611::initSensor()
 {
@@ -225,20 +232,23 @@ float SensorMS5611::getAltitude()
 	return alti;
 }
 
-void SensorMS5611::UnlockI2C()
+void SensorMS5611::unlockI2C()
 {
-	SensorMS5611 & THIS = SensorMS5611::GetInstance();
-	
+	ms5611.unlockI2CInternal();
+}
+
+void SensorMS5611::unlockI2CInternal()
+{
 	// check if and interrupt was done between lock and release
-	if( THIS.interruptWait )
+	if( interruptWait )
 	{
 		// the interrupt can't read, do it for it
-		THIS.readStep(); 
-		THIS.interruptWait = false;
+		readStep(); 
+		interruptWait = false;
 		
 		// reset timer
-		THIS.restartTimer();
-	}
+		restartTimer();
+	}	
 }
 
 // the main interrupt function : read at stable frequency
@@ -253,14 +263,17 @@ ISR(TIMER3_COMPA_vect) {
 }
 #endif // ARDUINO_ARCH_AVR
 
-void SensorMS5611::TimerProc()
+void SensorMS5611::timerProc()
 {
-	SensorMS5611 & THIS = SensorMS5611::GetInstance();
-	
+	ms5611.timerProcInternal();
+}
+
+void SensorMS5611::timerProcInternal()
+{
 	// if mutex locked, let the main loop do the job when release 
 	if( I2CDevice::locked )
 	{
-		THIS.interruptWait = true;
+		interruptWait = true;
 	}
 	else
 	{
@@ -268,9 +281,9 @@ void SensorMS5611::TimerProc()
 		//interrupts();
 	
 		// read at stable frequency
-		THIS.readStep();
-		THIS.restartTimer();
-	}
+		readStep();
+		restartTimer();
+	}	
 }
 
 void SensorMS5611::resetCommand()
@@ -367,14 +380,17 @@ void SensorMS5611::startTimer()
 		OCR3A = MS5611_INTERRUPT_COMPARE;
 	#endif
 #elif defined ARDUINO_ARCH_STM32F1
+	#if 1
 	Timer2.pause();
 	Timer2.setMode(MS5611_TIMER_CHANNEL, TIMER_OUTPUT_COMPARE);
 	Timer2.setPrescaleFactor(MS5611_TIMER_PRESCALER);
-	Timer2.setOverflow(MS5611_INTERRUPT_COMPARE);
+//	Timer2.setOverflow(MS5611_INTERRUPT_COMPARE);
 	Timer2.setCompare(MS5611_TIMER_CHANNEL, MS5611_INTERRUPT_COMPARE);
-	Timer2.setCount(0);
-	Timer2.attachInterrupt(MS5611_TIMER_CHANNEL, TimerProc);
+//	Timer2.setCount(0);
+	Timer2.attachInterrupt(MS5611_TIMER_CHANNEL, timerProc);
+	Timer2.refresh();
 	Timer2.resume();
+	#endif
 #else
 	//#error This architecture is not supported!
 #endif

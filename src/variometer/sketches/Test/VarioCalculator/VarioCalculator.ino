@@ -17,7 +17,7 @@ HardWire Wire2(2, I2C_FAST_MODE);
 HardWire & I2CDevice::Wire = Wire1;
 
 // set unlock callback function
-UnlockCallback I2CDevice::cbUnlock = VarioCalculator::unlockI2C;
+unlockCallback I2CDevice::cbUnlock = VarioCalculator::unlockI2C;
 
 //
 EEPROMDriver eeprom(Wire2);
@@ -26,7 +26,8 @@ EEPROMDriver eeprom(Wire2);
 GlobalConfig Config(eeprom, EEPROM_ADDRESS);
 
 //
-VarioCalculator & vario = VarioCalculator::getInstance();
+//VarioCalculator & vario = VarioCalculator::getInstance();
+VarioCalculator Vario;
 
 //
 uint32_t lastTick;
@@ -64,7 +65,7 @@ void setup()
     while (Serial.available() && Serial.read()); // empty buffer again
 
 	//
-	vario.begin(Config.kalman_sigmaP, Config.kalman_sigmaA/*, calibrateGyro = true*/);
+	Vario.begin(Config.kalman_sigmaP, Config.kalman_sigmaA/*, calibrateGyro = true*/);
 	
 	//
 	lastTick = micros();
@@ -77,18 +78,18 @@ void setup()
 void loop()
 {
 	//
-	vario.update();
+	Vario.update();
 	
-	if (vario.available())
+	if (Vario.available())
 	{
-		Serial.print(vario.getVelocity()*100.0);
+		Serial.print(Vario.getVelocity()*100.0);
 		//Serial.print(",");
-		//Serial.print(vario.getPressure());
+		//Serial.print(Vario.getPressure());
 		//Serial.print(",");
-		//Serial.print(vario.getAltitude());
+		//Serial.print(Vario.getAltitude());
 		Serial.println("");
 		
-		vario.flush();
+		Vario.flush();
 		lastTick = millis();
 	}
 }

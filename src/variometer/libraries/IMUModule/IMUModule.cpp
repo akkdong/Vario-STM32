@@ -7,9 +7,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-IMUModule::IMUModule() :
-	mpu6050(SensorMPU6050::GetInstance()),
-	ms5611(SensorMS5611::GetInstance())
+IMUModule::IMUModule() // : mpu6050_(mpu6050), ms5611_(ms5611)
 {
 }
 

@@ -17,7 +17,7 @@
 #define I2CDEV_DEFAULT_READ_TIMEOUT     1000
 
 // unlock callback function
-typedef void (* UnlockCallback)(void);
+typedef void (* unlockCallback)(void);
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -51,7 +51,7 @@ public:
 	static uint16_t 			readTimeout;
 	static volatile boolean		locked;
 	
-	static UnlockCallback		cbUnlock;
+	static unlockCallback		cbUnlock;
 	
 	static HardWire &			Wire;
 };

@@ -36,6 +36,12 @@
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+SensorMPU6050 mpu6050;
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 // class SensorMPU6050
 
 SensorMPU6050::SensorMPU6050()
@@ -44,12 +50,14 @@ SensorMPU6050::SensorMPU6050()
 	gyroData[0] = gyroData[1] = gyroData[2] = 0.0;
 }
 
+#if 0
 SensorMPU6050 & SensorMPU6050::GetInstance()
 {
 	static SensorMPU6050 mpu6050;
 	
 	return mpu6050;
 }
+#endif
 
 void SensorMPU6050::initSensor(boolean calibrateGyro)
 {

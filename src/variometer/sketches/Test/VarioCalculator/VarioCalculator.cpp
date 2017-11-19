@@ -24,7 +24,7 @@
 //  4G ~=  8192 2^13
 //  8G ~=  4096 2^12
 // 16G ~=  2048 2^11
-#define MPU6050_ACCEL_SCALE 		(8192.0)
+#define MPU6050_ACCEL_SCALE 		(8192)
 //  250 degree/s ~= 131 
 //  500 degree/s ~= 65.5
 // 1000 degree/s ~= 32.8
@@ -201,16 +201,19 @@ int VarioCalculator::getRawAcceleration(float * accel)
 	return 1;
 }
 
+/*
 VarioCalculator & VarioCalculator::getInstance()
 {
 	static VarioCalculator vario;
 	
 	return vario;
 }
+*/
 
 void VarioCalculator::unlockI2C()
 {
-	getInstance().unlockI2CInternal();
+	//getInstance().unlockI2CInternal();
+	Vario.unlockI2CInternal();
 }
 
 void VarioCalculator::unlockI2CInternal()
@@ -225,7 +228,8 @@ void VarioCalculator::unlockI2CInternal()
 	
 void VarioCalculator::timerProc()
 {
-	getInstance().timerProcInternal();
+	//getInstance().timerProcInternal();
+	Vario.timerProcInternal();
 }
 
 void VarioCalculator::timerProcInternal()
@@ -366,7 +370,8 @@ void VarioCalculator::convertD2()
 
 void VarioCalculator::updateBaro()
 {
-	#if 0 // timerProc never be called in updateBaro --> so.... no needs mutex lock
+	#if 0 
+	// timerProc never be called in updateBaro --> so.... no needs mutex lock
 	// lock the mutex to get the values
 	uint32_t d1;
 	uint32_t d2;
@@ -468,6 +473,7 @@ int VarioCalculator::initAccel(int calibrateGyro)
 	mpu_set_sensors(INV_XYZ_GYRO|INV_XYZ_ACCEL); 
 	mpu_set_gyro_fsr(MPU6050_GYRO_FSR);
 	mpu_set_accel_fsr(MPU6050_ACCEL_FSR);
+	mpu_set_lpf(10);
 	mpu_configure_fifo(INV_XYZ_GYRO|INV_XYZ_ACCEL);
 
 	// setting dmp
@@ -480,6 +486,22 @@ int VarioCalculator::initAccel(int calibrateGyro)
 	else
 		dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT|/*DMP_FEATURE_SEND_RAW_GYRO|*/DMP_FEATURE_SEND_RAW_ACCEL);
 
+	if (0)
+	{
+		long gyro[3], accel[3];
+		
+		gyro[0] = -100;
+		gyro[1] = 50;
+		gyro[2] = -20;
+		
+		accel[0] = 50;
+		accel[1] = -16;
+		accel[2] = 1919 - 2018;
+		
+		mpu_set_gyro_bias_reg(gyro);
+		mpu_set_accel_bias_6050_reg(accel);
+	}
+	
 	//
 	accumulateAccel = 0.0;
 	accumulateCount= 0;

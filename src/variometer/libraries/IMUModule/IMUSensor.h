@@ -13,11 +13,11 @@
 
 class SensorMS5611
 {
-protected:
+public:
 	SensorMS5611();
 	
 public:
-	static SensorMS5611 & GetInstance(); // singleton instance access
+//	static SensorMS5611 & GetInstance(); // singleton instance access
 	
 public:
 	void				initSensor();
@@ -29,10 +29,15 @@ public:
 	float				getPressure();
 	float				getAltitude();
 	
-	static void			UnlockI2C(); // I2CDevicel call this function when it's unlocked
-	static void			TimerProc(); // Timer interrupt handler call this function when it's called
+	static void			unlockI2C(); // I2CDevicel call this function when it's unlocked
+	static void			timerProc(); // Timer interrupt handler call this function when it's called
 
 protected:
+	//
+	void				unlockI2CInternal();
+	void				timerProcInternal();
+	
+	//
 	void				resetCommand();
 	uint16_t			getPROMValue(int address);
 	void				getDigitalValue(volatile uint32_t& value);
@@ -68,6 +73,7 @@ private:
 };
 
 
+extern SensorMS5611 ms5611;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -75,11 +81,11 @@ private:
 
 class SensorMPU6050
 {
-protected:
+public:
 	SensorMPU6050();
 	
 public:
-	static SensorMPU6050 & GetInstance(); // singleton instance access
+//	static SensorMPU6050 & GetInstance(); // singleton instance access
 	
 public:
 	void				initSensor(boolean calibrateGyro = true);
@@ -117,5 +123,9 @@ inline float * SensorMPU6050::getRawAccel()
 	
 inline float * SensorMPU6050::getRawGyro()
 	{ return gyroData; }
+	
+//
+extern SensorMPU6050 mpu6050;
+
 
 #endif // __IMUSENSOR_H__
