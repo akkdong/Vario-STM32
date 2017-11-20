@@ -1,12 +1,13 @@
 // AccelCalibrator.cpp
 
-#include <AccelCalibrator.h>
+#include "AccelCalibrator.h"
+#include <GlobalConfig.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////
 // class AccelCalibrator
 
-AccelCalibrator::AccelCalibrator(IMUModule & mod) : imu(mod)
+AccelCalibrator::AccelCalibrator() : imu(mpu6050_)
 {
 	/* init vars */
 	for( int i=0; i<ACCEL_CALIBRATOR_ORIENTATION_COUNT; i++ )
@@ -20,14 +21,14 @@ void AccelCalibrator::init(void)
 {
 	/* init the accelerometer without auto calibration */
 	//vertaccel_init(false);
-	imu.initCalibration();
+	imu.beginCalibration();
 
 	/* get the values stored in EEPROM */
-	float* cal = imu.getCalibration();
+	//float* cal = imu.getCalibration();
 	
-	calibration[0] = cal[0];
-	calibration[1] = cal[1];
-	calibration[2] = cal[2];
+	calibration[0] = Config.accel_calData[0];
+	calibration[1] = Config.accel_calData[1];
+	calibration[2] = Config.accel_calData[2];
 }
 
 void AccelCalibrator::reset(void)
@@ -39,20 +40,27 @@ void AccelCalibrator::reset(void)
 	
 	calibrated = false;
 }
+
+void AccelCalibrator::readRawAccel(float * accel)
+{
+	while (! imu.available())
+		imu.update(false);
+	
+	imu.read(accel, 0);
+}
   
 void AccelCalibrator::measure(void)
 {
 	float accel[3];
-	float upVector[3];
-	float va;
+	//float upVector[3];
+	//float va;
 
 	/* empty the FIFO and stabilize the accelerometer */
 	unsigned long currentTime = millis();
 	while( millis() - currentTime < ACCEL_CALIBRATOR_WAIT_DURATION )
 	{
 		//vertaccel_rawReady(accel, upVector, &va);
-		delay(10);
-		imu.rawReady(accel, upVector, &va);
+		readRawAccel(accel);
 	}
 
 	/* starting measures with mean filter */
@@ -64,9 +72,9 @@ void AccelCalibrator::measure(void)
 
 	while( count < ACCEL_CALIBRATOR_FILTER_SIZE )
 	{
-		delay(10);
 		//if( vertaccel_rawReady(accel, upVector, &va) )
-		if (imu.rawReady(accel, upVector, &va))
+		//if (imu.rawReady(accel, upVector, &va))
+		readRawAccel(accel);
 		{
 			measuredAccel[0] += accel[0];
 			measuredAccel[1] += accel[1];
@@ -250,7 +258,14 @@ void AccelCalibrator::calibrate(void)
 	calibration[2] = -calibrationCenter[2];
 
 	//vertaccel_saveCalibration(calibration);
-	imu.saveCalibration(calibration);
+	//imu.setCalibration(calibration);
+	Config.accel_calData[0] = calibration[0];
+	Config.accel_calData[1] = calibration[1];
+	Config.accel_calData[2] = calibration[2];
+	
+	Config.writeCalibrationData();
+	
+	//
 	calibrated = true;
 }
 

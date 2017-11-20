@@ -6,7 +6,7 @@
 
 #include <DefaultSettings.h>
 #include <Arduino.h>
-#include <IMUModule.h>
+#include <MPU6050_.h>
 
 
 #define ACCEL_CALIBRATOR_ORIENTATION_COUNT 			6
@@ -57,7 +57,7 @@
 //
 //
 
-#define USE_ALL_ORIENTATION
+//#define USE_ALL_ORIENTATION
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -66,7 +66,7 @@
 class AccelCalibrator
 {
 public:
-	AccelCalibrator(IMUModule & mod);
+	AccelCalibrator();
 
 	void init(void);
 
@@ -95,6 +95,8 @@ public:
 private:
 	void computeCenter(float* v1, float* v2, float* v3, float radius, float* center);
 	float computeDistanceVariance(float *v, float* center);
+	
+	void readRawAccel(float * accel);
 
 public:
 	/* for one measure */
@@ -111,7 +113,7 @@ public:
 	boolean calibrated;
 	
 	//
-	IMUModule & imu;
+	MPU6050_ & imu;
 };
 
 #endif // __ACCELCALIBRATOR_H__

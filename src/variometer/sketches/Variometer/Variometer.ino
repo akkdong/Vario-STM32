@@ -6,8 +6,6 @@
 #include <I2CDevice.h>
 #include <EEPROMDriver.h>
 #include <GlobalConfig.h>
-#include <IMUModule.h>
-#include <VertVelocity.h>
 #include <NmeaParserEx.h>
 #include <InputKey.h>
 #include <OutputKey.h>
@@ -17,6 +15,7 @@
 #include <ToneGenerator.h>
 #include <ToneFrequency.h>
 #include <TonePlayer.h>
+#include <Variometer.h>
 #include <VarioBeeper.h>
 #include <VarioSentence.h>
 #include <BluetoothMan.h>
@@ -111,7 +110,7 @@ HardWire Wire2(2, I2C_FAST_MODE);
 HardWire & I2CDevice::Wire = Wire1;
 
 // set unlock callback function
-unlockCallback I2CDevice::cbUnlock = SensorMS5611::unlockI2C;
+unlockCallback I2CDevice::cbUnlock = MS5611::unlockI2C;
 
 // declare EEPROMDriver
 EEPROMDriver eeprom(Wire2);
@@ -119,14 +118,8 @@ EEPROMDriver eeprom(Wire2);
 GlobalConfig Config(eeprom, EEPROM_ADDRESS);
 
 //
-// InertialMeasurementUnit Module : measure accelerometer & gyro & do calibration for accelerometer
-//    It internally uses I2CDevice 
-//
 
-IMUModule imu;
-
-//
-VertVelocity vertVel;
+Variometer vario;
 
 
 //
@@ -212,7 +205,7 @@ FuncKeyParser keyParser(keyFunc, cmdStack, tonePlayer);
 //
 //
 
-AccelCalibrator accelCalibrator(imu);
+AccelCalibrator accelCalibrator;
 
 
 
@@ -266,6 +259,7 @@ void changeDeviceMode(int mode)
 	{
 		// clean-up something
 		//
+		vario.end();
 		
 		// turn-off GPS & BT
 		keyPowerGPS.disable();
@@ -360,6 +354,7 @@ void setup_vario()
 	logger.init();
 
 	//
+	#if 0
 	imu.init();
 	
 	for (int i = 0; i < 100; i++)
@@ -374,6 +369,8 @@ void setup_vario()
 				Config.kalman_sigmaP, // POSITION_MEASURE_STANDARD_DEVIATION,
 				Config.kalman_sigmaA, // ACCELERATION_MEASURE_STANDARD_DEVIATION,
 				millis());		
+	#endif
+	vario.begin(Config.kalman_sigmaP, Config.kalman_sigmaA);
 	
 	// turn-on GPS & BT
 	keyPowerGPS.enable();
@@ -392,21 +389,18 @@ void setup_vario()
 
 void loop_vario()
 {
-	if (imu.dataReady())
+	//
+	vario.update();
+	
+	if (vario.available())
 	{
 		//
-		imu.updateData(/* &sensorReporter */);
-
-		//
-		vertVel.update(imu.getAltitude(), imu.getVelocity(), millis());
-
-		//
-		float velocity = vertVel.getVelocity();
+		float velocity = vario.getVelocity();
 		varioBeeper.setVelocity(velocity);
 		Serial.println(velocity * 100.0, 2);
 		
-		float position = vertVel.getCalibratedPosition(); // vertVel.getPosition();
-		logger.update(position);
+		float altitude = vario.getCalibratedAltitude(); // vario.getAltitude();
+		logger.update(altitude);
 		
 		//
 		{
@@ -421,15 +415,17 @@ void loop_vario()
 				return;
 			}
 		}
+		
+		// update vario sentence periodically
+		if (varioNmea.checkInterval())
+			varioNmea.begin(vario.getCalibratedAltitude(), vario.getVelocity(), vario.getTemperature(), batVolt.getVoltage());
+		
+		vario.flush();
 	}	
 	
 	// read & prase gps sentence
 	nmeaParser.update();
 	
-	// update vario sentence periodically
-	if (varioNmea.checkInterval())
-		varioNmea.begin(vertVel.getPosition(), vertVel.getVelocity(), imu.getTemperature(), batVolt.getVoltage());
-
 	// send any prepared sentence to BT
 	btMan.update();	
 	
@@ -446,7 +442,8 @@ void loop_vario()
 	if (varioMode == VARIO_MODE_INIT  && nmeaParser.availableIGC())
 	{
 		// do position calibration
-		vertVel.calibratePosition(nmeaParser.getAltitude());
+		//vertVel.calibratePosition(nmeaParser.getAltitude());
+		vario.calibrateAltitude(nmeaParser.getAltitude());
 		
 		// now ready to fly~~~
 		varioMode = VARIO_MODE_LANDING;
@@ -563,7 +560,7 @@ void loop_calibration()
 	//
 	ledFlasher.update();
 	tonePlayer.update();
-	keyFunc.update();
+	//keyFunc.update();
 	
 	//
 	if (calibMode == CAL_MODE_MEASURE_DELAY)
@@ -579,33 +576,43 @@ void loop_calibration()
 		// get orientation
 		int orient = accelCalibrator.getMeasureOrientation();
 		
-		// push measure
-		boolean measureValid = accelCalibrator.pushMeasure();
-
-		// make corresponding beep
-		if (measureValid)
-			tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 1, KEY_VOLUME);
-		else 
-			tonePlayer.setBeep(LOW_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 1, KEY_VOLUME);	
-		
-		//
-		if( accelCalibrator.canCalibrate() )
+		if (orient != ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION)
 		{
-			// calibrate & save result
-			accelCalibrator.calibrate();
+			// push measure
+			boolean measureValid = accelCalibrator.pushMeasure();
 
-			// play completion melody & confirm
-			calibMode = CAL_MODE_COMPLETION;
+			// make corresponding beep
+			if (measureValid)
+				tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 1, KEY_VOLUME);
+			else 
+				tonePlayer.setBeep(LOW_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 1, KEY_VOLUME);	
 			
-			tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 2, BASE_BEEP_DURATION, 3, KEY_VOLUME);
-			ledFlasher.blink(BTYPE_SHORT_ON_OFF);
-		}
-		else
-		{
 			// go back measure delay
 			calibMode = CAL_MODE_MEASURE_DELAY;
 			// reset delay tick
 			deviceTick = millis();
+		}
+		else
+		{
+			//
+			if( accelCalibrator.canCalibrate() )
+			{
+				// calibrate & save result
+				accelCalibrator.calibrate();
+
+				// play completion melody & confirm
+				calibMode = CAL_MODE_COMPLETION;
+				
+				tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 2, BASE_BEEP_DURATION, 3, KEY_VOLUME);
+				ledFlasher.blink(BTYPE_SHORT_ON_OFF);
+			}
+			else
+			{
+				// go back measure delay
+				calibMode = CAL_MODE_MEASURE_DELAY;
+				// reset delay tick
+				deviceTick = millis();
+			}
 		}
 	}
 	else if (calibMode == CAL_MODE_COMPLETION)
