@@ -570,16 +570,20 @@ void loop_calibration()
 	}
 	else if (calibMode == CAL_MODE_MEASURE)
 	{
+		Serial.println("start measure....");
+		
 		// make measure
 		accelCalibrator.measure();
 		
 		// get orientation
 		int orient = accelCalibrator.getMeasureOrientation();
+		Serial.print("  orientation = "); Serial.println(orient);
 		
 		if (orient != ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION)
 		{
 			// push measure
 			boolean measureValid = accelCalibrator.pushMeasure();
+			Serial.print("  measurement "); Serial.println(measureValid?"valid":"invalid");
 
 			// make corresponding beep
 			if (measureValid)
@@ -591,12 +595,14 @@ void loop_calibration()
 			calibMode = CAL_MODE_MEASURE_DELAY;
 			// reset delay tick
 			deviceTick = millis();
+			Serial.println("wait to next measurement!");
 		}
 		else
 		{
 			//
 			if( accelCalibrator.canCalibrate() )
 			{
+				Serial.println("calibrate!!!");
 				// calibrate & save result
 				accelCalibrator.calibrate();
 
@@ -612,6 +618,7 @@ void loop_calibration()
 				calibMode = CAL_MODE_MEASURE_DELAY;
 				// reset delay tick
 				deviceTick = millis();
+				Serial.println("wait to next measurement!");
 			}
 		}
 	}
@@ -619,6 +626,9 @@ void loop_calibration()
 	{
 		if (millis() - deviceTick > MEASURE_DELAY)
 		{
+			Serial.println("calibrate complete!!!");
+			Serial.println("reset now....");
+			
 			// jobs done. reset now!
 			tonePlayer.setTone(LOW_BEEP_FREQ, KEY_VOLUME);
 			delay(BASE_BEEP_DURATION * 4);
