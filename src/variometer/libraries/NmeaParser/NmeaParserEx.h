@@ -31,8 +31,10 @@ public:
 	void				reset();
 	
 	//
+	#if 0
 	uint32_t			getDate();  	// DDMMYY
 	uint32_t			getTime();		// HHMMSS
+	#endif
 	time_t				getDateTime();
 	float				getLatitude();
 	float				getLongitude();
@@ -65,8 +67,8 @@ private:
 	volatile uint8_t	mParity;
 	
 	//
-	uint32_t			mDate;
-	uint32_t			mTime;
+	//uint32_t			mDate;
+	//uint32_t			mTime;
 	
 	struct tm 			mTmStruct;
 	time_t				mDateTime;
@@ -87,11 +89,13 @@ private:
 // inline functions
 //
 
+#if 0
 inline uint32_t NmeaParserEx::getDate()
 	{ return mDate; }
 	
 inline uint32_t	NmeaParserEx::getTime()
 	{ return mTime; }
+#endif
 	
 inline time_t	NmeaParserEx::getDateTime()
 	{ return mDateTime; }

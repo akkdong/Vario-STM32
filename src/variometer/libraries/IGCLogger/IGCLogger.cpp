@@ -20,7 +20,7 @@
 
 
 const char * nameManufacture = "NRC";
-const char * serialNumber = "STM";
+const char * serialNumber = "XXX";
 const char * tailOfFileName = "01.igc";
 
 const char * logsFolder = "/TrackLogs";
@@ -28,22 +28,22 @@ const char * logsFolder = "/TrackLogs";
 
 // ANRCSTM Variometer & GPS Loggger
 // HFDTExxxx
-// HPPLTPILOT:xxxxxx
-// HPCCLCOMPETITION CLASS:FAI-3 (PG)
-// HPGTYGLIDERTYPE:xxxxx
-// HODTM100GPSDATUM:WGS-84
+// HFPLTPILOT:xxxxxx
+// HFCCLCOMPETITION CLASS:FAI-3 (PG)
+// HFGTYGLIDERTYPE:xxxxx
+// HFDTM100GPSDATUM:WGS-84
 const char * igcHeader[] =
 {
-	"ANRCSTM Variometer & GPS Loggger", 
+	"ANRC Variometer & GPS Loggger v1", 
 	"\r\nHFDTE",
 	NULL,
-	"\r\nHPPLTPILOT:",
+	"\r\nHFPLTPILOT:",
 	NULL,
-	"\r\nHPCCLCOMPETITION CLASS:",
+	"\r\nHFCCLCOMPETITION CLASS:",
 	NULL,
-	"\r\nHPGTYGLIDERTYPE:",
+	"\r\nHFGTYGLIDERTYPE:",
 	NULL,
-	"\r\nHODTM100GPSDATUM:",
+	"\r\nHFDTM100GPSDATUM:",
 	NULL,
 	"\r\n"
 };
@@ -93,6 +93,7 @@ int IGCLogger::init()
 	return true;
 }
 
+#if 0
 int	IGCLogger::begin(uint32_t date)
 {
 	if (IS_SET(LOGGER_INIT_FAILED))
@@ -121,6 +122,7 @@ int	IGCLogger::begin(uint32_t date)
 	
 	return false;
 }
+#endif
 
 int	IGCLogger::begin(time_t date)
 {
@@ -203,6 +205,7 @@ void IGCLogger::reset()
 	varioAltitude 	= 0;
 }
 
+#if 0
 const char * IGCLogger::makeFileName(char * buf, uint32_t date)
 {
 	// name format : YYYY-MM-DD-NRC-STM-nn.igc
@@ -251,17 +254,19 @@ const char * IGCLogger::makeFileName(char * buf, uint32_t date)
 	
 	return NULL;
 }
+#endif
 
 const char * IGCLogger::makeFileName(char * buf, time_t date)
 {
-	// name format : YYYY-MM-DD-NRC-STM-nn.igc
+	// name format : YYYY-MM-DD-NRC-XXX-nn.igc
 	// ...
 	int pos = 0;
 	int i, num;
 	const char * ptr;
 	struct tm * _tm;
 
-	date = date + (Config.vario_timezone * 60 *60); 
+	date = date + (Config.vario_timezone * 60 * 60); 
+	date = date + (Config.vario_timezone * 60 * 60); 
 	_tm = localtime(&date);
 	
 	// year
@@ -308,6 +313,7 @@ const char * IGCLogger::makeFileName(char * buf, time_t date)
 	return NULL;
 }
 
+#if 0
 void IGCLogger::writeHeader(uint32_t date)
 {
 	if(! IS_SET(LOGGER_WORKING))
@@ -322,6 +328,56 @@ void IGCLogger::writeHeader(uint32_t date)
 			{
 				digit.begin(date, 6);
 				
+				while (digit.available())
+					sdFile.write(digit.read());
+			}
+			break;
+		case IGC_HEADER_PILOT	 :
+			if (Config.profile_pilot[0])
+				sdFile.write((const char *)Config.profile_pilot);
+			break;
+		case IGC_HEADER_CLASS	 :
+			break;
+		case IGC_HEADER_GLIDER	 :
+			if (Config.profile_glider[0])
+				sdFile.write((const char *)Config.profile_glider);
+			break;
+		case IGC_HEADER_GPSDATUM :
+			// leave it empty!!
+			break;
+		default 				 :
+			sdFile.write(igcHeader[i]);
+			break;
+		}
+	}
+}
+#endif
+
+void IGCLogger::writeHeader(time_t date)
+{
+	if(! IS_SET(LOGGER_WORKING))
+		return;
+
+	//
+	for (int i = 0; i < sizeof(igcHeader) / sizeof(igcHeader[0]); i++)
+	{
+		switch (i)
+		{
+		case IGC_HEADER_DATE	 :
+			{
+				struct tm * _tm;
+				_tm = localtime(&date);				
+				
+				//  DD : tm_mday -> 1 ~ 31
+				digit.begin(_tm->tm_mday, 2);
+				while (digit.available())
+					sdFile.write(digit.read());
+				// MM : tm_mon -> 0 ~ 11
+				digit.begin(_tm->tm_mon + 1, 2);
+				while (digit.available())
+					sdFile.write(digit.read());
+				// YY : tm_year -> xxxx
+				digit.begin(_tm->tm_year % 100, 2);
 				while (digit.available())
 					sdFile.write(digit.read());
 			}

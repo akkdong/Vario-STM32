@@ -22,7 +22,9 @@ public:
 public:
 	int					init();
 	
+	#if 0
 	int					begin(uint32_t date); // date = DDMMYY
+	#endif
 	int					begin(time_t date); // date = seconds since 1900
 	void				end();
 	
@@ -36,9 +38,14 @@ public:
 private:
 	void				reset();
 	
+	#if 0
 	const char *		makeFileName(char * buf, uint32_t date);
+	#endif
 	const char *		makeFileName(char * buf, time_t date);
+	#if 0
 	void				writeHeader(uint32_t date);
+	#endif
+	void				writeHeader(time_t date);
 
 private:
 	SdFat				sdCard;

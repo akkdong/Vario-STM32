@@ -316,8 +316,9 @@ void NmeaParserEx::reset()
 {
 	mHead = mTail = mWrite = 0;
 	
-	mDate = 0;
-	mTime = 0;
+	mDateTime = 0;
+	//mDate = 0;
+	//mTime = 0;
 	mLatitude = 0.0;
 	mLongitude = 0.0;	
 	mSpeed = 0;
@@ -381,7 +382,7 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 		case 8 : // Date of fix  (DDMMYY)
 			dateStr2TmStruct(&mTmStruct, &mBuffer[startPos]);
 			mDateTime = mktime(&mTmStruct);
-			mDate = strToNum(startPos);
+			//mDate = strToNum(startPos);
 			break;
 		}
 	}
@@ -403,7 +404,7 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			}
 			
 			// save current time
-			mTime = strToNum(startPos);
+			//mTime = strToNum(startPos);
 			break;
 		case 1 : // Latitude (DDMM.mmm)
 			// update IGC sentence if it's unlocked

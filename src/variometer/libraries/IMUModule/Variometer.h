@@ -27,6 +27,7 @@ public:
 	
 	float				getPressure();
 	float				getTemperature();
+	float				getAltitude2();
 	float				getAltitude();
 	float				getCalibratedAltitude();
 	float				getVelocity();
@@ -66,11 +67,16 @@ inline float Variometer::getPressure()
 inline float Variometer::getTemperature()
 	{ return baro.getTemperature(); }
 
-inline float Variometer::getAltitude()
+inline float Variometer::getAltitude2()
 	{ return p; }
 
+inline float Variometer::getAltitude()
+//	{ return p; }
+	{ return MS5611::getAltitude(baro.getPressure()); }
+
 inline float Variometer::getCalibratedAltitude()
-	{ return (p + altitudeDrift); }
+//	{ return (p + altitudeDrift); }
+	{ return (getAltitude() + altitudeDrift); }
 
 inline float Variometer::getVelocity()
 	{ return v; }
@@ -82,7 +88,7 @@ inline uint32_t Variometer::getTimestamp()
 	{ return t; }
 
 inline void Variometer::calibrateAltitude(float altitudeRef)
-	{ altitudeDrift = altitudeRef - p; }
+	{ altitudeDrift = altitudeRef - getAltitude(); }
 
 
 #endif // __VARIOMETER_H__

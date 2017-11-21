@@ -94,6 +94,48 @@ uint32_t deviceTick;	// global tick-count
 void (* loop_main)(void) = 0;
 
 //
+//
+//
+
+static Tone melodyVarioReady[] =
+{
+	{ 262, 1000 / 4 }, 
+	{ 196, 1000 / 8 }, 
+	{ 196, 1000 / 8 }, 
+	{ 220, 1000 / 4 }, 
+	{ 196, 1000 / 4 }, 
+	{   0, 1000 / 4 }, 
+	{ 247, 1000 / 4 }, 
+	{ 262, 1000 / 4 },
+	{   0, 1000 / 8 }, 
+};
+static Tone melodyTakeOff[] =
+{
+	{ 262, 1000 / 4 }, 
+	{ 196, 1000 / 8 }, 
+	{ 196, 1000 / 8 }, 
+	{ 220, 1000 / 4 }, 
+	{ 196, 1000 / 4 }, 
+	{   0, 1000 / 4 }, 
+	{ 247, 1000 / 4 }, 
+	{ 262, 1000 / 4 },
+	{   0, 1000 / 8 }, 
+};
+
+static Tone melodyLanding[] =
+{
+	{ 262, 1000 / 4 }, 
+	{ 196, 1000 / 8 }, 
+	{ 196, 1000 / 8 }, 
+	{ 220, 1000 / 4 }, 
+	{ 196, 1000 / 4 }, 
+	{   0, 1000 / 4 }, 
+	{ 247, 1000 / 4 }, 
+	{ 262, 1000 / 4 },
+	{   0, 1000 / 8 }, 
+};
+
+//
 // declare I2C instance
 //
 // I2C1 is used by IMU : I2CDevice is proxy interface of I2C1
@@ -397,7 +439,7 @@ void loop_vario()
 		//
 		float velocity = vario.getVelocity();
 		varioBeeper.setVelocity(velocity);
-		Serial.println(velocity * 100.0, 2);
+		Serial.println(vario.getAltitude());
 		
 		float altitude = vario.getCalibratedAltitude(); // vario.getAltitude();
 		logger.update(altitude);
@@ -450,8 +492,8 @@ void loop_vario()
 
 		//		
 		ledFlasher.blink(BTYPE_LONG_ON_OFF);
-		// play reday melody~~~
-		//
+		// play ready melody~~~
+		tonePlayer.setMelody(&melodyVarioReady[0], sizeof(melodyVarioReady) / sizeof(melodyVarioReady[0]), 1, PLAY_PREEMPTIVE, KEY_VOLUME);
 	}
 	else if (varioMode == VARIO_MODE_LANDING)
 	{
@@ -462,7 +504,7 @@ void loop_vario()
 			
 			ledFlasher.blink(BTYPE_SHORT_ON_OFF);
 			// play take-off melody
-			// ...
+			tonePlayer.setMelody(&melodyTakeOff[0], sizeof(melodyTakeOff) / sizeof(melodyTakeOff[0]), 1, PLAY_PREEMPTIVE, KEY_VOLUME);
 			
 			// start logging & change mode
 			logger.begin(nmeaParser.getDateTime());
@@ -483,7 +525,7 @@ void loop_vario()
 				//
 				ledFlasher.blink(BTYPE_LONG_ON_OFF);
 				// play landing melody
-				// ...
+				tonePlayer.setMelody(&melodyLanding[0], sizeof(melodyLanding) / sizeof(melodyLanding[0]), 1, PLAY_PREEMPTIVE, KEY_VOLUME);
 				
 				// stop logging & change mode
 				logger.end();

@@ -67,7 +67,7 @@ GlobalConfig::GlobalConfig(EEPROMDriver & driver, unsigned char addr) : eepromDr
 	//
 	vario_sinkThreshold = VARIOMETER_SINKING_THRESHOLD; // -3.0
 	vario_climbThreshold = VARIOMETER_CLIMBING_THRESHOLD; // 0.2
-	vario_sensitivity = VARIOMETER_SENSITIVITY; // 0.15
+	vario_sensitivity = VARIOMETER_SENSITIVITY; // 0.1
 
 //	vario_sentence = VARIOMETER_DEFAULT_NMEA_SENTENCE;
 	vario_timezone = VARIOMETER_TIME_ZONE; // GMT+9
