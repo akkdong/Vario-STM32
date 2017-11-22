@@ -60,6 +60,8 @@ private:
 	// timestamp
 	uint32_t			t_;
 	
+	// barometer altitude
+	float				baroAltitude;
 	// altitude calibration
 	float				altitudeDrift;
 	
@@ -83,8 +85,8 @@ inline float KalmanVario::getAltitude2()
 	{ return z_; }
 
 inline float KalmanVario::getAltitude()
-//	{ return z_; }
-	{ return MS5611::getAltitude(baro.getPressure()); }
+	{ return baroAltitude; }
+//	{ return MS5611::getAltitude(baro.getPressure()); }
 
 inline float KalmanVario::getCalibratedAltitude()
 //	{ return (z_ + altitudeDrift); }

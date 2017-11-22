@@ -79,7 +79,7 @@ int IGCLogger::init()
 	}
 	
 	//
-	#if 0 // files is saved on the root : not support sub-folder
+	#if 1 // files is saved on the root : not support sub-folder
 	if (! sdCard.exists(logsFolder))
 	{
 		SET_STATE(LOGGER_INIT_FAILED);
@@ -87,7 +87,7 @@ int IGCLogger::init()
 		return false;
 	}
 	
-	sd.chdir(logsFolder);
+	sdCard.chdir(logsFolder);
 	#endif
 
 	return true;
@@ -153,10 +153,20 @@ int	IGCLogger::begin(time_t date)
 	return false;
 }
 
-void IGCLogger::end()
+void IGCLogger::end(time_t date)
 {
 	if (! IS_SET(LOGGER_WORKING))
 		return;
+	
+	if (date)
+	{
+		time_t localdate = date + (Config.vario_timezone * 60 * 60); 
+		struct tm * _tm = localtime(&localdate);	
+		
+		sdFile.timestamp(T_WRITE,
+						_tm->tm_year, _tm->tm_mon+1, _tm->tm_mday,
+						_tm->tm_hour, _tm->tm_min, _tm->tm_sec);
+	}
 	
 	UNSET_STATE(LOGGER_WORKING);
 	sdFile.close();
@@ -265,7 +275,6 @@ const char * IGCLogger::makeFileName(char * buf, time_t date)
 	const char * ptr;
 	struct tm * _tm;
 
-	date = date + (Config.vario_timezone * 60 * 60); 
 	date = date + (Config.vario_timezone * 60 * 60); 
 	_tm = localtime(&date);
 	
@@ -380,6 +389,14 @@ void IGCLogger::writeHeader(time_t date)
 				digit.begin(_tm->tm_year % 100, 2);
 				while (digit.available())
 					sdFile.write(digit.read());
+				
+				//
+				time_t localdate = date + (Config.vario_timezone * 60 * 60); 
+				_tm = localtime(&localdate);	
+				
+				sdFile.timestamp(T_ACCESS|T_CREATE|T_WRITE,
+								_tm->tm_year, _tm->tm_mon+1, _tm->tm_mday,
+								_tm->tm_hour, _tm->tm_min, _tm->tm_sec);
 			}
 			break;
 		case IGC_HEADER_PILOT	 :

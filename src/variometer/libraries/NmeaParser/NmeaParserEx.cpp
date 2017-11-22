@@ -387,7 +387,11 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			break;
 		case 8 : // Date of fix  (DDMMYY)
 			dateStr2TmStruct(&mTmStruct, &mBuffer[startPos]);
-			mDateTime = mktime(&mTmStruct);
+			
+			if (IS_SET(RMC_VALID))
+				mDateTime = mktime(&mTmStruct);
+			else
+				mDateTime = 0;
 			//mDate = strToNum(startPos);
 			break;
 		}

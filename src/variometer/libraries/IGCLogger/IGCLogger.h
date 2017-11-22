@@ -26,7 +26,7 @@ public:
 	int					begin(uint32_t date); // date = DDMMYY
 	#endif
 	int					begin(time_t date); // date = seconds since 1900
-	void				end();
+	void				end(time_t date);
 	
 	int					write(uint8_t ch);
 

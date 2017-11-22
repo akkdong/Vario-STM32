@@ -39,6 +39,8 @@ int Variometer::begin(float sigmaP, float sigmaA)
 	a = va;
 	v = 0;
 	t = millis();
+	
+	baroAltitude = p;
 	altitudeDrift = 0.0;
 
 	// init variance
@@ -84,6 +86,10 @@ void Variometer::update()
 		baro.read(&prs, 0);
 		imu.read(&va);
 		
+		//
+		float altitude = MS5611::getAltitude(prs);
+		baroAltitude = baroAltitude * 0.9 + altitude * 0.1;
+		
 		// delta time
 		unsigned long deltaTime = millis() - t;
 		float dt = ((float)deltaTime)/1000.0;
@@ -121,7 +127,7 @@ void Variometer::update()
 		s = p11 + varp;
 		k11 = p11/s;
 		k12 = p12/s;
-		y = MS5611::getAltitude(prs) - p;
+		y = altitude - p;
 
 		// update
 		p += k11 * y;

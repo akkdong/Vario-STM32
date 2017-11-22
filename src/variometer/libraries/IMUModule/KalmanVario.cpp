@@ -56,6 +56,7 @@ int KalmanVario::begin(float zVariance, float zAccelVariance, float zAccelBiasVa
 	Pav_ = 0.0;
 	Paa_ = 100000.0f;	
 	
+	baroAltitude = z_;
 	altitudeDrift = 0.0;
 	
 	//
@@ -92,22 +93,13 @@ void KalmanVario::update()
 		baro.read(&prs, 0);
 		imu.read(&va);
 		
-		#if 0
-        // CJMCU-117 board is placed upside down in the case (when speaker is pointing up). We arbitrarily decide that 
-		// the CJMCU-117 board silkscreen +X points "forward" or "north"  (in our case, the side with the power switch), 
-		// silkscreen +Y points "right" or "east", and silkscreen +Z points down. This is the North-East-Down (NED) 
-		// right-handed coordinate frame used in our AHRS algorithm implementation.
-		// The required mapping from sensor samples to NED frame for our specific board orientation is : 
-		// gxned = gx, gyned = gy, gzned = gz (clockwise rotations about the axis must result in +ve readings on the axis)
-		// axned = -ax, ayned = -ay, azned = -az (when the axis points down, axis reading must be +ve)
-		// The AHRS algorithm expects rotation rates in radians/second		
-		imu_MahonyAHRSupdateIMU(imuTimeDeltaSecs, gyro[0]*DEG_TO_RAD, gyro[1]*DEG_TO_RAD, gyro[2]*DEG_TO_RAD, -accel[0], -accel[1], -accel[2]);
+		// just test : remove vertical velocity factor
+		va = 0;
 		
-		float gravityCompensatedAccel = imu_GravityCompensatedAccel(-accel[0], -accel[1], -accel[2], q0, q1, q2, q3);
-		zAccelAccumulator += gravityCompensatedAccel; // one earth-z acceleration value computed every 5mS, accumulate
-		#endif
-		
-		
+		//
+		float altitude = MS5611::getAltitude(prs);
+		baroAltitude = baroAltitude * 0.9 + altitude * 0.1;
+
 		// delta time
 		unsigned long deltaTime = millis() - t_;
 		float dt = ((float)deltaTime)/1000.0;
@@ -162,7 +154,7 @@ void KalmanVario::update()
 		Paa_ += zAccelBiasVariance_;
 
 		// Error
-		float innov = MS5611::getAltitude(prs) - z_; 
+		float innov = altitude - z_; 
 		float sInv = 1.0f / (Pzz_ + zVariance_);  
 
 		// Kalman gains

@@ -319,7 +319,7 @@ void changeDeviceMode(int mode)
 		
 		//
 		if (logger.isLogging())
-			logger.end();		
+			logger.end(nmeaParser.getDateTime());		
 	}
 	
 	//
@@ -460,10 +460,11 @@ void loop_vario()
 		//
 		float velocity = vario.getVelocity();
 		varioBeeper.setVelocity(velocity);
-		Serial.println(vario.getAltitude());
 		
 		float altitude = vario.getAltitude(); // getCalibratedAltitude or getAltitude
 		logger.update(altitude);
+
+		Serial.print(vario.getAltitude()); Serial.print(", "); Serial.println(vario.getAltitude2());
 		
 		//
 		{
@@ -549,7 +550,7 @@ void loop_vario()
 				tonePlayer.setMelody(&melodyLanding[0], sizeof(melodyLanding) / sizeof(melodyLanding[0]), 1, PLAY_PREEMPTIVE, KEY_VOLUME);
 				
 				// stop logging & change mode
-				logger.end();
+				logger.end(nmeaParser.getDateTime());
 			}
 		}
 		else
@@ -716,7 +717,7 @@ void setup_shutdown()
 
 	//
 	if (logger.isLogging())
-		logger.end();
+		logger.end(nmeaParser.getDateTime());
 	
 	//
 	deviceTick = millis();
@@ -766,7 +767,7 @@ void processShutdownInterrupt()
 		// shutdown interrupt trigged by LTC2950
 		// clean-up & wait power-off(LTC2750 will turn off power)
 		if (logger.isLogging())
-			logger.end();
+			logger.end(nmeaParser.getDateTime());
 		
 		// beep~
 		//tonePlayer.setBeep(420, 0, 0, KEY_VOLUME);

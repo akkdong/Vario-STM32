@@ -45,6 +45,8 @@ private:
 	float				p, v, a;
 	uint32_t			t;
 	
+	// barometer altitude
+	float				baroAltitude;
 	// altitude calibration
 	float				altitudeDrift;
 	
@@ -71,8 +73,8 @@ inline float Variometer::getAltitude2()
 	{ return p; }
 
 inline float Variometer::getAltitude()
-//	{ return p; }
-	{ return MS5611::getAltitude(baro.getPressure()); }
+	{ return baroAltitude; }
+//	{ return MS5611::getAltitude(baro.getPressure()); }
 
 inline float Variometer::getCalibratedAltitude()
 //	{ return (p + altitudeDrift); }

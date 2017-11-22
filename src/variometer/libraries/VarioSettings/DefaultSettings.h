@@ -175,7 +175,7 @@
 
 #define MAX_IGC_SENTENCE						(37)	// B-sentence max size : include null termination
 														// ex: B1602405407121N00249342WA0028000421 CR LF
-														//     BHHMMSSDDMMmmmNDDDMMmmmWAPPPPPGGGGGCL
+														//     BHHMMSSDDMMmmmNDDDMMmmmWAGGGGGPPPPPCL
 														//                   S        EV          RF
 
 #define IGC_OFFSET_START						(0)
@@ -185,8 +185,8 @@
 #define IGC_OFFSET_LONGITUDE					(15)
 #define IGC_OFFSET_LONGITUDE_					(23)
 #define IGC_OFFSET_VALIDITY						(24)
-#define IGC_OFFSET_PRESS_ALT					(25)
-#define IGC_OFFSET_GPS_ALT						(30)
+#define IGC_OFFSET_GPS_ALT						(25)
+#define IGC_OFFSET_PRESS_ALT					(30)
 #define IGC_OFFSET_RETURN						(35)
 #define IGC_OFFSET_NEWLINE						(36)
 #define IGC_OFFSET_TERMINATE					(37)
