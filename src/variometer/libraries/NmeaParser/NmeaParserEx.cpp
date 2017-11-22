@@ -251,11 +251,17 @@ void NmeaParserEx::update()
 						mIGCNext = 0;
 					}
 					
+					// unset parse state
+					UNSET_STATE(PARSE_GGA|PARSE_RMC);
+					
 					// the logger(readIGC) does not unlock state while the parser does parsing.
-					// so the parse must unlocked it
+					// so the parser must unlocked it
 					if (IS_SET(IGC_LOCKED) && mIGCSize == mIGCNext)
 					{
 						UNSET_STATE(IGC_LOCKED);
+						
+						mIGCSize = 0;
+						mIGCNext = 0;
 					}
 				}
 			}			

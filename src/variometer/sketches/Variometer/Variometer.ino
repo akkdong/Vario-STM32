@@ -1,6 +1,8 @@
 // Variometer.ino
 //
 
+#define USE_KALMANVARIO	1
+
 #include <DefaultSettings.h>
 #include <SerialEx.h>
 #include <I2CDevice.h>
@@ -15,7 +17,11 @@
 #include <ToneGenerator.h>
 #include <ToneFrequency.h>
 #include <TonePlayer.h>
+#if USE_KALMANVARIO
+#include <KalmanVario.h>
+#else
 #include <Variometer.h>
+#endif // USE_KALMANVARIO
 #include <VarioBeeper.h>
 #include <VarioSentence.h>
 #include <BluetoothMan.h>
@@ -161,7 +167,11 @@ GlobalConfig Config(eeprom, EEPROM_ADDRESS);
 
 //
 
+#if USE_KALMANVARIO
+KalmanVario vario;
+#else
 Variometer vario;
+#endif // USE_KALMANVARIO
 
 
 //
@@ -412,7 +422,18 @@ void setup_vario()
 				Config.kalman_sigmaA, // ACCELERATION_MEASURE_STANDARD_DEVIATION,
 				millis());		
 	#endif
+	
+	#if USE_KALMANVARIO
+	
+	// Kalman filter configuration
+	#define KF_ZMEAS_VARIANCE       400.0f
+	#define KF_ZACCEL_VARIANCE      1000.0f
+	#define KF_ACCELBIAS_VARIANCE   1.0f	
+	
+	vario.begin(KF_ZMEAS_VARIANCE, KF_ZACCEL_VARIANCE, KF_ACCELBIAS_VARIANCE);
+	#else
 	vario.begin(Config.kalman_sigmaP, Config.kalman_sigmaA);
+	#endif // USE_KALMANVARIO
 	
 	// turn-on GPS & BT
 	keyPowerGPS.enable();
@@ -441,7 +462,7 @@ void loop_vario()
 		varioBeeper.setVelocity(velocity);
 		Serial.println(vario.getAltitude());
 		
-		float altitude = vario.getCalibratedAltitude(); // vario.getAltitude();
+		float altitude = vario.getAltitude(); // getCalibratedAltitude or getAltitude
 		logger.update(altitude);
 		
 		//
@@ -460,7 +481,7 @@ void loop_vario()
 		
 		// update vario sentence periodically
 		if (varioNmea.checkInterval())
-			varioNmea.begin(vario.getCalibratedAltitude(), vario.getVelocity(), vario.getTemperature(), batVolt.getVoltage());
+			varioNmea.begin(altitude/*vario.getCalibratedAltitude()*/, vario.getVelocity(), vario.getTemperature(), batVolt.getVoltage());
 		
 		vario.flush();
 	}	

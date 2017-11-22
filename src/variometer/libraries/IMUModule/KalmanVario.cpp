@@ -17,6 +17,8 @@ int KalmanVario::begin(float zVariance, float zAccelVariance, float zAccelBiasVa
 	imu.begin();
 	baro.begin();
 	
+	imu.calibateGyro();
+	
 	// read dummy data 10 times
 	// it may be stabilize data...
 	float prs, va;

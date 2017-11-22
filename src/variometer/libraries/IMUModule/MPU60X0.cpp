@@ -157,7 +157,11 @@ int MPU60X0::read(float * accel, float * gyro)
 }
 
 void MPU60X0::calibateGyro()
-{
+{	
+	#define GYRO_MAX_EXPECTED_OFFSET		16
+	#define GYRO_NUM_CALIB_SAMPLES			50
+	#define ABS(x)                	 		((x) < 0 ? -(x) : (x))
+	
 	float gyro[3], sum[3] = {0, 0, 0};
 	int count = 0;
 	
@@ -169,6 +173,14 @@ void MPU60X0::calibateGyro()
 		{
 			mpu60x0_.read(0, gyro);
 			
+			if ((ABS(gyro[0]) > GYRO_MAX_EXPECTED_OFFSET) || 
+				(ABS(gyro[1]) > GYRO_MAX_EXPECTED_OFFSET) || 
+				(ABS(gyro[2]) > GYRO_MAX_EXPECTED_OFFSET))
+			{
+				count = 0;
+				break;
+			}
+			
 			sum[0] += gyro[0];
 			sum[1] += gyro[1];
 			sum[2] += gyro[2];
@@ -176,10 +188,13 @@ void MPU60X0::calibateGyro()
 			count += 1;
 		}
 		
-	} while (count < 50);
+	} while (count < GYRO_NUM_CALIB_SAMPLES);
 	
 	//
-	gyro_calData[0] = -(sum[0] / count);
-	gyro_calData[1] = -(sum[1] / count);
-	gyro_calData[2] = -(sum[2] / count);
+	if (count)
+	{
+		gyro_calData[0] = -(sum[0] / count);
+		gyro_calData[1] = -(sum[1] / count);
+		gyro_calData[2] = -(sum[2] / count);
+	}
 }

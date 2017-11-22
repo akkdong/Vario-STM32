@@ -81,8 +81,8 @@ private:
 	
 	// IGC sentence
 	char				mIGCSentence[MAX_IGC_SENTENCE];
-	int					mIGCNext;	// next = 0 ~ MAX_XXX -1 -> available
-	int					mIGCSize;	// size = 0 -> empty, size = MAX_xx -> valid
+	volatile int		mIGCNext;	// next = 0 ~ MAX_XXX -1 -> available
+	volatile int		mIGCSize;	// size = 0 -> empty, size = MAX_xx -> valid
 };
 
 
