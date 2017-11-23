@@ -78,7 +78,7 @@ public:
 	void			update();
 	
 	// synchronous function
-	void			beep(uint32_t freq, uint32_t duration, int count = 1);
+	void			beep(uint32_t freq, uint32_t duration, int count = 1, int volume = -1);
 
 private:
 	int				playCheck();

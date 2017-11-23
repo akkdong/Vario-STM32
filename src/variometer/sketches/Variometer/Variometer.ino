@@ -30,8 +30,7 @@
 #include <CommandParser.h>
 #include <SensorReporter.h>
 #include <AccelCalibrator.h>
-
-#include <libmaple\nvic.h>
+#include <UsbMassStorage.h>
 
 
 enum _DeviceMode
@@ -377,6 +376,13 @@ void loop()
 	// main loop for each mode
 	loop_main();
 
+	// beep beep beep!
+	tonePlayer.update();	
+	// start voltage measurement periodically
+	batVolt.update();
+	// MCU State : LED Blinking
+	ledFlasher.update();
+	
 	
 	//
 	// common functions
@@ -492,16 +498,7 @@ void loop_vario()
 	
 	// send any prepared sentence to BT
 	btMan.update();	
-	
-	// beep beep beep!
-	tonePlayer.update();
-	
-	// start voltage measurement periodically
-	batVolt.update();
-	
-	// MCU State : LED Blinking
-	ledFlasher.update();
-	
+
 	// IGC setence is available when it received a valid GGA. -> altitude is valid
 	if (varioMode == VARIO_MODE_INIT  && nmeaParser.availableIGC())
 	{
@@ -581,17 +578,131 @@ void loop_vario()
 //
 //
 
+class Sd2CardEx : public SdSpiCard
+{
+public:
+	Sd2CardEx() {
+		m_spi.setPort(1);
+	}
+	Sd2CardEx(uint8_t spiPort) {
+		m_spi.setPort(spiPort);
+	}
+
+	/** Initialize the SD card.
+	* \param[in] csPin SD chip select pin.
+	* \param[in] settings SPI speed, mode, and bit order.
+	* \return true for success else false.
+	*/
+	bool begin(uint8_t csPin = SS, SPISettings settings = SD_SCK_MHZ(50)) {
+		return SdSpiCard::begin(&m_spi, csPin, settings);
+	}
+	
+private:
+	SdFatSpiDriver m_spi;
+};
+
+Sd2CardEx SdCard(SDCARD_CHANNEL);
+
+uint32_t MAL_massBlockCount[2];
+uint32_t MAL_massBlockSize[2];
+
 void setup_ums()
 {
 	//
-	ledFlasher.blink(BTYPE_BLINK_2_LONG_ON);
+	Serial.end();
+	
+	//
+	SdCard.begin(SDCARD_CS, SPI_QUARTER_SPEED);
+	
+	uint32_t numberOfBlocks = SdCard.cardSize();
+	//SerialDbg.print("Number of Blocks = "); SerialDbg.println(numberOfBlocks);
+	
+	if (numberOfBlocks)
+	{
+		MAL_massBlockCount[0] = numberOfBlocks;
+		MAL_massBlockCount[1] = 0;
+		MAL_massBlockSize[0] = 512;
+		MAL_massBlockSize[1] = 0;
+		//SerialDbg.print("cardSize = "); SerialDbg.println(numberOfBlocks * 512);
+
+		//
+		//SerialDbg.println("USBMassStorage.begin");
+		USBMassStorage.begin();	
+		
+		//
+		ledFlasher.blink(BTYPE_BLINK_2_LONG_ON);
+		//
+		tonePlayer.setBeep(NOTE_G4, 500, 300, 2, KEY_VOLUME);
+	}
+	else
+	{
+		// synchronous beep!!
+		tonePlayer.beep(NOTE_C3, 500, 3, KEY_VOLUME);
+		// return to vario mode
+		changeDeviceMode(DEVICE_MODE_VARIO);
+	}
 }
 
 void loop_ums()
 {
+	//
+	USBMassStorage.loop();
+	
+	//
 	ledFlasher.update();
 	tonePlayer.update();
+	
+	//
+	#if 0
+	if (keyUSB.read() != INPUT_ACTIVE)
+	{
+		// synchronous beep!!
+		tonePlayer.beep(NOTE_C4, 400, 2, KEY_VOLUME);
+		// shutdown now
+		changeDeviceMode(DEVICE_MODE_SHUTDOWN);
+	}
+	#endif
 }
+
+
+extern "C" uint16_t usb_mass_mal_init(uint8_t lun)
+{
+	return 0;
+}
+
+extern "C" uint16_t usb_mass_mal_get_status(uint8_t lun)
+{
+	return SdCard.errorCode();
+}
+
+extern "C" uint16_t usb_mass_mal_write_memory(uint8_t lun, uint32_t memoryOffset, uint8_t *writebuff, uint16_t transferLength)
+{
+	uint32_t block = memoryOffset / 512;
+
+	if (lun != 0)
+		return USB_MASS_MAL_FAIL;
+
+	if (SdCard.writeBlock(block, writebuff))
+		return USB_MASS_MAL_SUCCESS;
+
+	return USB_MASS_MAL_FAIL;
+}
+
+extern "C" uint16_t usb_mass_mal_read_memory(uint8_t lun, uint32_t memoryOffset, uint8_t *readbuff, uint16_t transferLength)
+{
+	if (lun != 0)
+		return USB_MASS_MAL_FAIL;
+
+	if (SdCard.readBlock(memoryOffset / 512, readbuff))
+		return USB_MASS_MAL_SUCCESS;
+
+	return USB_MASS_MAL_FAIL;
+}
+
+extern "C" void usb_mass_mal_format()
+{
+}
+	
 
 //
 //
@@ -621,11 +732,6 @@ void setup_calibration()
 
 void loop_calibration()
 {
-	//
-	ledFlasher.update();
-	tonePlayer.update();
-	//keyFunc.update();
-	
 	//
 	if (calibMode == CAL_MODE_MEASURE_DELAY)
 	{
@@ -811,16 +917,18 @@ void processCommand()
 				case PARAM_SW_CALIBRATION  :
 					changeDeviceMode(DEVICE_MODE_CALIBRATION);
 					return;
-				#ifdef FEATURE_IGCLOGGING_ENALBE
 				case PARAM_SW_UMS          :
-					if (keyUSB.read() && logger.isInitialized())
+					if (/*keyUSB.read() == INPUT_ACTIVE &&*/ logger.isInitialized())
 					{
 						changeDeviceMode(DEVICE_MODE_UMS);
 						return;
 					}
-					// else cann't change mode : warning beep~~
+					else
+					{
+						// sd-init failed!! : warning beep~~
+						tonePlayer.beep(NOTE_C3, 400, 4, KEY_VOLUME);
+					}
 					break;
-				#endif // FEATURE_IGCLOGGING_ENALBE
 				}
 			}
 			break;

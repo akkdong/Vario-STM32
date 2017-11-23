@@ -78,16 +78,24 @@ int IGCLogger::init()
 		return false;
 	}
 	
-	//
-	#if 1 // files is saved on the root : not support sub-folder
+	// IGC files are saved on the root-folder : not support sub-folder
+	#if 1
 	if (! sdCard.exists(logsFolder))
 	{
-		SET_STATE(LOGGER_INIT_FAILED);
+		if (! sdCard.mkdir(logsFolder))
+		{
+			SET_STATE(LOGGER_INIT_FAILED);
 		
-		return false;
+			return false;
+		}
 	}
 	
-	sdCard.chdir(logsFolder);
+	if (! sdCard.chdir(logsFolder))
+	{
+			SET_STATE(LOGGER_INIT_FAILED);
+		
+			return false;		
+	}
 	#endif
 
 	return true;
