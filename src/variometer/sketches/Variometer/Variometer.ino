@@ -470,7 +470,7 @@ void loop_vario()
 		float altitude = vario.getAltitude(); // getCalibratedAltitude or getAltitude
 		logger.update(altitude);
 
-		Serial.print(vario.getAltitude()); Serial.print(", "); Serial.println(vario.getAltitude2());
+		//Serial.print(vario.getAltitude()); Serial.print(", "); Serial.println(vario.getAltitude2());
 		
 		//
 		{

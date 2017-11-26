@@ -116,7 +116,7 @@
 // Voltage measurement settings
 //
 
-#define ADC_SCALE_FACTOR						(1000.0 / (270.0 + 1000.0))	// voltage divisor : R1(270K), R2(1M)
+#define ADC_SCALE_FACTOR						(1000.0 / (560.0 + 1000.0))	// voltage divisor : R1(560K), R2(1M)
 #define	ADC_LPF_FACTOR							(0.2)
 
 #define ADC_CH									ADC1
