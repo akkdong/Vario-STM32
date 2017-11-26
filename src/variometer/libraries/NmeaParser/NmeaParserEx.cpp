@@ -340,6 +340,14 @@ void NmeaParserEx::reset()
 
 void timeStr2TmStruct(struct tm * _tm, const char * str)
 {
+	// validation
+	for (int i = 0; i < 6; i++)
+	{
+		if (str[i] < '0' || '9' < str[i])
+			return;
+	}
+
+	//
 	_tm->tm_hour = ((str[0] - '0') * 10) + (str[1] - '0');
 	_tm->tm_min  = ((str[2] - '0') * 10) + (str[3] - '0');
 	_tm->tm_sec  = ((str[4] - '0') * 10) + (str[5] - '0');
@@ -347,6 +355,13 @@ void timeStr2TmStruct(struct tm * _tm, const char * str)
 
 void dateStr2TmStruct(struct tm * _tm, const char * str)
 {
+	// validation
+	for (int i = 0; i < 6; i++)
+	{
+		if (str[i] < '0' || '9' < str[i])
+			return;
+	}
+	
 	// nmea date(year) -> since 2000
 	// struct tm(year) -> since 1900
 	//
@@ -390,8 +405,8 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			
 			if (IS_SET(RMC_VALID))
 				mDateTime = mktime(&mTmStruct);
-			else
-				mDateTime = 0;
+			//else
+			//	mDateTime = 0;
 			//mDate = strToNum(startPos);
 			break;
 		}

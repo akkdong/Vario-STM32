@@ -172,7 +172,7 @@ void IGCLogger::end(time_t date)
 		struct tm * _tm = localtime(&localdate);	
 		
 		sdFile.timestamp(T_WRITE,
-						_tm->tm_year, _tm->tm_mon+1, _tm->tm_mday,
+						_tm->tm_year + 1900, _tm->tm_mon+1, _tm->tm_mday,
 						_tm->tm_hour, _tm->tm_min, _tm->tm_sec);
 	}
 	
@@ -403,7 +403,7 @@ void IGCLogger::writeHeader(time_t date)
 				_tm = localtime(&localdate);	
 				
 				sdFile.timestamp(T_ACCESS|T_CREATE|T_WRITE,
-								_tm->tm_year, _tm->tm_mon+1, _tm->tm_mday,
+								_tm->tm_year + 1900, _tm->tm_mon+1, _tm->tm_mday,
 								_tm->tm_hour, _tm->tm_min, _tm->tm_sec);
 			}
 			break;
