@@ -11,6 +11,7 @@ enum INPUT_MODE
 	TRANS_UP,
 	STATE_DOWN,
 	COMP_INPUT,	// composite each input
+	LONGLONG_INPUT,
 };
 
 enum BUTTON_STATE
@@ -91,7 +92,9 @@ void FunctionKey::update()
 			//
 			inputValue = (inputValue << 1);
 			
-			if (millis() - lastTick > FKEY_MIN_SHORTKEY_TIME)
+			if (millis() - lastTick > FKEY_MIN_LONGLONGKEY_TIME)
+				inputValue = 0xFF; 
+			else if (millis() - lastTick > FKEY_MIN_SHORTKEY_TIME)
 				inputValue += 1; // LONG press
 
 			//
@@ -104,7 +107,11 @@ void FunctionKey::update()
 	case TRANS_UP :
 		if (millis() - lastTick > FKEY_MIN_DEBOUNCE_TIME)
 		{
-			inputState = COMP_INPUT;
+			if (inputValue == 0xFF)
+				inputState = LONGLONG_INPUT;
+			else
+				inputState = COMP_INPUT;
+			
 			lastTick = millis();
 		}
 		// else ignore
@@ -124,6 +131,11 @@ void FunctionKey::update()
 				inputState = WAIT_INPUT;
 			}
 		}
+		break;
+		
+	case LONGLONG_INPUT :
+		returnValue = 0xFF;
+		inputState = WAIT_INPUT;
 		break;
 	}
 }

@@ -87,7 +87,7 @@
 
 #define STABLE_SINKING_THRESHOLD				(-0.2)
 #define STABLE_CLIMBING_THRESHOLD				(0.2)
-#define AUTO_SHUTDOWN_THRESHOLD					(600000)	// 10min (600s)
+#define AUTO_SHUTDOWN_THRESHOLD					(10*60*1000)	// 10min (600s)
 
 
 // Low battery threshold
@@ -135,6 +135,7 @@
 #define FKEY_MIN_DEBOUNCE_TIME					(10)	// ms
 #define FKEY_MIN_SHORTKEY_TIME					(300)	// ms
 #define FKEY_MIN_FIRE_TIME						(500)	// ms
+#define FKEY_MIN_LONGLONGKEY_TIME				(2000)	// ms
 
 
 #define FKEY_INPUT_ACTIVE						ACTIVE_LOW	// LOW ACTIVE
@@ -175,7 +176,8 @@
 
 #define MAX_IGC_SENTENCE						(37)	// B-sentence max size : include null termination
 														// ex: B1602405407121N00249342WA0028000421 CR LF
-														//     BHHMMSSDDMMmmmNDDDMMmmmWAGGGGGPPPPPCL
+														//     0123456789012345678901234567890123456789
+														//     BHHMMSSDDMMmmmNDDDMMmmmWAPPPPPGGGGGCL
 														//                   S        EV          RF
 
 #define IGC_OFFSET_START						(0)
@@ -185,8 +187,8 @@
 #define IGC_OFFSET_LONGITUDE					(15)
 #define IGC_OFFSET_LONGITUDE_					(23)
 #define IGC_OFFSET_VALIDITY						(24)
-#define IGC_OFFSET_GPS_ALT						(25)
-#define IGC_OFFSET_PRESS_ALT					(30)
+#define IGC_OFFSET_PRESS_ALT					(25)
+#define IGC_OFFSET_GPS_ALT						(30)
 #define IGC_OFFSET_RETURN						(35)
 #define IGC_OFFSET_NEWLINE						(36)
 #define IGC_OFFSET_TERMINATE					(37)

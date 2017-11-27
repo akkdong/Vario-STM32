@@ -93,8 +93,8 @@ uint8_t deviceMode = DEVICE_MODE_VARIO;
 uint8_t	varioMode; 		// sub-mode of vario-mode
 uint8_t	calibMode;		// sub-mode of calibration-mode
 
-uint32_t varioTick;		// vario tick-count
 uint32_t deviceTick;	// global tick-count
+uint32_t modeTick;		// mode-specific tick-count
 
 void (* loop_main)(void) = 0;
 
@@ -298,6 +298,12 @@ void board_init()
 	ledFlasher.turnOn();
 }
 
+void board_reset()
+{
+	// reset!!
+	nvic_sys_reset();
+	while(1);	
+}
 
 //
 //
@@ -528,15 +534,15 @@ void loop_vario()
 			// start logging & change mode
 			logger.begin(nmeaParser.getDateTime());
 			
-			//
-			varioTick = millis();
+			// set mode-tick
+			modeTick = millis();
 		}
 	}
 	else if (varioMode == VARIO_MODE_FLYING)
 	{
 		if (nmeaParser.getSpeed() < FLIGHT_START_MIN_SPEED)
 		{
-			if ((millis() - varioTick) > FLIGHT_LANDING_THRESHOLD)
+			if ((millis() - modeTick) > FLIGHT_LANDING_THRESHOLD)
 			{
 				//
 				varioMode = VARIO_MODE_LANDING;
@@ -552,8 +558,8 @@ void loop_vario()
 		}
 		else
 		{
-			// reset varioTick
-			varioTick = millis();
+			// reset modeTick
+			modeTick = millis();
 		}
 	}
 	
@@ -633,11 +639,14 @@ void setup_ums()
 		ledFlasher.blink(BTYPE_BLINK_2_LONG_ON);
 		//
 		tonePlayer.setBeep(NOTE_G4, 500, 300, 2, KEY_VOLUME);
+		
+		// set mode-tick
+		modeTick = millis();
 	}
 	else
 	{
 		// synchronous beep!!
-		tonePlayer.beep(NOTE_C3, 500, 3, KEY_VOLUME);
+		tonePlayer.beep(NOTE_C3, 200, 3, KEY_VOLUME);
 		// return to vario mode
 		changeDeviceMode(DEVICE_MODE_VARIO);
 	}
@@ -652,16 +661,18 @@ void loop_ums()
 	ledFlasher.update();
 	tonePlayer.update();
 	
-	//
-	#if 0
-	if (keyUSB.read() != INPUT_ACTIVE)
+	// reset mode-tick when usb is plugged
+	if (keyUSB.read() == INPUT_ACTIVE)
+		modeTick = millis(); 
+
+	// turn-off if it have been unplugged while a threshold
+	if ((millis() - modeTick) > AUTO_SHUTDOWN_THRESHOLD)
 	{
 		// synchronous beep!!
 		tonePlayer.beep(NOTE_C4, 400, 2, KEY_VOLUME);
 		// shutdown now
 		changeDeviceMode(DEVICE_MODE_SHUTDOWN);
 	}
-	#endif
 }
 
 
@@ -743,7 +754,9 @@ void loop_calibration()
 		Serial.println("start measure....");
 		
 		// make measure
+		ledFlasher.turnOn();
 		accelCalibrator.measure();
+		ledFlasher.blink(BTYPE_BLINK_3_LONG_ON);
 		
 		// get orientation
 		int orient = accelCalibrator.getMeasureOrientation();
@@ -804,8 +817,7 @@ void loop_calibration()
 			delay(BASE_BEEP_DURATION * 4);
 			
 			// reset!!
-			nvic_sys_reset();
-			while(1);
+			board_reset();
 		}				
 	}
 }
@@ -926,7 +938,7 @@ void processCommand()
 					else
 					{
 						// sd-init failed!! : warning beep~~
-						tonePlayer.beep(NOTE_C3, 400, 4, KEY_VOLUME);
+						tonePlayer.beep(NOTE_C3, 200, 4, KEY_VOLUME);
 					}
 					break;
 				}
@@ -965,6 +977,8 @@ void processCommand()
 			Config.updateVarioVolume(tonePlayer.getVolume());
 			break;
 		case CMD_DEVICE_RESET 	:
+			// reset!!
+			board_reset();
 			break;
 		case CMD_QUERY_PARAM 	:
 			switch (cmd.param)

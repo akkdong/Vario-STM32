@@ -171,7 +171,7 @@ void IGCLogger::end(time_t date)
 		time_t localdate = date + (Config.vario_timezone * 60 * 60); 
 		struct tm * _tm = localtime(&localdate);	
 		
-		sdFile.timestamp(T_WRITE,
+		sdFile.timestamp(T_ACCESS|T_WRITE,
 						_tm->tm_year + 1900, _tm->tm_mon+1, _tm->tm_mday,
 						_tm->tm_hour, _tm->tm_min, _tm->tm_sec);
 	}

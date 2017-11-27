@@ -84,17 +84,17 @@ void FuncKeyParser::update()
 		{
 		case 0x88 : // count: 4, code: LSSS	// mode change : UMS
 			inputCmd = CMD_MODE_SWITCH;
-			inputParam = PARAM_SW_UMS;
-			inputTick = millis();
-			Player.setMelodyEx(&toneMode[0], (value & 0xE0) >> 4, KEY_VOLUME);
-			//Serial.println("change to UMS mode");
-			break;
-		case 0x64 : // count: 3, code: LSS	// mode change : Calibration
-			inputCmd = CMD_MODE_SWITCH;
 			inputParam = PARAM_SW_CALIBRATION;
 			inputTick = millis();
 			Player.setMelodyEx(&toneMode[0], (value & 0xE0) >> 4, KEY_VOLUME);
 			//Serial.println("change to calibration mode");
+			break;
+		case 0x64 : // count: 3, code: LSS	// mode change : Calibration
+			inputCmd = CMD_MODE_SWITCH;
+			inputParam = PARAM_SW_UMS;
+			inputTick = millis();
+			Player.setMelodyEx(&toneMode[0], (value & 0xE0) >> 4, KEY_VOLUME);
+			//Serial.println("change to UMS mode");
 			break;
 		
 		case 0x87 : // count: 4, code: SLLL	// volume : loud
