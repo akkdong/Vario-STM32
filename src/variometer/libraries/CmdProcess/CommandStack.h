@@ -5,6 +5,7 @@
 #define __COMMANDSTACK_H__
 
 #define MAX_STACKSIZE			(10)
+#define MAX_COMMAND_STRING		(32)
 
 #define CMD_FROM_KEY			(0)
 #define CMD_FROM_BT				(1)
@@ -101,19 +102,34 @@
 /////////////////////////////////////////////////////////////////////////////
 // 
 
+union CommandValue
+{
+	int32_t		sData;
+	uint32_t	uData;
+	float		fData;
+	
+	uint32_t	aData[MAX_COMMAND_STRING/sizeof(uint32_t)];
+	uint8_t		strData[MAX_COMMAND_STRING];
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// 
+
 class Command
 {
 public:
 	Command() 
-		{ from = code = param = value = 0; }
+		{ from = code = param = 0; }
 	Command(uint16_t f, uint16_t c, uint32_t p, uint32_t v = 0)
-		{ from = f; code = c; param = p; value = v; }
-	
+		{ from = f; code = c; param = p; value.sData = v; }
+//	Command(uint16_t f, uint16_t c, uint32_t p, float v = 0)
+//		{ from = f; code = c; param = p; value.fData = v; }	
 public:
 	uint16_t	code;	// command code;
 	uint16_t	from; 	// this command received from BT or USB or KEY
 	uint32_t	param;	// command specific parameter
-	uint32_t	value;	// 
+//	uint32_t	value;	// 
+	CommandValue value;
 };
 
 

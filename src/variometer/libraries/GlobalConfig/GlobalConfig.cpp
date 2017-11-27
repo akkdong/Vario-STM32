@@ -39,18 +39,18 @@ EEPROM_BlockInfo BlockMap[] =
 
 static VarioTone default_Tone[TONE_TABLE_COUNT] =
 {
-	{ -10.0,   200, 200, 100 },
-	{  -3.0,   293, 200, 100 },
-	{  -2.0,   369, 200, 100 },
-	{  -1.0,   440, 200, 100 },
-	{  -0.5,   475, 600, 100 },
-	{   0.0,   493, 600,  50 },
-	{   0.37, 1000, 369,  50 },
-	{   0.92, 1193, 219,  50 },
-	{   1.90, 1324, 151,  50 },
-	{   3.01, 1428, 112,  50 },
-	{   5.35, 1567, 100,  50 },
-	{  10.00, 1687,  83,  50 },
+	{ -10.0,  200, 200, 100 },
+	{  -3.0,  293, 200, 100 },
+	{  -2.0,  369, 200, 100 },
+	{  -1.0,  440, 200, 100 },
+	{   0.0,  400, 600,  50 },
+	{   0.8,  495, 500,  50 },
+	{  1.10,  786, 288,  50 },
+	{  1.63,  925, 219,  50 },
+	{  2.68, 1063, 185,  50 },
+	{  4.99, 1314, 134,  50 },
+	{  7.73, 1570,  91,  50 },
+	{ 10.00, 1800,  78,  50 },
 };
 
 
@@ -161,6 +161,9 @@ void GlobalConfig::readAll()
 		accel_calData[0] = data->accel[0];
 		accel_calData[1] = data->accel[1];
 		accel_calData[2] = data->accel[2];
+		gyro_calData[0] = data->accel[3];
+		gyro_calData[1] = data->accel[4];
+		gyro_calData[2] = data->accel[5];
 	}	
 
 	//
@@ -332,7 +335,9 @@ boolean GlobalConfig::writeCalibrationData()
 	block->accel[0] = accel_calData[0];
 	block->accel[1] = accel_calData[1];
 	block->accel[2] = accel_calData[2];
-	
+	block->accel[3] = gyro_calData[0];
+	block->accel[4] = gyro_calData[1];
+	block->accel[5] = gyro_calData[2];	
 	//Serial.println("write accelerometer calibration data");
 	return writeBlock(BLOCK_ID_CALIBRATION_DATA, (EEPROM_Block *)block);
 }

@@ -2,6 +2,7 @@
 //
 
 #include "NmeaParserEx.h"
+#include <FixedLenDigit.h>
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -502,9 +503,13 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 		case 7 : // Horizontal Dilution of Precision
 			break;
 		case 8 : // Altitude(above measn sea level)
+			// save GPS altitude
+			mAltitude = (uint32_t)(strToFloat(startPos) + 0.5);
+			
 			// update IGC sentence if it's unlocked
 			if (! IS_SET(IGC_LOCKED))
 			{
+				#if 0
 				int i, j;
 				
 				for(i = 0; i < IGC_SIZE_GPS_ALT; i++)
@@ -519,10 +524,14 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 					mIGCSentence[IGC_OFFSET_GPS_ALT+j] = mIGCSentence[IGC_OFFSET_GPS_ALT+i];
 				for ( ; j >= 0; j--)
 					mIGCSentence[IGC_OFFSET_GPS_ALT+j] =  '0';
-			}
-			
-			// save GPS altitude
-			mAltitude = (uint32_t)(strToFloat(startPos) + 0.5);
+				#else
+				FixedLenDigit digit;
+				digit.begin(mAltitude, IGC_SIZE_GPS_ALT);
+				
+				for (int i = 0; i < IGC_SIZE_GPS_ALT /*digit.available()*/; i++)
+					mIGCSentence[IGC_OFFSET_GPS_ALT+i] = digit.read();
+				#endif
+			}			
 			break;
 		case 9 : // Altitude unit (M: meter)
 			break;
@@ -566,10 +575,15 @@ float NmeaParserEx::strToFloat(int startPos)
 long NmeaParserEx::strToNum(int startPos)
 {
 	long value = 0;
+	unsigned char sign = 1;
 	
 	for (int i = startPos; ;)
 	{
-		if ('0' <= mBuffer[i] && mBuffer[i] <= '9')
+		if (i == startPos && mBuffer[i] == '-')
+		{
+			sign = -1;
+		}
+		else if ('0' <= mBuffer[i] && mBuffer[i] <= '9')
 		{
 			value *= 10;
 			value += mBuffer[i] - '0';
@@ -583,5 +597,5 @@ long NmeaParserEx::strToNum(int startPos)
 		i = (i + 1) % MAX_NMEA_PARSER_BUFFER;
 	}
 	
-	return value;
+	return value * sign;
 }
