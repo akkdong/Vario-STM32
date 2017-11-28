@@ -204,6 +204,7 @@ int IGCLogger::write(uint8_t ch)
 void IGCLogger::update(uint32_t varioAlt)
 {
 	varioAltitude = varioAlt;
+	//Serial.println(varioAltitude);
 }
 
 int IGCLogger::isInitialized()

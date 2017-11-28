@@ -77,8 +77,8 @@ void GlobalConfig::reset()
 	vario_sinkThreshold = VARIOMETER_SINKING_THRESHOLD; // -3.0
 	vario_climbThreshold = VARIOMETER_CLIMBING_THRESHOLD; // 0.2
 	vario_sensitivity = VARIOMETER_SENSITIVITY; // 0.1
-
 //	vario_sentence = VARIOMETER_DEFAULT_NMEA_SENTENCE;
+	vario_baroOnly = true;
 	vario_timezone = VARIOMETER_TIME_ZONE; // GMT+9
 	
 	//
@@ -125,9 +125,7 @@ void GlobalConfig::readAll()
 		vario_sinkThreshold = vario->sinkThreshold;
 		vario_climbThreshold = vario->climbThreshold;
 		vario_sensitivity = vario->sensitivity;
-		
-		//vario_sentence = vario->sentence;
-		//vario_timezone = vario->timezone;
+		vario_baroOnly = vario->baroOnly;
 	}
 	// vario-timezone
 	if (readBlock(BLOCK_ID_VARIO_TIMEZONE, block))
@@ -273,9 +271,7 @@ boolean GlobalConfig::writeVarioSettings()
 	block->sinkThreshold = vario_sinkThreshold;
 	block->climbThreshold = vario_climbThreshold;
 	block->sensitivity = vario_sensitivity;
-	
-//	block->sentence = vario_sentence;
-//	block->timezone = vario_timezone;
+	block->baroOnly = vario_baroOnly;
 	
 	//Serial.println("write vario settings");
 	return writeBlock(BLOCK_ID_VARIO_SETTINGS, (EEPROM_Block *)block);

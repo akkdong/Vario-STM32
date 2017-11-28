@@ -73,7 +73,7 @@ enum EEPROM_BlockMask
 	BLOCK_MASK_PROFILE_MODEL 	= 0x5301,
 	BLOCK_MASK_PROFILE_PILOT	= 0x5302,
 	BLOCK_MASK_PROFILE_GLIDER	= 0x5303,
-	BLOCK_MASK_VARIO_SETTINGS	= 0x5405,
+	BLOCK_MASK_VARIO_SETTINGS	= 0x5425,
 	BLOCK_MASK_VARIO_TIMEZONE	= 0x5411,
 	BLOCK_MASK_VARIO_VOLUMNE	= 0x5451,
 	BLOCK_MASK_VARIO_TONE_00	= 0x55E1,
@@ -132,8 +132,7 @@ typedef struct tagBLOCK_VarioSettings
 	float climbThreshold;
 	float sensitivity;
 	
-	//unsigned char sentence;
-	//unsigned char timezone;
+	uint8_t baroOnly;
 
 } BLOCK_VarioSettings;
 
@@ -250,6 +249,7 @@ public:
 	float				vario_climbThreshold;
 	float				vario_sensitivity;
 //	unsigned char		vario_sentence;		// sentence type: LK8 or LXNAV
+	uint8_t				vario_baroOnly;
 
 	// block: vario_timezone
 	char 				vario_timezone; 	// GMT+9

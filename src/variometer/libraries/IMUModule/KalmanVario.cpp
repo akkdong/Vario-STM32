@@ -1,8 +1,11 @@
 // KalmanVario.cpp
 //
 
+#include <GlobalConfig.h>
+
 #include "KalmanVario.h"
 #include "MahonyAHRS.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // class KalmanVario
@@ -93,8 +96,9 @@ void KalmanVario::update()
 		baro.read(&prs, 0);
 		imu.read(&va);
 		
-		// just test : remove vertical velocity factor
-		va = 0;
+		// baroOnly : remove vertical acceleration factor
+		if (Config.vario_baroOnly)
+			va = 0;
 		
 		//
 		float altitude = MS5611::getAltitude(prs);

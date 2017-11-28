@@ -41,7 +41,7 @@
 //   8000 / (1000 / 50) -> update 400 times
 //   10 / 400 -> 0.025
 
-#define TT_HALF_PERIOD		(8000.0)	// 8s
+#define TT_HALF_PERIOD		(5000.0)	// 5s
 #define TT_UPDATE_FREQ		(50.0)
 
 #define TT_UPDATE_DELTA		(VARIOMETER_MAX_CLIMB_VELOCITY / (TT_HALF_PERIOD / (1000.0 / TT_UPDATE_FREQ)))
@@ -109,6 +109,7 @@ void queryParam_profileGlider(Command * cmd);		// PARAM_PROFILE_GLIDER
 void queryParam_varioSinkThreshold(Command * cmd);	// PARAM_VARIO_SINK_THRESHOLD
 void queryParam_varioClimbThreshold(Command * cmd);	// PARAM_VARIO_CLIMB_THRESHOLD
 void queryParam_varioSensitivity(Command * cmd);	// PARAM_VARIO_SENSITIVITY
+void queryParam_varioBaroOnly(Command * cmd);		// PARAM_VARIO_BARO_ONLY
 void queryParam_varioVolumn(Command * cmd);			// PARAM_VARIO_VOLUMN
 void queryParam_varioTone_XX(Command * cmd);		// PARAM_VARIO_TONE_00~11
 void queryParam_timeZone(Command * cmd);			// PARAM_TIME_ZONE
@@ -124,6 +125,7 @@ void updateParam_profileGlider(Command * cmd);		// PARAM_PROFILE_GLIDER
 void updateParam_varioSinkThreshold(Command * cmd);	// PARAM_VARIO_SINK_THRESHOLD
 void updateParam_varioClimbThreshold(Command * cmd);// PARAM_VARIO_CLIMB_THRESHOLD
 void updateParam_varioSensitivity(Command * cmd);	// PARAM_VARIO_SENSITIVITY
+void updateParam_varioBaroOnly(Command * cmd);		// PARAM_VARIO_BARO_ONLY
 void updateParam_varioVolumn(Command * cmd);		// PARAM_VARIO_VOLUMN
 void updateParam_varioTone_XX(Command * cmd);		// PARAM_VARIO_TONE_00~11
 void updateParam_timeZone(Command * cmd);			// PARAM_TIME_ZONE
@@ -143,6 +145,7 @@ PARAM_PROC	queryProc[] =
 	queryParam_varioSinkThreshold,	// PARAM_VARIO_SINK_THRESHOLD
 	queryParam_varioClimbThreshold,	// PARAM_VARIO_CLIMB_THRESHOLD
 	queryParam_varioSensitivity,	// PARAM_VARIO_SENSITIVITY
+	queryParam_varioBaroOnly,		// PARAM_VARIO_BARO_ONLY
 	queryParam_varioVolumn,			// PARAM_VARIO_VOLUMN
 	queryParam_varioTone_XX,		// PARAM_VARIO_TONE_00
 	queryParam_varioTone_XX,		// PARAM_VARIO_TONE_01
@@ -171,6 +174,7 @@ PARAM_PROC updateProc[] =
 	updateParam_varioSinkThreshold,	// PARAM_VARIO_SINK_THRESHOLD
 	updateParam_varioClimbThreshold,// PARAM_VARIO_CLIMB_THRESHOLD
 	updateParam_varioSensitivity,	// PARAM_VARIO_SENSITIVITY
+	updateParam_varioBaroOnly,		// PARAM_VARIO_BARO_ONLY
 	updateParam_varioVolumn,		// PARAM_VARIO_VOLUMN
 	updateParam_varioTone_XX,		// PARAM_VARIO_TONE_00
 	updateParam_varioTone_XX,		// PARAM_VARIO_TONE_01
@@ -620,6 +624,7 @@ void loop_vario()
 		else
 		{
 			varioBeeper.setVelocity(velocity);
+			Serial.println(velocity);
 		}
 
 		//
@@ -640,7 +645,7 @@ void loop_vario()
 		sensorReporter.update(vario.getAccelData(), vario.getGyroData(), vario.getPressure(), vario.getTemperature());
 		
 		//
-		float altitude = vario.getAltitude(); // getCalibratedAltitude or getAltitude
+		float altitude = vario.getAltitude2(); // getCalibratedAltitude or getAltitude
 		logger.update(altitude);
 		//Serial.print(vario.getAltitude()); Serial.print(", "); Serial.println(vario.getAltitude2());
 		
@@ -1281,6 +1286,15 @@ void queryParam_varioSensitivity(Command * cmd)
 	Serial.println(Config.vario_sensitivity);
 }
 
+// PARAM_VARIO_BARO_ONLY
+void queryParam_varioBaroOnly(Command * cmd)
+{
+	Serial.print("%QU,"); 
+	Serial.print(cmd->param); 
+	Serial.print(","); 
+	Serial.println(Config.vario_baroOnly);
+}
+
 // PARAM_VARIO_VOLUMN
 void queryParam_varioVolumn(Command * cmd)
 {	
@@ -1397,6 +1411,11 @@ void updateParam_varioSensitivity(Command * cmd)
 {
 //	float value = toFloat(cmd->valData);
 //	Config.vario_sensitivity = value;
+}
+
+// PARAM_VARIO_BARO_ONLY
+void updateParam_varioBaroOnly(Command * cmd)
+{
 }
 
 // PARAM_VARIO_VOLUMN
