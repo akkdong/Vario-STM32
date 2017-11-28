@@ -60,6 +60,15 @@ static VarioTone default_Tone[TONE_TABLE_COUNT] =
 GlobalConfig::GlobalConfig(EEPROMDriver & driver, unsigned char addr) : eepromDriver(driver), eepromAddr(addr)
 {
 	//
+	reset();
+	
+	//
+	dirty = false;
+}
+
+void GlobalConfig::reset()
+{
+	//
 	memset(profile_model, 0, sizeof(profile_model));
 	memset(profile_pilot, 0, sizeof(profile_pilot));
 	memset(profile_glider, 0, sizeof(profile_glider));
@@ -86,9 +95,10 @@ GlobalConfig::GlobalConfig(EEPROMDriver & driver, unsigned char addr) : eepromDr
 	accel_calData[0] = 0.0; 
 	accel_calData[1] = 0.0; 
 	accel_calData[2] = 0.0; 
-	
-	//
-	dirty = false;
+	// gyro calibration data
+	gyro_calData[0] = 0.0; 
+	gyro_calData[1] = 0.0; 
+	gyro_calData[2] = 0.0; 	
 }
 	
 void GlobalConfig::readAll()

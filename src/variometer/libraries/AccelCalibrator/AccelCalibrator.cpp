@@ -49,7 +49,7 @@ void AccelCalibrator::readRawAccel(float * accel)
 	imu.read(accel, 0);
 }
   
-void AccelCalibrator::measure(void)
+void AccelCalibrator::measure(LEDFlasher * flasher)
 {
 	float accel[3];
 	//float upVector[3];
@@ -57,10 +57,17 @@ void AccelCalibrator::measure(void)
 
 	/* empty the FIFO and stabilize the accelerometer */
 	unsigned long currentTime = millis();
+	
+	if (flasher)
+		flasher->blink(BTYPE_BLINK_3_LONG_OFF);
+	
 	while( millis() - currentTime < ACCEL_CALIBRATOR_WAIT_DURATION )
 	{
 		//vertaccel_rawReady(accel, upVector, &va);
 		readRawAccel(accel);
+		
+		if( flasher)
+			flasher->update();
 	}
 
 	/* starting measures with mean filter */
@@ -70,6 +77,9 @@ void AccelCalibrator::measure(void)
 	measuredAccel[2] = 0.0;
 	float accelSquareMean[3] = {0.0, 0.0, 0.0}; //to compute standard deviation
 
+	if (flasher)
+		flasher->blink(BTYPE_SHORT_ON_OFF);
+	
 	while( count < ACCEL_CALIBRATOR_FILTER_SIZE )
 	{
 		//if( vertaccel_rawReady(accel, upVector, &va) )
@@ -86,7 +96,13 @@ void AccelCalibrator::measure(void)
 
 			count++;
 		}
+		
+		if (flasher)
+			flasher->update();
 	}
+	
+	if (flasher)
+		flasher->blink(BTYPE_BLINK_3_LONG_ON);
 
 	/* compute mean accel */
 	measuredAccel[0] /= (float)count;

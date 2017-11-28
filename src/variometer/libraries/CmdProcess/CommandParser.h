@@ -7,7 +7,7 @@
 #include <Arduino.h>
 #include "CommandStack.h"
 
-#define MAX_FIELD_LEN	(16)
+#define MAX_FIELD_LEN	(32)
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -39,7 +39,9 @@ private:
 	
 	uint16_t		cmdCode;
 	uint32_t		cmdParam;
-	uint32_t		cmdValue;
+	
+	uint8_t			cmdValue[MAX_VALUE_STRING];
+	uint16_t		valueLen;
 };
 
 #endif // __COMMANDPARSER_H__

@@ -13,6 +13,7 @@
 class NmeaParserEx;
 class VarioSentence;
 class SensorReporter;
+class ResponseSender;
 class SerialEx;
 
 
@@ -22,7 +23,7 @@ class SerialEx;
 class BluetoothMan
 {
 public:
-	BluetoothMan(SerialEx & serial, NmeaParserEx & nmea, VarioSentence & vario, SensorReporter & sensor);
+	BluetoothMan(SerialEx & serial, NmeaParserEx & nmea, VarioSentence & vario, SensorReporter & sensor, ResponseSender & resp);
 	
 public:
 	void				update();
@@ -37,6 +38,7 @@ private:
 	void				writeVarioSentence();
 	void				writeGPSSentence();
 	void				writeSensorData();
+	void				writeResponse();
 	
 private:
 	//
@@ -49,6 +51,7 @@ private:
 	NmeaParserEx &		nmeaParser;
 	VarioSentence &		varioSentence;
 	SensorReporter &	sensorReporter;
+	ResponseSender &	responseSender;
 };
 
 #endif // __BLUETOOTHMAN_H__

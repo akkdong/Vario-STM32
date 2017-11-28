@@ -189,13 +189,11 @@ int IGCLogger::write(uint8_t ch)
 		columnCount = 0;
 	
 	// pressure altitude field is replaced by measured pressure altitude : NmeaParser returns null value
-	#if 0
 	if (columnCount == IGC_OFFSET_PRESS_ALT)
 		digit.begin(varioAltitude, IGC_SIZE_PRESS_ALT);
 	
 	if (digit.available())
 		ch = digit.read();
-	#endif
 	
 	sdFile.write(&ch, 1);
 	columnCount += 1;

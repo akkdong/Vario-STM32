@@ -33,6 +33,9 @@ public:
 	float				getVelocity();
 	float				getAcceleration();
 	
+	float *				getAccelData();
+	float *				getGyroData();
+	
 	uint32_t			getTimestamp();
 	
 	void				calibrateAltitude(float altitudeRef);
@@ -97,6 +100,12 @@ inline float KalmanVario::getVelocity()
 
 inline float KalmanVario::getAcceleration()
 	{ return aBias_; }
+	
+inline float * KalmanVario::getAccelData()
+	{ return imu.getRawAccel(); }
+
+inline float * KalmanVario::getGyroData()
+	{ return imu.getRawGyro(); }
 
 inline uint32_t KalmanVario::getTimestamp()
 	{ return t_; }

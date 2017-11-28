@@ -37,7 +37,7 @@ void BatteryVoltage::update()
 	{
 		int adcValue = analogRead(adcPin);
 		float value = ADC_TO_VOLTAGE(adcValue);
-		Serial.print(adcValue); Serial.print(", "); Serial.println(value);
+		//Serial.print(adcValue); Serial.print(", "); Serial.println(value);
 		measVoltage = value * ADC_LPF_FACTOR + measVoltage * (1 - ADC_LPF_FACTOR);
 	}
 }

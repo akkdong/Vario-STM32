@@ -67,7 +67,7 @@ void VarioBeeper::setVelocity(float velocity)
 	switch (beepType)
 	{
 	case BEEP_TYPE_SINKING :
-		if (Config.vario_sinkThreshold + VARIOMETER_SENSITIVITY/*Config.vario_sensitivity*/ < velocity)
+		if (Config.vario_sinkThreshold + Config.vario_sensitivity < velocity)
 			typeChanged = true;
 		break;
 		
@@ -77,7 +77,7 @@ void VarioBeeper::setVelocity(float velocity)
 		break;
 		
 	case BEEP_TYPE_CLIMBING :
-		if (velocity < Config.vario_climbThreshold - VARIOMETER_SENSITIVITY/*Config.vario_sensitivity*/)
+		if (velocity < Config.vario_climbThreshold - Config.vario_sensitivity)
 			typeChanged = true;
 		break;
 	}

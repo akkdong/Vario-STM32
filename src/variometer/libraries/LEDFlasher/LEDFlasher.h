@@ -17,14 +17,7 @@ enum BLINK_TYPE
 	BTYPE_BLINK_3_LONG_ON,		// -_-_-_----_
 	BTYPE_BLINK_2_LONG_OFF,		// -_-_____
 	BTYPE_BLINK_3_LONG_OFF,		// -_-_-_____
-	
-//	BLINK_IMU_FAILED		, // 0 : ---_-_-_-_
-//	BLINK_SD_FAIELD			, // 1 : ---_-_-_
-//	BLINK_ACCEL_MEASURE		, // 2 : ---___
-//	BLINK_MEASURE_VALID		, // 3 : ---_
-//	BLINK_MEASURE_INVALID	, // 4 : -___
-//	BLINK_FIRMWARE_UPDATE	, // 5 : -_
-	
+
 	BLINK_TYPE_COUNT,
 	BLINK_NONE = -1
 };

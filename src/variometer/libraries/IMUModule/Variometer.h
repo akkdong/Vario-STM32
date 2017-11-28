@@ -32,6 +32,10 @@ public:
 	float				getCalibratedAltitude();
 	float				getVelocity();
 	float				getAcceleration();
+
+	float *				getAccelData();
+	float *				getGyroData();
+	
 	
 	uint32_t			getTimestamp();
 	
@@ -85,6 +89,12 @@ inline float Variometer::getVelocity()
 
 inline float Variometer::getAcceleration()
 	{ return a; }
+
+inline float * Variometer::getAccelData()
+	{ return imu.getRawAccel(); }
+
+inline float * Variometer::getGyroData()
+	{ return imu.getRawGyro(); }
 
 inline uint32_t Variometer::getTimestamp()
 	{ return t; }

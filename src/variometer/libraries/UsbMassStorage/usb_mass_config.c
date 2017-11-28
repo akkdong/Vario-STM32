@@ -98,8 +98,8 @@ Device Status:     0x0000
   (Bus Powered)
  */
 
-#define NUM_ENDPTS           3
-DEVICE Device_Table = {
+#define NUM_ENDPTS           4
+DEVICE Device_Table_mass = {
   .Total_Endpoint = NUM_ENDPTS,
   .Total_Configuration = 1
 };

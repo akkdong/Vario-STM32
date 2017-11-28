@@ -74,6 +74,8 @@
 #define VARIOMETER_SINKING_THRESHOLD 			(-3.0)
 #define VARIOMETER_CLIMBING_THRESHOLD 			(0.2)
 #define VARIOMETER_SENSITIVITY 					(0.1)
+#define VARIOMETER_MIN_CLIMB_VELOCITY			(-10)
+#define VARIOMETER_MAX_CLIMB_VELOCITY			(10)
 
 #define VARIOMETER_LXNAV_SENTENCE				(1)
 #define VARIOMETER_LK8_SENTENCE					(2)
@@ -152,14 +154,14 @@
 
 #define SDCARD_CHANNEL							(1)			// SPI1
 #define SDCARD_CS								PIN_SD_CS	// SPI1_CS : PA4, SPI2_CS : PB12
-#define SDCARD_CLOCK							(18)		// 18MHz
+#define SDCARD_CLOCK							(36)		// 18MHz
 
 
 // Flight detection settings
 //
 
 #define FLIGHT_START_MIN_SPEED 					(5.0)		// 5Km/h
-#define FLIGHT_LANDING_THRESHOLD 				(10000)		// 10s
+#define FLIGHT_LANDING_THRESHOLD 				(30000)		// 30s
 
 
 // InvenSense settings

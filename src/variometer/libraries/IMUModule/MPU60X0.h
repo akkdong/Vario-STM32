@@ -72,9 +72,6 @@ private:
 	// raw data
 	float				gyroData[3];
 	float				accelData[3];
-	
-	float				gyro_calData[3];
-	float				accel_calData[3];
 };
 
 // inline members

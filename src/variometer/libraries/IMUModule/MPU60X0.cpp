@@ -39,8 +39,6 @@ void MPU60X0::begin()
 	
 	memset(gyroData, 0, sizeof(gyroData));
 	memset(accelData, 0, sizeof(accelData));
-	
-	memset(gyro_calData, 0, sizeof(gyro_calData));
 }
 
 void MPU60X0::end()
@@ -87,9 +85,9 @@ void MPU60X0::update(int calibrateAccel)
 	
 	if (calibrateAccel)
 	{
-		gyroData[0] += gyro_calData[0];
-		gyroData[1] += gyro_calData[1];
-		gyroData[2] += gyro_calData[2];		
+		gyroData[0] += Config.gyro_calData[0];
+		gyroData[1] += Config.gyro_calData[1];
+		gyroData[2] += Config.gyro_calData[2];		
 		
 		accelData[0] += Config.accel_calData[0];
 		accelData[1] += Config.accel_calData[1];
@@ -159,7 +157,7 @@ int MPU60X0::read(float * accel, float * gyro)
 void MPU60X0::calibateGyro()
 {	
 	#define GYRO_MAX_EXPECTED_OFFSET		16
-	#define GYRO_NUM_CALIB_SAMPLES			50
+	#define GYRO_NUM_CALIB_SAMPLES			100
 	#define ABS(x)                	 		((x) < 0 ? -(x) : (x))
 	
 	float gyro[3], sum[3] = {0, 0, 0};
@@ -193,8 +191,8 @@ void MPU60X0::calibateGyro()
 	//
 	if (count)
 	{
-		gyro_calData[0] = -(sum[0] / count);
-		gyro_calData[1] = -(sum[1] / count);
-		gyro_calData[2] = -(sum[2] / count);
+		Config.gyro_calData[0] = -(sum[0] / count);
+		Config.gyro_calData[1] = -(sum[1] / count);
+		Config.gyro_calData[2] = -(sum[2] / count);
 	}
 }

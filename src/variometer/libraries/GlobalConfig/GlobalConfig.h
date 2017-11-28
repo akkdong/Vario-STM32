@@ -209,6 +209,8 @@ class GlobalConfig
 public:
 	GlobalConfig(EEPROMDriver & driver, unsigned char addr);
 	
+	void				reset();
+	
 	void				readAll();
 	void				writeAll();
 	
@@ -250,17 +252,31 @@ public:
 //	unsigned char		vario_sentence;		// sentence type: LK8 or LXNAV
 
 	// block: vario_timezone
-	unsigned char 		vario_timezone; 	// GMT+9
+	char 				vario_timezone; 	// GMT+9
 	
 	// block: vario_volume
-	char				vario_volume;
+	unsigned char		vario_volume;
 	
 	// vario_tone_table 
 	VarioTone			vario_tone[TONE_TABLE_COUNT];
 	
+	// threshold
+	// int threshold_auto_shutdown;
+	// int threshold_stable_sinking;
+	// int threshold_stable_climibing;	
+	// int threshold_start_flight;
+	// int threshold_landing_timeout;
+	// int threshold_shutdown_holdtime;
+	// int threshold_low_battery;
+	
 	// block: kalman_paramters
 	float				kalman_sigmaP;
 	float				kalman_sigmaA;
+	
+	// kalman-vario-parameters
+	// float variance_zmeas;
+	// float variance_acccel;
+	// float variance_accelbias;
 	
 	// bloack: accelerometer/gyro calibration data
 	float				accel_calData[3]; 

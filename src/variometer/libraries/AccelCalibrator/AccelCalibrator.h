@@ -7,7 +7,7 @@
 #include <DefaultSettings.h>
 #include <Arduino.h>
 #include <MPU6050_.h>
-
+#include <LEDFlasher.h>
 
 #define ACCEL_CALIBRATOR_ORIENTATION_COUNT 			6
 #define ACCEL_CALIBRATOR_ORIENTATION_THRESHOLD 		0.7
@@ -74,7 +74,7 @@ public:
 	void reset(void);
 
 	/* launch accel measure and compute standard deviation */
-	void measure(void);
+	void measure(LEDFlasher * flasher = 0);
 
 	/* return measure orientation */
 	int getMeasureOrientation(void);

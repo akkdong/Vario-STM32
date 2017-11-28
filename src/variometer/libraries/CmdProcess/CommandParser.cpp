@@ -37,7 +37,7 @@ void CommandParser::update()
 			
 			cmdCode = 0;
 			cmdParam = 0;
-			cmdValue = 0;
+			valueLen = 0;
 		}
 		else
 		{
@@ -70,6 +70,8 @@ void CommandParser::update()
 					case CMD_DEVICE_RESET	: // 'RS'
 					case CMD_QUERY_PARAM	: // 'QU'
 					case CMD_UPDATE_PARAM	: // 'UD'
+					case CMD_SAVE_PARAM		: // 'SA'
+					case CMD_RESTORE_PARAM	: // 'RE'
 						// known command
 						if (c == ',')
 							parseStep = 3; // next is param field
@@ -126,7 +128,8 @@ void CommandParser::update()
 				// param field
 				if (c == '\r' || c == '\n')
 				{
-					cmdValue = toNum(fieldData);
+					memcpy(cmdValue, fieldData, fieldIndex);
+					valueLen = fieldIndex;
 
 					if (c == '\r')
 						parseStep = 5; // next is '\n'
@@ -158,8 +161,8 @@ void CommandParser::update()
 			if (parseStep == 6)
 			{
 				// parse field & enqueue command to stack
-				Command cmd(StrmSouce, cmdCode, cmdParam, cmdValue);
-				
+				Command cmd(StrmSouce, cmdCode, cmdParam, cmdValue, valueLen);
+
 				Stack.enqueue(cmd);
 				
 				// begin again

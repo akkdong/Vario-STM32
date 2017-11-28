@@ -5,7 +5,7 @@
 #define __COMMANDSTACK_H__
 
 #define MAX_STACKSIZE			(10)
-#define MAX_COMMAND_STRING		(32)
+#define MAX_VALUE_STRING		(32)
 
 #define CMD_FROM_KEY			(0)
 #define CMD_FROM_BT				(1)
@@ -22,6 +22,8 @@
 #define CMD_DEVICE_RESET		'RS'
 #define CMD_QUERY_PARAM			'QU'
 #define CMD_UPDATE_PARAM		'UD'
+#define CMD_SAVE_PARAM			'SV'
+#define CMD_RESTORE_PARAM		'RE'
 
 // mode switch
 #define PARAM_SW_ICALIBRATION	(1)		// interactive
@@ -39,12 +41,10 @@
 // sensor dump
 #define PARAM_DU_NONE			(0)
 #define PARAM_DU_ACCELEROMETER	(1<<0)
-#define PARAM_DU_PRESSURE		(1<<1)
-#define PARAM_DU_TEMPERATURE	(1<<2)
-#define PARAM_DU_VOLTAGE		(1<<3)
-#define PARAM_DU_GPS			(1<<4)
-#define PARAM_DU_V_VELOCITY		(1<<5)
-#define PARAM_DU_ALL			(0x3F)
+#define PARAM_DU_GYROSCOPE		(1<<1)
+#define PARAM_DU_PRESSURE		(1<<2)
+#define PARAM_DU_TEMPERATURE	(1<<3)
+#define PARAM_DU_ALL			(0x0F)
 
 // nmea sentence
 #define PARAM_NM_UNBLOCK		(0)
@@ -64,6 +64,36 @@
 #define PARAM_RS_AFTER_SAVE		(1)
 
 // query paramater
+enum VarioParameters
+{
+	PARAM_PROFILE_MODEL,
+	PARAM_PROFILE_PILOT,
+	PARAM_PROFILE_GLIDER,
+	PARAM_VARIO_SINK_THRESHOLD,
+	PARAM_VARIO_CLIMB_THRESHOLD,
+	PARAM_VARIO_SENSITIVITY,
+	PARAM_VARIO_VOLUMN,
+	PARAM_VARIO_TONE_00,
+	PARAM_VARIO_TONE_01,
+	PARAM_VARIO_TONE_02,
+	PARAM_VARIO_TONE_03,
+	PARAM_VARIO_TONE_04,
+	PARAM_VARIO_TONE_05,
+	PARAM_VARIO_TONE_06,
+	PARAM_VARIO_TONE_07,
+	PARAM_VARIO_TONE_08,
+	PARAM_VARIO_TONE_09,
+	PARAM_VARIO_TONE_10,
+	PARAM_VARIO_TONE_11,
+	PARAM_TIME_ZONE,
+	PARAM_KALMAN_SIGMA,
+	PARAM_KALMAN_VARIANCE,
+	PARAM_CALIBRATION_ACCEL,
+	PARAM_CALIBRATION_GYRO,
+	PARAM_COUNT,
+};
+
+
 #define PARAM_QU_VARIO_SINK_THRESHOLD	(1)
 #define PARAM_QU_VARIO_CLIMB_THRESHOLD	(2)
 #define PARAM_QU_VARIO_SENSITIVITY		(3)
@@ -102,35 +132,69 @@
 /////////////////////////////////////////////////////////////////////////////
 // 
 
-union CommandValue
-{
-	int32_t		sData;
-	uint32_t	uData;
-	float		fData;
-	
-	uint32_t	aData[MAX_COMMAND_STRING/sizeof(uint32_t)];
-	uint8_t		strData[MAX_COMMAND_STRING];
-};
-
-/////////////////////////////////////////////////////////////////////////////
-// 
-
 class Command
 {
 public:
-	Command() 
-		{ from = code = param = 0; }
-	Command(uint16_t f, uint16_t c, uint32_t p, uint32_t v = 0)
-		{ from = f; code = c; param = p; value.sData = v; }
-//	Command(uint16_t f, uint16_t c, uint32_t p, float v = 0)
-//		{ from = f; code = c; param = p; value.fData = v; }	
+	Command() {
+		from = code = param = valLen = 0;
+	}
+	Command(const Command & c) {
+		from = c.from; code = c.code; param = c.param; valLen = c.valLen;
+
+		memset(valData, 0, sizeof(valData));
+		if (valLen)
+			memcpy(valData, c.valData, valLen);
+	}
+	Command(uint16_t f, uint16_t c, uint32_t p, uint8_t * d = 0, uint8_t n = 0) { 
+		from = f; code = c; param = p; valLen = n;
+
+		memset(valData, 0, sizeof(valData));
+		if (d && n)
+			memcpy(valData, d, n);
+	}
+
 public:
-	uint16_t	code;	// command code;
 	uint16_t	from; 	// this command received from BT or USB or KEY
+	uint16_t	code;	// command code;
 	uint32_t	param;	// command specific parameter
-//	uint32_t	value;	// 
-	CommandValue value;
+	
+	uint8_t		valData[MAX_VALUE_STRING];
+	uint8_t		valLen;
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+
+enum RESDATA_TYPE
+{
+	RESDATA_NONE,
+	RESDATA_NUMBER,
+	RESDATA_FLOAT,
+	RESDATA_ARRAY,
+	RESDATA_STRING,
+};
+
+class Response
+{
+public:
+	Response();
+	
+public:
+	uint16_t	to;		// this response is transmitted to BT or USB
+	uint16_t	code;	// response code
+	uint32_t	param;	// response specific paramater
+	
+	union
+	{
+		uint32 	uData;
+		float	fData;
+		uint32	aData[4];
+		uint8_t	sData[MAX_VALUE_STRING];
+	};
+	uint8_t dataType;	// response data type
+};
+
 
 
 /////////////////////////////////////////////////////////////////////////////
