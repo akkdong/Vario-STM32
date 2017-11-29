@@ -4,11 +4,12 @@
 #ifndef __BLUETOOTHMAN_H__
 #define __BLUETOOTHMAN_H__
 
+#if 0
 #define BTMAN_BLOCK_NONE		(0)
 #define BTMAN_BLOCK_NMEA		(1<<0)
 #define BTMAN_BLOCK_SENSOR		(1<<1)
 #define BTMAN_BLOCK_MASK		(BTMAN_BLOCK_NMEA|BTMAN_BLOCK_SENSOR)
-
+#endif
 
 class NmeaParserEx;
 class VarioSentence;
@@ -31,8 +32,10 @@ public:
 	int					available();
 	int					read();
 	
+	#if 0
 	void				blockNmeaSentence(uint8_t block);
 	void				blockSensorData(uint8_t block);
+	#endif
 
 private:
 	void				writeVarioSentence();
@@ -43,7 +46,9 @@ private:
 private:
 	//
 	uint8_t				lockState;
+	#if 0
 	uint8_t				blockTransfer;	// block transfer of nmea or sensor
+	#endif
 	
 	//
 	SerialEx &			serialBT;

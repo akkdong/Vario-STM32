@@ -37,7 +37,7 @@ enum BTMAN_LOCK_STATE
 
 BluetoothMan::BluetoothMan(SerialEx & serial, NmeaParserEx & nmea, VarioSentence & vario, SensorReporter & sensor, ResponseSender & resp) :
 	serialBT(serial), nmeaParser(nmea), varioSentence(vario), sensorReporter(sensor), responseSender(resp),
-	lockState(BTMAN_UNLOCKED), blockTransfer(BTMAN_BLOCK_NONE)
+	lockState(BTMAN_UNLOCKED)/*, blockTransfer(BTMAN_BLOCK_NONE)*/
 {
 }
 
@@ -67,17 +67,17 @@ void BluetoothMan::update()
 	}
 	else
 	{
-		if (varioSentence.available() && ! (blockTransfer & BTMAN_BLOCK_NMEA))
+		if (varioSentence.available() /*&& ! (blockTransfer & BTMAN_BLOCK_NMEA)*/)
 		{
 			lockState = BTMAN_LOCKED_BY_VARIO;			
 			writeVarioSentence();
 		}
-		else if (nmeaParser.available() && ! (blockTransfer & BTMAN_BLOCK_NMEA))
+		else if (nmeaParser.available() /*&& ! (blockTransfer & BTMAN_BLOCK_NMEA)*/)
 		{
 			lockState = BTMAN_LOCKED_BY_GPS;
 			writeGPSSentence();
 		}
-		else if (sensorReporter.available() && ! (blockTransfer & BTMAN_BLOCK_SENSOR))
+		else if (sensorReporter.available() /*&& ! (blockTransfer & BTMAN_BLOCK_SENSOR)*/)
 		{
 			lockState = BTMAN_LOCKED_BY_SENSOR;
 			writeSensorData();
@@ -91,17 +91,17 @@ void BluetoothMan::update()
 #else	
 	if (lockState == BTMAN_UNLOCKED)
 	{
-		if (varioSentence.available() && ! (blockTransfer & BTMAN_BLOCK_NMEA))
+		if (varioSentence.available() /*&& ! (blockTransfer & BTMAN_BLOCK_NMEA)*/)
 		{
 			lockState = BTMAN_LOCKED_BY_VARIO;			
 			writeVarioSentence();
 		}
-		else if (nmeaParser.available() && ! (blockTransfer & BTMAN_BLOCK_NMEA))
+		else if (nmeaParser.available() /*&& ! (blockTransfer & BTMAN_BLOCK_NMEA)*/)
 		{
 			lockState = BTMAN_LOCKED_BY_GPS;
 			writeGPSSentence();
 		}
-		else if (sensorReporter.available() && ! (blockTransfer & BTMAN_BLOCK_SENSOR))
+		else if (sensorReporter.available() /*&& ! (blockTransfer & BTMAN_BLOCK_SENSOR)*/)
 		{
 			lockState = BTMAN_LOCKED_BY_SENSOR;
 			writeSensorData();
@@ -218,6 +218,7 @@ void BluetoothMan::writeResponse()
 	}
 }
 
+#if 0
 void BluetoothMan::blockNmeaSentence(uint8_t block)
 {
 	if (block)
@@ -231,6 +232,7 @@ void BluetoothMan::blockSensorData(uint8_t block)
 	// block all or block each sensor value ??????
 	// 
 }
+#endif
 
 int BluetoothMan::available()
 {

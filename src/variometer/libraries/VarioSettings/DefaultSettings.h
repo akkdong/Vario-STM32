@@ -74,8 +74,8 @@
 #define VARIOMETER_SINKING_THRESHOLD 			(-3.0)
 #define VARIOMETER_CLIMBING_THRESHOLD 			(0.2)
 #define VARIOMETER_SENSITIVITY 					(0.1)
-#define VARIOMETER_MIN_CLIMB_VELOCITY			(-10)
-#define VARIOMETER_MAX_CLIMB_VELOCITY			(10)
+#define VARIOMETER_MIN_VELOCITY					(-10)
+#define VARIOMETER_MAX_VELOCITY					(10)
 
 #define VARIOMETER_LXNAV_SENTENCE				(1)
 #define VARIOMETER_LK8_SENTENCE					(2)
@@ -176,8 +176,8 @@
 
 #define MAX_NMEA_PARSER_BUFFER					(128)
 
-#define MAX_IGC_SENTENCE						(37)	// B-sentence max size : include null termination
-														// ex: B1602405407121N00249342WA0028000421 CR LF
+#define MAX_IGC_SENTENCE						(37)	// B-sentence max size
+														// ex: B1602405407121N00249342WA0028000421\r\n
 														//     0123456789012345678901234567890123456789
 														//     BHHMMSSDDMMmmmNDDDMMmmmWAPPPPPGGGGGCL
 														//                   S        EV          RF

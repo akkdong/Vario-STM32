@@ -4,6 +4,10 @@
 #include <Arduino.h>
 #include "FunctionKey.h"
 
+#define DELAY_LONG	250
+#define DELAY_SHORT	100
+
+
 enum INPUT_MODE
 {
 	WAIT_INPUT,	// wait first input
@@ -35,10 +39,11 @@ void FunctionKey::begin(int pin, int active)
 	
 	inputState = WAIT_INPUT;	
 	inputIndex = -1;
-	inputValue = 0;
+	toneCount = 0;
 	
+	inputValue = 0;	
 	returnValue = 0;
-	
+
 	lastTick = millis();	
 }
 
@@ -93,9 +98,29 @@ void FunctionKey::update()
 			inputValue = (inputValue << 1);
 			
 			if (millis() - lastTick > FKEY_MIN_LONGLONGKEY_TIME)
-				inputValue = 0xFF; 
+			{
+				inputValue = 0xFFFF; 
+				inputIndex = 0;
+				
+				tone[0].freq = NOTE_G4;
+				tone[0].length = DELAY_LONG * 2;
+			}
 			else if (millis() - lastTick > FKEY_MIN_SHORTKEY_TIME)
+			{
 				inputValue += 1; // LONG press
+
+				tone[inputIndex*2].freq = NOTE_G4;
+				tone[inputIndex*2].length = DELAY_LONG;
+			}
+			else
+			{
+				tone[inputIndex*2].freq = NOTE_G4;
+				tone[inputIndex*2].length = DELAY_SHORT;
+			}
+			
+			tone[inputIndex*2+1].freq = 0;
+			tone[inputIndex*2+1].length = DELAY_SHORT;
+			
 
 			//
 			inputState = TRANS_UP;
@@ -107,7 +132,7 @@ void FunctionKey::update()
 	case TRANS_UP :
 		if (millis() - lastTick > FKEY_MIN_DEBOUNCE_TIME)
 		{
-			if (inputValue == 0xFF)
+			if (inputValue == 0xFFFF)
 				inputState = LONGLONG_INPUT;
 			else
 				inputState = COMP_INPUT;
@@ -127,15 +152,17 @@ void FunctionKey::update()
 		{
 			if (millis() - lastTick > FKEY_MIN_FIRE_TIME)
 			{
-				returnValue = ((inputIndex + 1) << 5) + inputValue;
+				returnValue = ((inputIndex + 1) << 12) + inputValue;
 				inputState = WAIT_INPUT;
+				toneCount = (inputIndex + 1) * 2;
 			}
 		}
 		break;
 		
 	case LONGLONG_INPUT :
-		returnValue = 0xFF;
+		returnValue = inputValue;
 		inputState = WAIT_INPUT;
+		toneCount = 2;
 		break;
 	}
 }
@@ -161,9 +188,9 @@ int FunctionKey::getInput()
 	}
 }
 
-unsigned char FunctionKey::getValue()
+uint16_t FunctionKey::getValue()
 {
-	unsigned char value = returnValue;
+	uint16_t value = returnValue;
 	returnValue = 0;
 	
 	return value;

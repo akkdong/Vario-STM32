@@ -268,6 +268,9 @@ public:
 	// int threshold_landing_timeout;
 	// int threshold_shutdown_holdtime;
 	// int threshold_low_battery;
+	//
+	// int threshold_auto_shutdown_vario;
+	// int threshold_auto_shutdown_ums;
 	
 	// block: kalman_paramters
 	float				kalman_sigmaP;

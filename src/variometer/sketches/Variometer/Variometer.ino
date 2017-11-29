@@ -36,15 +36,15 @@
 
 // test-tone delta(inc/dec) calculation
 //
-// 0 ~ 8s -> 0 ~ VARIOMETER_MAX_CLIMB_VELOCITY(10m/s)
+// 0 ~ 8s -> 0 ~ VARIOMETER_MAX_VELOCITY(10m/s)
 // velocity update frequency -> 50Hz
 //   8000 / (1000 / 50) -> update 400 times
 //   10 / 400 -> 0.025
 
-#define TT_HALF_PERIOD		(5000.0)	// 5s
+#define TT_HALF_PERIOD		(6000.0)	// 6s
 #define TT_UPDATE_FREQ		(50.0)
 
-#define TT_UPDATE_DELTA		(VARIOMETER_MAX_CLIMB_VELOCITY / (TT_HALF_PERIOD / (1000.0 / TT_UPDATE_FREQ)))
+#define TT_UPDATE_DELTA		(VARIOMETER_MAX_VELOCITY / (TT_HALF_PERIOD / (1000.0 / TT_UPDATE_FREQ)))
 
 
 
@@ -456,8 +456,7 @@ void changeDeviceMode(int mode)
 		keyPowerBT.disable();
 		
 		//
-		if (logger.isLogging())
-			logger.end(nmeaParser.getDateTime());		
+		logger.end(nmeaParser.getDateTime());		
 	}
 	
 	//
@@ -611,9 +610,9 @@ void loop_vario()
 			{
 				toneTestVelocity = toneTestVelocity + toneTestDelta;
 				
-				if (toneTestVelocity < Config.vario_climbThreshold)
+				if (toneTestVelocity < VARIOMETER_MIN_VELOCITY)
 					toneTestDelta = TT_UPDATE_DELTA;
-				if (toneTestVelocity > VARIOMETER_MAX_CLIMB_VELOCITY)
+				if (toneTestVelocity > VARIOMETER_MAX_VELOCITY)
 					toneTestDelta = -TT_UPDATE_DELTA;
 				
 				//toneTestTick = millis();
@@ -624,7 +623,7 @@ void loop_vario()
 		else
 		{
 			varioBeeper.setVelocity(velocity);
-			Serial.println(velocity);
+			//Serial.println(velocity);
 		}
 
 		//
@@ -658,7 +657,7 @@ void loop_vario()
 	}	
 	
 	// read & prase gps sentence
-	nmeaParser.update();
+	nmeaParser.update(vario.getAltitude());
 	
 	// send any prepared sentence to BT
 	btMan.update();	
@@ -680,7 +679,7 @@ void loop_vario()
 	}
 	else if (varioMode == VARIO_MODE_LANDING)
 	{
-		if (nmeaParser.getSpeed() > FLIGHT_START_MIN_SPEED)
+		if (nmeaParser.getSpeed() > FLIGHT_START_MIN_SPEED && nmeaParser.getDateTime())
 		{
 			//
 			varioMode = VARIO_MODE_FLYING;
@@ -986,8 +985,7 @@ void setup_shutdown()
 	tonePlayer.setBeep(NOTE_C3, 800, 800);
 
 	//
-	if (logger.isLogging())
-		logger.end(nmeaParser.getDateTime());
+	logger.end(nmeaParser.getDateTime());
 	
 	//
 	deviceTick = millis();
@@ -1036,8 +1034,7 @@ void processShutdownInterrupt()
 	{
 		// shutdown interrupt trigged by LTC2950
 		// clean-up & wait power-off(LTC2750 will turn off power)
-		if (logger.isLogging())
-			logger.end(nmeaParser.getDateTime());
+		logger.end(nmeaParser.getDateTime());
 		
 		// beep~
 		//tonePlayer.setBeep(420, 0, 0, KEY_VOLUME);
@@ -1075,9 +1072,9 @@ void processCommand()
 		case CMD_SENSOR_DUMP 	:
 			commandSendsorDump(&cmd);
 			break;
-		case CMD_NMEA_SENTENCE  :
-			btMan.blockNmeaSentence(cmd.param);
-			break;
+//		case CMD_NMEA_SENTENCE  :
+//			btMan.blockNmeaSentence(cmd.param);
+//			break;
 		case CMD_TONE_TEST 		:
 			commandToneTest(&cmd);
 			break;
@@ -1087,6 +1084,10 @@ void processCommand()
 		case CMD_DEVICE_RESET 	:
 			// reset!!
 			board_reset();
+			break;
+		case CMD_DEVICE_SHUTDOWN:
+			// shutdown!!
+			changeDeviceMode(DEVICE_MODE_SHUTDOWN);
 			break;
 		case CMD_QUERY_PARAM 	:
 			if (cmd.param < PARAM_COUNT)
@@ -1185,7 +1186,7 @@ void commandToneTest(Command * cmd)
 	{
 		toneTestFlag = true;
 
-		toneTestVelocity = Config.vario_climbThreshold;
+		toneTestVelocity = 0; // Config.vario_climbThreshold;
 		toneTestDelta = TT_UPDATE_DELTA;
 	}
 	else
@@ -1326,7 +1327,7 @@ void queryParam_timeZone(Command * cmd)
 	Serial.print("%QU,");
 	Serial.print(cmd->param);
 	Serial.print(","); 
-	Serial.println(Config.vario_timezone);
+	Serial.println((int)Config.vario_timezone);
 }
 
 // PARAM_KALMAN_SIGMA

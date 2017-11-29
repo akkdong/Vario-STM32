@@ -20,7 +20,7 @@ public:
 	NmeaParserEx(Stream & stm);
 	
 public:
-	void				update();
+	void				update(uint32_t baroAlt);
 	
 	int					available();
 	int					read();
@@ -75,12 +75,14 @@ private:
 	
 	float				mLatitude;
 	float				mLongitude;
-	uint32_t			mAltitude;	
+	uint32_t			mAltitude;
 	uint32_t			mSpeed;
 	uint32_t			mHeading;
 	
+	uint32_t			mBaroAlt;
+	
 	// IGC sentence
-	char				mIGCSentence[MAX_IGC_SENTENCE];
+	char				mIGCSentence[MAX_IGC_SENTENCE+1];
 	volatile int		mIGCNext;	// next = 0 ~ MAX_XXX -1 -> available
 	volatile int		mIGCSize;	// size = 0 -> empty, size = MAX_xx -> valid
 };

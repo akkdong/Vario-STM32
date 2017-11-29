@@ -48,11 +48,15 @@ NmeaParserEx::NmeaParserEx(Stream & stm) : mStream(stm)
 	mIGCSentence[IGC_OFFSET_VALIDITY] = 'A';
 	mIGCSentence[IGC_OFFSET_RETURN] = '\r';
 	mIGCSentence[IGC_OFFSET_NEWLINE] = '\n';
-	mIGCSentence[IGC_OFFSET_TERMINATE] = '\0';
+//	mIGCSentence[IGC_OFFSET_TERMINATE] = '\0';
 }
 
-void NmeaParserEx::update()
+void NmeaParserEx::update(uint32_t baroAlt)
 {
+	//
+	mBaroAlt = baroAlt;
+	
+	//
 	while (mStream.available())
 	{
 		//
@@ -526,8 +530,14 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 					mIGCSentence[IGC_OFFSET_GPS_ALT+j] =  '0';
 				#else
 				FixedLenDigit digit;
-				digit.begin(mAltitude, IGC_SIZE_GPS_ALT);
+			
+				//
+				digit.begin(mBaroAlt, IGC_SIZE_PRESS_ALT);
+				for (int i = 0; i < IGC_SIZE_PRESS_ALT /*digit.available()*/; i++)
+					mIGCSentence[IGC_OFFSET_PRESS_ALT+i] = digit.read();
 				
+				//
+				digit.begin(mAltitude, IGC_SIZE_GPS_ALT);
 				for (int i = 0; i < IGC_SIZE_GPS_ALT /*digit.available()*/; i++)
 					mIGCSentence[IGC_OFFSET_GPS_ALT+i] = digit.read();
 				#endif

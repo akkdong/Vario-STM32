@@ -5,6 +5,8 @@
 #define __FUNCTIONKEY_H__
 
 #include <DefaultSettings.h>
+#include <ToneFrequency.h>
+#include <TonePlayer.h>
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -21,23 +23,39 @@ public:
 	
 	boolean			fired();
 	
-	unsigned char	getValue();
+	uint16_t		getValue();
+	
+	Tone *			getTone();
+	int				getToneCount();
 
 private:
 	int				getInput();
 	
 private:
-	long			lastTick;
+	uint32_t		lastTick;
 	
 	int				inputPin;
 	int				activeState;
 	
 	int				inputIndex;
 	int				inputState;
-	unsigned char	inputValue;
 	
-	unsigned char 	returnValue;
+	uint16_t		inputValue;
+	uint16_t 		returnValue;
+	
+	Tone			tone[10*2];
+	int				toneCount;
 };
+
+
+// inlines members
+//
+
+inline Tone * FunctionKey::getTone()
+	{ return &tone[0]; }
+	
+inline int FunctionKey::getToneCount()
+	{ return toneCount; }
 
 
 /*

@@ -185,6 +185,10 @@ int IGCLogger::write(uint8_t ch)
 	if (! IS_SET(LOGGER_WORKING))
 		return 0;
 	
+	#if 0	
+	if (columnCount < 0 && ch != 'B')
+		return 0;
+	
 	if (ch == 'B')
 		columnCount = 0;
 	
@@ -197,6 +201,12 @@ int IGCLogger::write(uint8_t ch)
 	
 	sdFile.write(&ch, 1);
 	columnCount += 1;
+	
+	//if (columnCount == MAX_IGC_SENTENCE)
+	//	columnCount = -1; // eol
+	#else
+	sdFile.write(&ch, 1);
+	#endif
 	
 	return 1;
 }
@@ -220,7 +230,7 @@ int IGCLogger::isLogging()
 void IGCLogger::reset()
 {
 	logState		= 0;
-	columnCount 	= 0;
+	columnCount 	= -1;
 	varioAltitude 	= 0;
 }
 

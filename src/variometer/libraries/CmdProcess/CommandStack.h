@@ -15,11 +15,12 @@
 										// ex) 0x5357 -> 'SW' : mode switch
 #define CMD_MODE_SWITCH			'SW'
 #define CMD_DEVICE_STATUS		'DS'
+#define CMD_DEVICE_RESET		'RS'
+#define CMD_DEVICE_SHUTDOWN		'SH'
 #define CMD_SENSOR_DUMP			'DU'
 #define CMD_NMEA_SENTENCE		'NM'
 #define CMD_TONE_TEST			'TT'
 #define CMD_SOUND_LEVEL			'LV'
-#define CMD_DEVICE_RESET		'RS'
 #define CMD_QUERY_PARAM			'QU'
 #define CMD_UPDATE_PARAM		'UD'
 #define CMD_SAVE_PARAM			'SV'

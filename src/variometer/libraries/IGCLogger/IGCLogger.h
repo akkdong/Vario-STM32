@@ -52,7 +52,7 @@ private:
 	SdFile				sdFile;
 	
 	uint8_t				logState;
-	uint8_t				columnCount;
+	int					columnCount;
 	
 	uint32_t			varioAltitude;
 	FixedLenDigit		digit;

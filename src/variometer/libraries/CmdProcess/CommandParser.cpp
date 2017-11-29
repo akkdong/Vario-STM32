@@ -63,11 +63,12 @@ void CommandParser::update()
 					{
 					case CMD_MODE_SWITCH	: // 'SW'
 					case CMD_DEVICE_STATUS	: // 'DS'
+					case CMD_DEVICE_RESET	: // 'RS'
+					case CMD_DEVICE_SHUTDOWN: // 'SH'
 					case CMD_SENSOR_DUMP	: // 'DU'
 					case CMD_NMEA_SENTENCE	: // 'NM'
 					case CMD_TONE_TEST		: // 'TT'
 					case CMD_SOUND_LEVEL	: // 'LV'
-					case CMD_DEVICE_RESET	: // 'RS'
 					case CMD_QUERY_PARAM	: // 'QU'
 					case CMD_UPDATE_PARAM	: // 'UD'
 					case CMD_SAVE_PARAM		: // 'SA'
