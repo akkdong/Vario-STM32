@@ -20,7 +20,7 @@ public:
 	NmeaParserEx(Stream & stm);
 	
 public:
-	void				update(uint32_t baroAlt);
+	void				update(/*float baroAlt*/);
 	
 	int					available();
 	int					read();
@@ -38,7 +38,7 @@ public:
 	time_t				getDateTime();
 	float				getLatitude();
 	float				getLongitude();
-	int32_t				getAltitude();
+	float				getAltitude();
 	uint32_t			getSpeed();
 	uint32_t			getHeading();
 	
@@ -75,11 +75,11 @@ private:
 	
 	float				mLatitude;
 	float				mLongitude;
-	uint32_t			mAltitude;
+	float				mAltitude;
 	uint32_t			mSpeed;
 	uint32_t			mHeading;
 	
-	uint32_t			mBaroAlt;
+//	float				mBaroAlt;
 	
 	// IGC sentence
 	char				mIGCSentence[MAX_IGC_SENTENCE+1];
@@ -108,7 +108,7 @@ inline float NmeaParserEx::getLatitude()
 inline float NmeaParserEx::getLongitude()
 	{ return mLongitude; }
 	
-inline int32_t NmeaParserEx::getAltitude()
+inline float NmeaParserEx::getAltitude()
 	{ return mAltitude; }
 	
 inline uint32_t NmeaParserEx::getSpeed()

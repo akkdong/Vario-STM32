@@ -51,10 +51,10 @@ NmeaParserEx::NmeaParserEx(Stream & stm) : mStream(stm)
 //	mIGCSentence[IGC_OFFSET_TERMINATE] = '\0';
 }
 
-void NmeaParserEx::update(uint32_t baroAlt)
+void NmeaParserEx::update(/*float baroAlt*/)
 {
 	//
-	mBaroAlt = baroAlt;
+	//mBaroAlt = baroAlt;
 	
 	//
 	while (mStream.available())
@@ -333,7 +333,7 @@ void NmeaParserEx::reset()
 	mLatitude = 0.0;
 	mLongitude = 0.0;	
 	mSpeed = 0;
-	mAltitude = 0;
+	mAltitude = 0.0;
 	mHeading = 0;
 	
 	mParseStep = -1;
@@ -508,7 +508,7 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			break;
 		case 8 : // Altitude(above measn sea level)
 			// save GPS altitude
-			mAltitude = (uint32_t)(strToFloat(startPos) + 0.5);
+			mAltitude = strToFloat(startPos);
 			
 			// update IGC sentence if it's unlocked
 			if (! IS_SET(IGC_LOCKED))
@@ -532,9 +532,9 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 				FixedLenDigit digit;
 			
 				//
-				digit.begin(mBaroAlt, IGC_SIZE_PRESS_ALT);
-				for (int i = 0; i < IGC_SIZE_PRESS_ALT /*digit.available()*/; i++)
-					mIGCSentence[IGC_OFFSET_PRESS_ALT+i] = digit.read();
+				//digit.begin(mBaroAlt, IGC_SIZE_PRESS_ALT);
+				//for (int i = 0; i < IGC_SIZE_PRESS_ALT /*digit.available()*/; i++)
+				//	mIGCSentence[IGC_OFFSET_PRESS_ALT+i] = digit.read();
 				
 				//
 				digit.begin(mAltitude, IGC_SIZE_GPS_ALT);

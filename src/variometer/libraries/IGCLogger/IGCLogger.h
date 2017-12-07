@@ -30,7 +30,7 @@ public:
 	
 	int					write(uint8_t ch);
 
-	void				update(uint32_t varioAlt);
+	void				update(float varioAlt);
 	
 	int					isInitialized();
 	int					isLogging();
@@ -54,7 +54,7 @@ private:
 	uint8_t				logState;
 	int					columnCount;
 	
-	uint32_t			varioAltitude;
+	float				varioAltitude;
 	FixedLenDigit		digit;
 };
 

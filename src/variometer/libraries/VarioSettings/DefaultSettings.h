@@ -14,7 +14,7 @@
 // Pin definitions
 //
 
-#define PIN_ADC_BATTERY							PA0		// ADC
+#define PIN_ADC_BATTERY							PA1		// ADC
 #define PIN_EMPTY_1								PA1		// empty
 #define PIN_USART2_TX							PA2		// USART2
 #define PIN_USART2_RX							PA3		// USART2

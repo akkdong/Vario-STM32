@@ -185,7 +185,7 @@ int IGCLogger::write(uint8_t ch)
 	if (! IS_SET(LOGGER_WORKING))
 		return 0;
 	
-	#if 0	
+	#if 1	
 	if (columnCount < 0 && ch != 'B')
 		return 0;
 	
@@ -202,8 +202,8 @@ int IGCLogger::write(uint8_t ch)
 	sdFile.write(&ch, 1);
 	columnCount += 1;
 	
-	//if (columnCount == MAX_IGC_SENTENCE)
-	//	columnCount = -1; // eol
+	if (columnCount == MAX_IGC_SENTENCE)
+		columnCount = -1; // eol
 	#else
 	sdFile.write(&ch, 1);
 	#endif
@@ -211,7 +211,7 @@ int IGCLogger::write(uint8_t ch)
 	return 1;
 }
 
-void IGCLogger::update(uint32_t varioAlt)
+void IGCLogger::update(float varioAlt)
 {
 	varioAltitude = varioAlt;
 	//Serial.println(varioAltitude);
@@ -231,7 +231,7 @@ void IGCLogger::reset()
 {
 	logState		= 0;
 	columnCount 	= -1;
-	varioAltitude 	= 0;
+	varioAltitude 	= 0.0;
 }
 
 #if 0

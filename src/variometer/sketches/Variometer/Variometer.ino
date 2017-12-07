@@ -644,9 +644,9 @@ void loop_vario()
 		sensorReporter.update(vario.getAccelData(), vario.getGyroData(), vario.getPressure(), vario.getTemperature());
 		
 		//
-		float altitude = vario.getAltitude2(); // getCalibratedAltitude or getAltitude
+		float altitude = vario.getCalibratedAltitude(); // getCalibratedAltitude or getAltitude
 		logger.update(altitude);
-		//Serial.print(vario.getAltitude()); Serial.print(", "); Serial.println(vario.getAltitude2());
+		Serial.print(altitude); Serial.print(", "); Serial.println(vario.getAltitude2());
 		
 		// update vario sentence periodically
 		if (varioNmea.checkInterval())
@@ -657,7 +657,7 @@ void loop_vario()
 	}	
 	
 	// read & prase gps sentence
-	nmeaParser.update(vario.getAltitude());
+	nmeaParser.update(/*vario.getCalibratedAltitude()*/);
 	
 	// send any prepared sentence to BT
 	btMan.update();	
