@@ -1,3 +1,6 @@
 [submodule "src/variometer/libraries/SdFat"]
 	path = src/variometer/libraries/SdFat
 	url = https://github.com/greiman/SdFat.git
+[submodule "src/variometer/libraries/STM32Sleep"]
+	path = src/variometer/libraries/STM32Sleep
+	url = https://github.com/chacal/stm32sleep.git
