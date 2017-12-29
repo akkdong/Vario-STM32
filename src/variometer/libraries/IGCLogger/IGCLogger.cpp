@@ -35,15 +35,15 @@ const char * logsFolder = "/TrackLogs";
 const char * igcHeader[] =
 {
 	"ANRC Variometer & GPS Loggger v1", 
-	"\r\nHFDTE",
+	"\r\nHFDTE",					// ex) DDMMYY
 	NULL,
-	"\r\nHFPLTPILOT:",
+	"\r\nHFPLTPILOT:",				// ex) akkdong
 	NULL,
-	"\r\nHFCCLCOMPETITION CLASS:",
+	"\r\nHFCCLCOMPETITION CLASS:",	// ex) FAI-3 (PG)
 	NULL,
-	"\r\nHFGTYGLIDERTYPE:",
+	"\r\nHFGTYGLIDERTYPE:", 		// ex) NIVIUK IcePeak6  {MANUFACTURE} {MODEL}
 	NULL,
-	"\r\nHFDTM100GPSDATUM:",
+	"\r\nHFDTM100GPSDATUM:WGS-84",
 	NULL,
 	"\r\n"
 };

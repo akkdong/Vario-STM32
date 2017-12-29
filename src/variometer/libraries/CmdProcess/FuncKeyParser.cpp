@@ -36,7 +36,7 @@ void FuncKeyParser::update()
 		Serial.print("Key input = "); Serial.println(value, HEX);
 
 		// replay key-input by sound
-		Player.setMelody(Input.getTone(), Input.getToneCount(), true, KEY_VOLUME);
+		Player.setMelody(Input.getTone(), Input.getToneCount(), 1, PLAY_PREEMPTIVE, KEY_VOLUME);
 
 		switch (value)
 		{
