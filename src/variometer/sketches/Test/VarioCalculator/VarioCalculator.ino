@@ -53,9 +53,9 @@ void setup()
 	Config.readAll();
 	
 	Serial.print("Accelerometer calibration data = [");
-	Serial.print(Config.accel_calData[0], 10); Serial.print(", ");
-	Serial.print(Config.accel_calData[1], 10); Serial.print(", ");
-	Serial.print(Config.accel_calData[2], 10); Serial.println("]");
+	Serial.print(Config.calData.accel[0], 10); Serial.print(", ");
+	Serial.print(Config.calData.accel[1], 10); Serial.print(", ");
+	Serial.print(Config.calData.accel[2], 10); Serial.println("]");
 	Serial.println("");	
 	
     // wait for ready
@@ -65,7 +65,7 @@ void setup()
     while (Serial.available() && Serial.read()); // empty buffer again
 
 	//
-	Vario.begin(Config.kalman_sigmaP, Config.kalman_sigmaA/*, calibrateGyro = true*/);
+	Vario.begin(Config.kalman.sigmaP, Config.kalman.sigmaA/*, calibrateGyro = true*/);
 	
 	//
 	lastTick = micros();

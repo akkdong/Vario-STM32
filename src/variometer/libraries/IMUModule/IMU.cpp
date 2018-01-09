@@ -185,9 +185,9 @@ boolean IMU::updateAcceleration()
 	//float gyro[3];
 	float quat[4]; 
 
-	accelData[0] = ((float)iaccel[0])/MPU6050_ACCEL_SCALE + Config.accel_calData[0];
-	accelData[1] = ((float)iaccel[1])/MPU6050_ACCEL_SCALE + Config.accel_calData[1];
-	accelData[2] = ((float)iaccel[2])/MPU6050_ACCEL_SCALE + Config.accel_calData[2];
+	accelData[0] = ((float)iaccel[0])/MPU6050_ACCEL_SCALE + Config.calData.accel[0];
+	accelData[1] = ((float)iaccel[1])/MPU6050_ACCEL_SCALE + Config.calData.accel[1];
+	accelData[2] = ((float)iaccel[2])/MPU6050_ACCEL_SCALE + Config.calData.accel[2];
 	
 	gyroData[0] = ((float)igyro[0])/MPU6050_GYRO_SCALE;
 	gyroData[1] = ((float)igyro[1])/MPU6050_GYRO_SCALE;
@@ -347,8 +347,8 @@ void IMU::timerProc()
 			{
 				imu.iVelocity->begin(imu.getPressure(),
 									imu.getAcceleration(),
-									Config.kalman_sigmaP,
-									Config.kalman_sigmaA,
+									0, // Config.kalman.sigmaP,
+									0, // Config.kalman.sigmaA,
 									millis());
 			}
 			else

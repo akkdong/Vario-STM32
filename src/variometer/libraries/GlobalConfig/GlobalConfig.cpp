@@ -13,31 +13,30 @@
 // EEPROM block map
 //
 
-EEPROM_BlockInfo BlockMap[] = 
+EEPROM_BlockInfo GlobalConfig::BlockMap[BLOCK_ID_COUNT] = 
 {
-	{0x0000, BLOCK_MASK_PROFILE_MODEL 	, BLOCK_SIZE_PROFILE_MODEL 	  },
-	{0x0040, BLOCK_MASK_PROFILE_PILOT	, BLOCK_SIZE_PROFILE_PILOT	  },
-	{0x0080, BLOCK_MASK_PROFILE_GLIDER	, BLOCK_SIZE_PROFILE_GLIDER	  },
-	{0x00C0, BLOCK_MASK_VARIO_SETTINGS	, BLOCK_SIZE_VARIO_SETTINGS	  },
-	{0x0100, BLOCK_MASK_VARIO_TIMEZONE	, BLOCK_SIZE_VARIO_TIMEZONE	  },
-	{0x0140, BLOCK_MASK_VARIO_VOLUMNE	, BLOCK_SIZE_VARIO_VOLUMNE	  },
-	{0x0180, BLOCK_MASK_VARIO_TONE_00	, BLOCK_SIZE_VARIO_TONE_00	  },
-	{0x01C0, BLOCK_MASK_VARIO_TONE_01	, BLOCK_SIZE_VARIO_TONE_01	  },
-	{0x0200, BLOCK_MASK_VARIO_TONE_02	, BLOCK_SIZE_VARIO_TONE_02	  },
-	{0x0240, BLOCK_MASK_VARIO_TONE_03	, BLOCK_SIZE_VARIO_TONE_03	  },
-	{0x0280, BLOCK_MASK_VARIO_TONE_04	, BLOCK_SIZE_VARIO_TONE_04	  },
-	{0x02C0, BLOCK_MASK_VARIO_TONE_05	, BLOCK_SIZE_VARIO_TONE_05	  },
-	{0x0300, BLOCK_MASK_VARIO_TONE_06	, BLOCK_SIZE_VARIO_TONE_06	  },
-	{0x0340, BLOCK_MASK_VARIO_TONE_07	, BLOCK_SIZE_VARIO_TONE_07	  },
-	{0x0380, BLOCK_MASK_VARIO_TONE_08	, BLOCK_SIZE_VARIO_TONE_08	  },
-	{0x03C0, BLOCK_MASK_VARIO_TONE_09	, BLOCK_SIZE_VARIO_TONE_09	  },
-	{0x0400, BLOCK_MASK_VARIO_TONE_10	, BLOCK_SIZE_VARIO_TONE_10	  },
-	{0x0440, BLOCK_MASK_VARIO_TONE_11	, BLOCK_SIZE_VARIO_TONE_11	  },
-	{0x0480, BLOCK_MASK_KALMAN_PARAMS	, BLOCK_SIZE_KALMAN_PARAMS	  },
-	{0x04C0, BLOCK_MASK_CALIBRATION_DATA, BLOCK_SIZE_CALIBRATION_DATA },	
+	{0x0000, BLOCK_MASK_GLIDER_INFO 		, BLOCK_SIZE_GLIDER_INFO 	 	, 0},
+	{0x0040, BLOCK_MASK_IGC_LOGGER			, BLOCK_SIZE_IGC_LOGGER	  		, 0},
+	{0x0080, BLOCK_MASK_VARIO_SETTINGS		, BLOCK_SIZE_VARIO_SETTINGS	  	, 0},
+	{0x00C0, BLOCK_MASK_VARIO_TONE_00		, BLOCK_SIZE_VARIO_TONE_00	  	, 0},
+	{0x0100, BLOCK_MASK_VARIO_TONE_01		, BLOCK_SIZE_VARIO_TONE_01	  	, 0},
+	{0x0140, BLOCK_MASK_VARIO_TONE_02		, BLOCK_SIZE_VARIO_TONE_02	  	, 0},
+	{0x0180, BLOCK_MASK_VARIO_TONE_03		, BLOCK_SIZE_VARIO_TONE_03	  	, 0},
+	{0x01C0, BLOCK_MASK_VARIO_TONE_04		, BLOCK_SIZE_VARIO_TONE_04	  	, 0},
+	{0x0200, BLOCK_MASK_VARIO_TONE_05		, BLOCK_SIZE_VARIO_TONE_05	  	, 0},
+	{0x0240, BLOCK_MASK_VARIO_TONE_06		, BLOCK_SIZE_VARIO_TONE_06	  	, 0},
+	{0x0280, BLOCK_MASK_VARIO_TONE_07		, BLOCK_SIZE_VARIO_TONE_07	  	, 0},
+	{0x02C0, BLOCK_MASK_VARIO_TONE_08		, BLOCK_SIZE_VARIO_TONE_08	  	, 0},
+	{0x0300, BLOCK_MASK_VARIO_TONE_09		, BLOCK_SIZE_VARIO_TONE_09	  	, 0},
+	{0x0340, BLOCK_MASK_VARIO_TONE_10		, BLOCK_SIZE_VARIO_TONE_10	  	, 0},
+	{0x0380, BLOCK_MASK_VARIO_TONE_11		, BLOCK_SIZE_VARIO_TONE_11	  	, 0},
+	{0x03C0, BLOCK_MASK_VOLUMNE_SETTINGS	, BLOCK_SIZE_VOLUMNE_SETTINGS	, 0},
+	{0x0400, BLOCK_MASK_THRESHOLD_SETTINGS	, BLOCK_SIZE_THRESHOLD_SETTINGS	, 0},
+	{0x0440, BLOCK_MASK_KALMAN_PARAMS		, BLOCK_SIZE_KALMAN_PARAMS	  	, 0},
+	{0x0480, BLOCK_MASK_CALIBRATION_DATA	, BLOCK_SIZE_CALIBRATION_DATA 	, 0},	
 };
 
-static VarioTone default_Tone[TONE_TABLE_COUNT] =
+BLOCK_VarioTone GlobalConfig::defaultTone[TONE_TABLE_COUNT] =
 {
 	/*
 	{ -10.0,  200, 200, 100 },
@@ -75,324 +74,199 @@ GlobalConfig::GlobalConfig(EEPROMDriver & driver, unsigned char addr) : eepromDr
 {
 	//
 	reset();
-	
-	//
-	dirty = false;
 }
 
 void GlobalConfig::reset()
 {
 	//
-	memset(profile_model, 0, sizeof(profile_model));
-	memset(profile_pilot, 0, sizeof(profile_pilot));
-	memset(profile_glider, 0, sizeof(profile_glider));
+	glider.type = GTYPE_PARAGLIDER;
+	
+	memset(glider.manufacture, 0, sizeof(glider.manufacture));
+	memset(glider.model, 0, sizeof(glider.model));
 	
 	//
-	vario_sinkThreshold = VARIOMETER_SINKING_THRESHOLD; // -3.0
-	vario_climbThreshold = VARIOMETER_CLIMBING_THRESHOLD; // 0.2
-	vario_sensitivity = VARIOMETER_SENSITIVITY; // 0.1
-//	vario_sentence = VARIOMETER_DEFAULT_NMEA_SENTENCE;
-	vario_baroOnly = true;
-	vario_timezone = VARIOMETER_TIME_ZONE; // GMT+9
+	logger.enable = true;
+	
+	logger.takeoff_speed = FLIGHT_START_MIN_SPEED;		// km/s
+	logger.landing_timeout = FLIGHT_LANDING_THRESHOLD;	// ms
+	logger.logging_interval = FLIGHT_LOGGING_INTERVAL;	// ms
+	
+	memset(logger.pilot, 0, sizeof(logger.pilot));
+	logger.timezone = VARIOMETER_TIME_ZONE; 			// GMT+9	
 	
 	//
-	vario_volume = VARIOMETER_BEEP_VOLUME; // 0 ~ 100
+	vario.sinkThreshold = VARIOMETER_SINKING_THRESHOLD; // -3.0
+	vario.climbThreshold = VARIOMETER_CLIMBING_THRESHOLD; // 0.2
+	vario.sensitivity = VARIOMETER_SENSITIVITY; // 0.1
 	
+	vario.sentence = VARIOMETER_DEFAULT_NMEA_SENTENCE;
+	vario.baroOnly = true;
+
 	// vario_tone_table 
-	memcpy(&vario_tone[0], &default_Tone[0], sizeof(default_Tone));
+	memcpy(&toneTable[0], &defaultTone[0], sizeof(defaultTone));
+	
 	
 	//
-	kalman_sigmaP = POSITION_MEASURE_STANDARD_DEVIATION; // 0.1
-	kalman_sigmaA = ACCELERATION_MEASURE_STANDARD_DEVIATION; // 0.3
+	volume.vario = VARIOMETER_BEEP_VOLUME; // 0 ~ 100
+	volume.effect = VARIOMETER_EFFECT_VOLUME;
 	
-	// accel calibration data
-	accel_calData[0] = 0.0; 
-	accel_calData[1] = 0.0; 
-	accel_calData[2] = 0.0; 
-	// gyro calibration data
-	gyro_calData[0] = 0.0; 
-	gyro_calData[1] = 0.0; 
-	gyro_calData[2] = 0.0; 	
+	//
+	threshold.low_battery = LOW_BATTERY_THRESHOLD;
+	threshold.shutdown_holdtime = SHUTDOWN_HOLD_TIME;
+	threshold.auto_shutdown_vario = AUTO_SHUTDOWN_THRESHOLD;
+	threshold.auto_shutdown_ums = AUTO_SHUTDOWN_THRESHOLD;
+	
+	//
+	#if VARIOMETER_CLASSS == CLASS_KALMANVARIO
+	kalman.var_zmeas = KF_ZMEAS_VARIANCE;
+	kalman.var_zaccel = KF_ZACCEL_VARIANCE;
+	kalman.var_accelbias = KF_ACCELBIAS_VARIANCE;	
+	#else
+	kalman.sigmaP = POSITION_MEASURE_STANDARD_DEVIATION; // 0.1
+	kalman.sigmaA = ACCELERATION_MEASURE_STANDARD_DEVIATION; // 0.3
+	#endif // VARIOMETER_CLASSS == CLASS_KALMANVARIO
+	
+	// calibration data
+	
+	memset(&calData.accel[0], 0, sizeof(calData.accel)); // accelerometer
+	memset(&calData.gyro[0], 0, sizeof(calData.gyro)); // gyro
+	memset(&calData.mag[0], 0, sizeof(calData.mag)); // magnet
+	
+	//
+	BlockMap[BLOCK_ID_GLIDER_INFO].block		= &glider;
+	BlockMap[BLOCK_ID_IGC_LOGGER].block			= &logger;
+	BlockMap[BLOCK_ID_VARIO_SETTINGS].block		= &vario;
+	BlockMap[BLOCK_ID_VARIO_TONE_00].block		= &toneTable[0];
+	BlockMap[BLOCK_ID_VARIO_TONE_01].block		= &toneTable[1];
+	BlockMap[BLOCK_ID_VARIO_TONE_02].block		= &toneTable[2];
+	BlockMap[BLOCK_ID_VARIO_TONE_03].block		= &toneTable[3];
+	BlockMap[BLOCK_ID_VARIO_TONE_04].block		= &toneTable[4];
+	BlockMap[BLOCK_ID_VARIO_TONE_05].block		= &toneTable[5];
+	BlockMap[BLOCK_ID_VARIO_TONE_06].block		= &toneTable[6];
+	BlockMap[BLOCK_ID_VARIO_TONE_07].block		= &toneTable[7];
+	BlockMap[BLOCK_ID_VARIO_TONE_08].block		= &toneTable[8];
+	BlockMap[BLOCK_ID_VARIO_TONE_09].block		= &toneTable[9];
+	BlockMap[BLOCK_ID_VARIO_TONE_10].block		= &toneTable[10];
+	BlockMap[BLOCK_ID_VARIO_TONE_11].block		= &toneTable[11];
+	BlockMap[BLOCK_ID_VOLUMNE_SETTINGS].block	= &volume;
+	BlockMap[BLOCK_ID_THRESHOLD_SETTINGS].block	= &threshold;
+	BlockMap[BLOCK_ID_KALMAN_PARAMS].block		= &kalman;
+	BlockMap[BLOCK_ID_CALIBRATION_DATA].block	= &calData;
 }
 	
 void GlobalConfig::readAll()
 {
-	//
-	EEPROM_Block * block = (EEPROM_Block *)&buffer[0];
-
-	// profile_model
-	if (readBlock(BLOCK_ID_PROFILE_MODEL, block))
-		memcpy(profile_model, &block->data[0], BlockMap[BLOCK_ID_PROFILE_MODEL].length - sizeof(block->mask));
-	// profile_pilot
-	if (readBlock(BLOCK_ID_PROFILE_PILOT, block))
-		memcpy(profile_pilot, &block->data[0], BlockMap[BLOCK_ID_PROFILE_PILOT].length - sizeof(block->mask));
-	// profile_glider
-	if (readBlock(BLOCK_ID_PROFILE_GLIDER, block))
-		memcpy(profile_glider, &block->data[0], BlockMap[BLOCK_ID_PROFILE_GLIDER].length - sizeof(block->mask));
-
-	
-	// vario-settings
-	if (readBlock(BLOCK_ID_VARIO_SETTINGS, block))
+	for (int i = 0; i < BLOCK_ID_COUNT; i++)
 	{
-		BLOCK_VarioSettings * vario = (BLOCK_VarioSettings *)block;
-		
-		vario_sinkThreshold = vario->sinkThreshold;
-		vario_climbThreshold = vario->climbThreshold;
-		vario_sensitivity = vario->sensitivity;
-		vario_baroOnly = vario->baroOnly;
+		readBlock(i);
+		//delay(10);
 	}
-	// vario-timezone
-	if (readBlock(BLOCK_ID_VARIO_TIMEZONE, block))
-	{
-		BLOCK_VarioTimezone * vario = (BLOCK_VarioTimezone *)block;
-		
-		vario_timezone = vario->timezone;
-	}
-	// vario-volume
-	if (readBlock(BLOCK_ID_VARIO_VOLUMNE, block))
-	{
-		BLOCK_VarioVolume * vario = (BLOCK_VarioVolume *)block;
-		
-		vario_volume = vario->volume;
-	}
-	// vario-tone-table
-	for (int i = 0; i < TONE_TABLE_COUNT; i++)
-	{
-		if (readBlock(BLOCK_ID_VARIO_TONE_00+i, block))
-		{
-			BLOCK_VarioTone * vario = (BLOCK_VarioTone *)block;
-			
-			memcpy(&vario_tone[i], &vario->tone, sizeof(VarioTone));
-		}
-	}
-
-	//
-	if (readBlock(BLOCK_ID_KALMAN_PARAMS, block))
-	{
-		BLOCK_KalmanParameters * kalman = (BLOCK_KalmanParameters *)block;
-		
-		kalman_sigmaP = kalman->sigmaP;
-		kalman_sigmaA = kalman->sigmaA;
-	}
-
-	//
-	if (readBlock(BLOCK_ID_CALIBRATION_DATA, block))
-	{
-		BLOCK_CalibrationData * data = (BLOCK_CalibrationData *)block;
-		
-		accel_calData[0] = data->accel[0];
-		accel_calData[1] = data->accel[1];
-		accel_calData[2] = data->accel[2];
-		gyro_calData[0] = data->accel[3];
-		gyro_calData[1] = data->accel[4];
-		gyro_calData[2] = data->accel[5];
-	}	
-
-	//
-	dirty = false;
 }
 
 void GlobalConfig::writeAll()
 {
-	// write all parameters
-	writeProfile();
-	writeVarioSettings();
-	writeVarioTimezone();
-	writeVarioVolume();
-	writeVarioToneTable();
-	writeKalmanParamters();
-	writeCalibrationData();
-	
-	//
-	dirty = false;
+	for (int i = 0; i < BLOCK_ID_COUNT; i++)
+	{
+		writeBlock(i);	
+		//delay(1);
+	}
 }
 
-boolean GlobalConfig::readBlock(unsigned char id, EEPROM_Block * block)
+boolean GlobalConfig::readBlock(unsigned char id)
 {
 	EEPROM_BlockInfo * info = &BlockMap[id];
+	unsigned short mask = 0x0000;
 	
-	block->mask = 0x0000;
-	eepromDriver.readBuffer(eepromAddr, info->address, (unsigned char *)&block->mask, sizeof(block->mask));
-	//Serial.print("block->mask = 0x"); Serial.println(block->mask, HEX);
+	eepromDriver.readBuffer(eepromAddr, info->address, (unsigned char *)&mask, sizeof(mask));
+	//Serial.print("readBlock : "); Serial.println(id);
+	//Serial.print("block->mask = 0x"); Serial.println(mask, HEX);
 	//Serial.print("info->mask = 0x"); Serial.println(info->mask, HEX);
-	if (block->mask != info->mask)
+	if (mask != info->mask)
 		return false;
 		
-	eepromDriver.readBuffer(eepromAddr, info->address + sizeof(block->mask), (unsigned char *)&block->data[0], info->length - sizeof(block->mask));
+	eepromDriver.readBuffer(eepromAddr, info->address + sizeof(mask), (unsigned char *)info->block, info->length);
 	return true;
 }
 
-boolean GlobalConfig::writeBlock(unsigned char id, EEPROM_Block * block)
+void GlobalConfig::writeBlock(unsigned char id)
 {
 	EEPROM_BlockInfo * info = &BlockMap[id];
 	
-	eepromDriver.writePage(eepromAddr, info->address, (unsigned char *)block, info->length);
-	delay(DELAY_AFTER_WRITE);
+	//Serial.print("writeBlock : "); Serial.println(id);
+	//Serial.print("info->address = 0x"); Serial.println(info->address, HEX);
+	//Serial.print("info->mask = 0x"); Serial.println(info->mask, HEX);
+	//Serial.print("info->length = "); Serial.println(info->length);
 	
-	return true;
-}
-
-boolean GlobalConfig::writeProfile()
-{
-	EEPROM_BlockInfo * info;
-	BLOCK_Profile * block = (BLOCK_Profile *)&buffer[0];
-	
-	// if not empty
-	if (profile_model[0]) 
-	{
-		info = &BlockMap[BLOCK_ID_PROFILE_MODEL];
-
-		block->mask = info->mask;
-		memcpy(block->name, profile_model, sizeof(profile_model));
-		
-		//Serial.println("write model");
-		writeBlock(BLOCK_ID_PROFILE_MODEL, (EEPROM_Block *)block);
-	}
-	
-	// if not empty
-	if (profile_pilot[0]) 
-	{
-		info = &BlockMap[BLOCK_ID_PROFILE_PILOT];
-
-		block->mask = info->mask;
-		memcpy(block->name, profile_pilot, sizeof(profile_pilot));
-		
-		//Serial.println("write pilot");
-		writeBlock(BLOCK_ID_PROFILE_PILOT, (EEPROM_Block *)block);
-	}
-	
-	// if not empty
-	if (profile_glider[0]) 
-	{
-		info = &BlockMap[BLOCK_ID_PROFILE_GLIDER];
-
-		block->mask = info->mask;
-		memcpy(block->name, profile_glider, sizeof(profile_glider));
-		
-		//Serial.println("write glider");
-		writeBlock(BLOCK_ID_PROFILE_GLIDER, (EEPROM_Block *)block);
-	}
-	
-	return true;
-}
-
-boolean GlobalConfig::writeVarioSettings()
-{
-	EEPROM_BlockInfo * info = &BlockMap[BLOCK_ID_VARIO_SETTINGS];
-	BLOCK_VarioSettings * block = (BLOCK_VarioSettings *)&buffer[0];
-
+	EEPROM_Block * block = GlobalConfig::getBlock();
 	block->mask = info->mask;
-	block->sinkThreshold = vario_sinkThreshold;
-	block->climbThreshold = vario_climbThreshold;
-	block->sensitivity = vario_sensitivity;
-	block->baroOnly = vario_baroOnly;
+	memcpy(&block->data[0], info->block, info->length);
 	
-	//Serial.println("write vario settings");
-	return writeBlock(BLOCK_ID_VARIO_SETTINGS, (EEPROM_Block *)block);
+	eepromDriver.writeBuffer(eepromAddr, info->address, (unsigned char *)block, info->length + sizeof(info->mask));
 }
 
-boolean GlobalConfig::writeVarioTimezone()
-{
-	EEPROM_BlockInfo * info = &BlockMap[BLOCK_ID_VARIO_TIMEZONE];
-	BLOCK_VarioTimezone * block = (BLOCK_VarioTimezone *)&buffer[0];
-	
-	block->mask = info->mask;
-	block->timezone = vario_timezone;
-	
-	//Serial.println("write timezone");
-	return writeBlock(BLOCK_ID_VARIO_TIMEZONE, (EEPROM_Block *)block);
-}
-
-boolean GlobalConfig::writeVarioVolume()
-{
-	EEPROM_BlockInfo * info = &BlockMap[BLOCK_ID_VARIO_VOLUMNE];
-	BLOCK_VarioVolume * block = (BLOCK_VarioVolume *)&buffer[0];
-	
-	block->mask = info->mask;
-	block->volume = vario_volume;
-	
-	//Serial.println("write vario volume");
-	return writeBlock(BLOCK_ID_VARIO_VOLUMNE, (EEPROM_Block *)block);
-}
-
-boolean GlobalConfig::writeVarioToneTable()
-{
-	for (int i = 0; i < TONE_TABLE_COUNT; i++)
-	{
-		EEPROM_BlockInfo * info = &BlockMap[BLOCK_ID_VARIO_TONE_00+i];
-		BLOCK_VarioTone * vario = (BLOCK_VarioTone *)&buffer[0];
-		
-		vario->mask = info->mask;
-		memcpy(&vario->tone, &vario_tone[i], sizeof(VarioTone));
-		
-		//Serial.print("write vario tone #"); Serial.println(i+1);
-		if (! writeBlock(BLOCK_ID_VARIO_TONE_00+i, (EEPROM_Block *)vario))
-			return false;
-	}
-	
-	return true;
-}
-
-boolean GlobalConfig::writeKalmanParamters()
-{
-	EEPROM_BlockInfo * info = &BlockMap[BLOCK_ID_KALMAN_PARAMS];
-	BLOCK_KalmanParameters * block = (BLOCK_KalmanParameters *)&buffer[0];
-	
-	block->mask = info->mask;
-	block->sigmaP = kalman_sigmaP;
-	block->sigmaA = kalman_sigmaA;
-	
-	//Serial.println("write kalman filter parameters");
-	return writeBlock(BLOCK_ID_KALMAN_PARAMS, (EEPROM_Block *)block);
-}
-
-boolean GlobalConfig::writeCalibrationData()
-{
-	EEPROM_BlockInfo * info = &BlockMap[BLOCK_ID_CALIBRATION_DATA];
-	BLOCK_CalibrationData * block = (BLOCK_CalibrationData *)&buffer[0];
-	
-	block->mask = info->mask;
-	block->accel[0] = accel_calData[0];
-	block->accel[1] = accel_calData[1];
-	block->accel[2] = accel_calData[2];
-	block->accel[3] = gyro_calData[0];
-	block->accel[4] = gyro_calData[1];
-	block->accel[5] = gyro_calData[2];	
-	//Serial.println("write accelerometer calibration data");
-	return writeBlock(BLOCK_ID_CALIBRATION_DATA, (EEPROM_Block *)block);
-}
-
-void GlobalConfig::updateVarioVolume(int volume)
+void GlobalConfig::updateVarioVolume(int vol)
 {
 	// 
-	vario_volume = volume;
+	volume.vario = vol;
 	
 	//
-	writeVarioVolume();
+	writeBlock(BLOCK_ID_VOLUMNE_SETTINGS);
 }
 
-/*
-void GlobalConfig::updateVarioSettings(float sink, float climb, float sensitive, char vol)
+#if CONFIG_DEBUG_DUMP
+void GlobalConfig::dump()
 {
-	//
-	vario_sinkThreshold = sink;
-	vario_climbThreshold = climb;
-	vario_sensitivity = sensitive;
+	Serial.print("Glider.type = "); Serial.println(glider.type);
+	Serial.print("Glider.manufacture = "); Serial.println(glider.manufacture);
+	Serial.print("Glider.model = "); Serial.println(glider.model);
 	
-	vario_volume = vol;
+	Serial.print("Logger.enable = "); Serial.println((int)logger.enable);
+	Serial.print("Logger.takeoff_speed = "); Serial.println(logger.takeoff_speed);
+	Serial.print("Logger.landing_timeout = "); Serial.println(logger.landing_timeout);
+	Serial.print("Logger.logging_interval = "); Serial.println(logger.logging_interval);
+	Serial.print("Logger.pilot = "); Serial.println(logger.pilot);
+	Serial.print("Logger.timezone = "); Serial.println((int)logger.timezone);
 	
-	//
-	writeVarioSettings();
+	Serial.print("Vario.sinkThreshold = "); Serial.println(vario.sinkThreshold);
+	Serial.print("Vario.climbThreshold = "); Serial.println(vario.climbThreshold);
+	Serial.print("Vario.sensitivity = "); Serial.println(vario.sensitivity);
+	Serial.print("Vario.sentence = "); Serial.println(vario.sentence);
+	Serial.print("Vario.baroOnly = "); Serial.println(vario.baroOnly);
+	
+	Serial.print("Volume.vario = "); Serial.println(volume.vario);
+	Serial.print("Volume.effect = "); Serial.println(volume.effect);
+	
+	Serial.print("Threshold.low_battery = "); Serial.println(threshold.low_battery);
+	Serial.print("Threshold.shutdown_holdtime = "); Serial.println(threshold.shutdown_holdtime);
+	Serial.print("Threshold.auto_shutdown_vario = "); Serial.println(threshold.auto_shutdown_vario);
+	Serial.print("Threshold.auto_shutdown_ums = "); Serial.println(threshold.auto_shutdown_ums);
+	
+	Serial.print("Kalman.var_zmeas = "); Serial.println(kalman.var_zmeas);
+	Serial.print("Kalman.var_zaccel = "); Serial.println(kalman.var_zaccel);
+	Serial.print("Kalman.var_accelbias = "); Serial.println(kalman.var_accelbias);
+	
+	Serial.print("CalData.accel[0] = "); Serial.println(calData.accel[0]);
+	Serial.print("CalData.accel[0] = "); Serial.println(calData.accel[1]);
+	Serial.print("CalData.accel[0] = "); Serial.println(calData.accel[2]);
+	Serial.print("CalData.gyro[0] = "); Serial.println(calData.gyro[0]);
+	Serial.print("CalData.gyro[0] = "); Serial.println(calData.gyro[1]);
+	Serial.print("CalData.gyro[0] = "); Serial.println(calData.gyro[2]);
+	Serial.print("CalData.mag[0] = "); Serial.println(calData.mag[0]);
+	Serial.print("CalData.mag[0] = "); Serial.println(calData.mag[1]);
+	Serial.print("CalData.mag[0] = "); Serial.println(calData.mag[2]);
+	
+	Serial.println("ToneTable[] = ");
+	for (int i = 0; i < sizeof(toneTable) / sizeo(toneTable[0]); i++)
+	{
+		Serial.print("    [");
+		Serial.print(toneTable[i].velocity);
+		Serial.print(", ");
+		Serial.print(toneTable[i].freq);
+		Serial.print(", ");
+		Serial.print(toneTable[i].period);
+		Serial.print(", ");
+		Serial.print(toneTable[i].duty);
+		Serial.println("]");
+	}
 }
-
-void GlobalConfig::updateCalibrationData(float * calData)
-{
-	//
-	accel_calData[0] = calData[0];
-	accel_calData[1] = calData[1];
-	accel_calData[2] = calData[2];
-	
-	//
-	writeCalibrationData();
-}
-*/
+#endif // CONFIG_DEBUG_DUMP

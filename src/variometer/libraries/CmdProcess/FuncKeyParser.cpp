@@ -33,7 +33,7 @@ void FuncKeyParser::update()
 	if (Input.fired())
 	{
 		uint16_t value = Input.getValue();
-		Serial.print("Key input = "); Serial.println(value, HEX);
+		//Serial.print("Key input = "); Serial.println(value, HEX);
 
 		// replay key-input by sound
 		Player.setMelody(Input.getTone(), Input.getToneCount(), 1, PLAY_PREEMPTIVE, KEY_VOLUME);
@@ -61,7 +61,7 @@ void FuncKeyParser::update()
 			break;
 		case 0x3003 : // count: 3, code: SLL	// volume : quiet
 			inputCmd = CMD_SOUND_LEVEL;
-			inputParam = PARAM_LV_QUIET;
+			inputParam = PARAM_LV_MEDIUM;
 			inputTick = millis();
 			//Serial.println("change volume to quiet level");
 			break;
@@ -94,7 +94,7 @@ void FuncKeyParser::update()
 			
 		case 0xFFFF : // long long press
 			// command reset
-			Stack.enqueue(Command(CMD_FROM_KEY, CMD_DEVICE_RESET, 0));
+			Stack.enqueue(Command(CMD_FROM_KEY, CMD_RESET, 0));
 			break;
 			
 		default : // unsupport(unused) key-input

@@ -1,8 +1,6 @@
 // Variometer.ino
 //
 
-#define USE_KALMANVARIO	1
-
 #include <DefaultSettings.h>
 #include <SerialEx.h>
 #include <I2CDevice.h>
@@ -17,21 +15,23 @@
 #include <ToneGenerator.h>
 #include <ToneFrequency.h>
 #include <TonePlayer.h>
-#if USE_KALMANVARIO
+#if VARIOMETER_CLASSS == CLASS_KALMANVARIO
 #include <KalmanVario.h>
 #else
 #include <Variometer.h>
-#endif // USE_KALMANVARIO
+#endif // VARIOMETER_CLASSS == CLASS_KALMANVARIO
 #include <VarioBeeper.h>
 #include <VarioSentence.h>
 #include <BluetoothMan.h>
 #include <IGCLogger.h>
 #include <BatteryVoltage.h>
 #include <CommandParser.h>
-#include <ResponseSender.h>
+#include <ResponseStack.h>
 #include <SensorReporter.h>
 #include <AccelCalibrator.h>
 #include <UsbMassStorage.h>
+
+#include "ParamVarMap.h"
 
 
 // test-tone delta(inc/dec) calculation
@@ -102,99 +102,11 @@ void commandModeSwitch(Command * cmd);
 void commandSoundLevel(Command * cmd);
 void commandToneTest(Command * cmd);
 void commandSendsorDump(Command * cmd);
+void commandQueryParameter(Command * cmd);
+void commandUpdateParameter(Command * cmd);
+void commandDumpParameters(Command * cmd);
 
-void queryParam_profileModel(Command * cmd);		// PARAM_PROFILE_MODEL
-void queryParam_profilePilot(Command * cmd);		// PARAM_PROFILE_PILOT
-void queryParam_profileGlider(Command * cmd);		// PARAM_PROFILE_GLIDER
-void queryParam_varioSinkThreshold(Command * cmd);	// PARAM_VARIO_SINK_THRESHOLD
-void queryParam_varioClimbThreshold(Command * cmd);	// PARAM_VARIO_CLIMB_THRESHOLD
-void queryParam_varioSensitivity(Command * cmd);	// PARAM_VARIO_SENSITIVITY
-void queryParam_varioBaroOnly(Command * cmd);		// PARAM_VARIO_BARO_ONLY
-void queryParam_varioVolumn(Command * cmd);			// PARAM_VARIO_VOLUMN
-void queryParam_varioTone_XX(Command * cmd);		// PARAM_VARIO_TONE_00~11
-void queryParam_timeZone(Command * cmd);			// PARAM_TIME_ZONE
-void queryParam_kalmanSigma(Command * cmd);			// PARAM_KALMAN_SIGMA
-void queryParam_kalmanVariance(Command * cmd);		// PARAM_KALMAN_VARIANCE
-void queryParam_calibrationAccel(Command * cmd);	// PARAM_CALIBRATION_ACCEL
-void queryParam_calibrationGyro(Command * cmd);		// PARAM_CALIBRATION_GYRO
-void queryParam_unsupport(Command * cmd);
-
-void updateParam_profileModel(Command * cmd);		// PARAM_PROFILE_MODEL
-void updateParam_profilePilot(Command * cmd);		// PARAM_PROFILE_PILOT
-void updateParam_profileGlider(Command * cmd);		// PARAM_PROFILE_GLIDER
-void updateParam_varioSinkThreshold(Command * cmd);	// PARAM_VARIO_SINK_THRESHOLD
-void updateParam_varioClimbThreshold(Command * cmd);// PARAM_VARIO_CLIMB_THRESHOLD
-void updateParam_varioSensitivity(Command * cmd);	// PARAM_VARIO_SENSITIVITY
-void updateParam_varioBaroOnly(Command * cmd);		// PARAM_VARIO_BARO_ONLY
-void updateParam_varioVolumn(Command * cmd);		// PARAM_VARIO_VOLUMN
-void updateParam_varioTone_XX(Command * cmd);		// PARAM_VARIO_TONE_00~11
-void updateParam_timeZone(Command * cmd);			// PARAM_TIME_ZONE
-void updateParam_kalmanSigma(Command * cmd);		// PARAM_KALMAN_SIGMA
-void updateParam_kalmanVariance(Command * cmd);		// PARAM_KALMAN_VARIANCE
-void updateParam_calibrationAccel(Command * cmd);	// PARAM_CALIBRATION_ACCEL
-void updateParam_calibrationGyro(Command * cmd);	// PARAM_CALIBRATION_GYRO
-void updateParam_unsupport(Command * cmd);
-
-typedef void (* PARAM_PROC)(Command * cmd);
-
-PARAM_PROC	queryProc[] =
-{
-	queryParam_profileModel,		// PARAM_PROFILE_MODEL
-	queryParam_profilePilot,		// PARAM_PROFILE_PILOT
-	queryParam_profileGlider,		// PARAM_PROFILE_GLIDER
-	queryParam_varioSinkThreshold,	// PARAM_VARIO_SINK_THRESHOLD
-	queryParam_varioClimbThreshold,	// PARAM_VARIO_CLIMB_THRESHOLD
-	queryParam_varioSensitivity,	// PARAM_VARIO_SENSITIVITY
-	queryParam_varioBaroOnly,		// PARAM_VARIO_BARO_ONLY
-	queryParam_varioVolumn,			// PARAM_VARIO_VOLUMN
-	queryParam_varioTone_XX,		// PARAM_VARIO_TONE_00
-	queryParam_varioTone_XX,		// PARAM_VARIO_TONE_01
-	queryParam_varioTone_XX,		// PARAM_VARIO_TONE_02
-	queryParam_varioTone_XX,		// PARAM_VARIO_TONE_03
-	queryParam_varioTone_XX,		// PARAM_VARIO_TONE_04
-	queryParam_varioTone_XX,		// PARAM_VARIO_TONE_05
-	queryParam_varioTone_XX,		// PARAM_VARIO_TONE_06
-	queryParam_varioTone_XX,		// PARAM_VARIO_TONE_07
-	queryParam_varioTone_XX,		// PARAM_VARIO_TONE_08
-	queryParam_varioTone_XX,		// PARAM_VARIO_TONE_09
-	queryParam_varioTone_XX,		// PARAM_VARIO_TONE_10
-	queryParam_varioTone_XX,		// PARAM_VARIO_TONE_11
-	queryParam_timeZone,			// PARAM_TIME_ZONE
-	queryParam_kalmanSigma,			// PARAM_KALMAN_SIGMA
-	queryParam_kalmanVariance,		// PARAM_KALMAN_VARIANCE
-	queryParam_calibrationAccel,	// PARAM_CALIBRATION_ACCEL
-	queryParam_calibrationGyro,		// PARAM_CALIBRATION_GYRO
-};
-
-PARAM_PROC updateProc[] = 
-{
-	updateParam_profileModel,		// PARAM_PROFILE_MODEL
-	updateParam_profilePilot,		// PARAM_PROFILE_PILOT
-	updateParam_profileGlider,		// PARAM_PROFILE_GLIDER
-	updateParam_varioSinkThreshold,	// PARAM_VARIO_SINK_THRESHOLD
-	updateParam_varioClimbThreshold,// PARAM_VARIO_CLIMB_THRESHOLD
-	updateParam_varioSensitivity,	// PARAM_VARIO_SENSITIVITY
-	updateParam_varioBaroOnly,		// PARAM_VARIO_BARO_ONLY
-	updateParam_varioVolumn,		// PARAM_VARIO_VOLUMN
-	updateParam_varioTone_XX,		// PARAM_VARIO_TONE_00
-	updateParam_varioTone_XX,		// PARAM_VARIO_TONE_01
-	updateParam_varioTone_XX,		// PARAM_VARIO_TONE_02
-	updateParam_varioTone_XX,		// PARAM_VARIO_TONE_03
-	updateParam_varioTone_XX,		// PARAM_VARIO_TONE_04
-	updateParam_varioTone_XX,		// PARAM_VARIO_TONE_05
-	updateParam_varioTone_XX,		// PARAM_VARIO_TONE_06
-	updateParam_varioTone_XX,		// PARAM_VARIO_TONE_07
-	updateParam_varioTone_XX,		// PARAM_VARIO_TONE_08
-	updateParam_varioTone_XX,		// PARAM_VARIO_TONE_09
-	updateParam_varioTone_XX,		// PARAM_VARIO_TONE_10
-	updateParam_varioTone_XX,		// PARAM_VARIO_TONE_11
-	updateParam_timeZone,			// PARAM_TIME_ZONE
-	updateParam_kalmanSigma,		// PARAM_KALMAN_SIGMA
-	updateParam_kalmanVariance,		// PARAM_KALMAN_VARIANCE
-	updateParam_calibrationAccel,	// PARAM_CALIBRATION_ACCEL
-	updateParam_calibrationGyro,	// PARAM_CALIBRATION_GYRO
-};
-
+int pushParameters(int start);
 
 
 //
@@ -220,6 +132,12 @@ uint8_t	toneTestFlag = false;
 
 float	toneTestVelocity;
 float	toneTestDelta;
+
+//
+// dump parameters
+//
+
+int		dumpParam = -1;
 
 
 //
@@ -290,11 +208,11 @@ GlobalConfig Config(eeprom, EEPROM_ADDRESS);
 
 //
 
-#if USE_KALMANVARIO
+#if VARIOMETER_CLASSS == CLASS_KALMANVARIO
 KalmanVario vario;
 #else
 Variometer vario;
-#endif // USE_KALMANVARIO
+#endif // VARIOMETER_CLASSS == CLASS_KALMANVARIO
 
 
 //
@@ -368,8 +286,8 @@ CommandParser cmdParser1(CMD_FROM_USB, Serial, cmdStack); // USB serial parser
 CommandParser cmdParser2(CMD_FROM_BT, Serial1, cmdStack); // BT serial parser
 FuncKeyParser keyParser(keyFunc, cmdStack, tonePlayer);
 
-ResponseSender senderUSB;
-ResponseSender senderBT;
+ResponseStack resStackUSB;
+ResponseStack resStackBT;
 
 
 
@@ -378,7 +296,7 @@ ResponseSender senderBT;
 //
 //
 
-BluetoothMan btMan(SerialEx1, nmeaParser, varioNmea, sensorReporter, senderBT);
+BluetoothMan btMan(SerialEx1, nmeaParser, varioNmea, sensorReporter, resStackBT);
 
 
 //
@@ -489,16 +407,18 @@ void changeDeviceMode(int mode)
 void setup()
 {
 	//
-	board_init();	
+	board_init();
 	
 	//
+	delay(500);
+	Config.reset();
 	Config.readAll();
 	
 	// ToneGenerator uses PIN_PWM_H(PA8 : Timer1, Channel1)
 	toneGen.begin(PIN_PWM_H);
 	
 	//
-	tonePlayer.setVolume(Config.vario_volume);	
+	tonePlayer.setVolume(Config.volume.vario);	
 		
 	//
 	changeDeviceMode(DEVICE_MODE_VARIO);
@@ -534,6 +454,10 @@ void loop()
 	
 	// check shutdown interrupts and prepare shutdown
 	processShutdownInterrupt();	
+	
+	//
+	if (dumpParam >= 0)
+		dumpParam = pushParameters(dumpParam);	
 }
 
 
@@ -562,22 +486,17 @@ void setup_vario()
 	// initialize kalman filtered vertical velocity calculator
 	vertVel.init(imu.getAltitude(), 
 				imu.getVelocity(),
-				Config.kalman_sigmaP, // POSITION_MEASURE_STANDARD_DEVIATION,
-				Config.kalman_sigmaA, // ACCELERATION_MEASURE_STANDARD_DEVIATION,
+				Config.kalman.sigmaP, // POSITION_MEASURE_STANDARD_DEVIATION,
+				Config.kalman.igmaA, // ACCELERATION_MEASURE_STANDARD_DEVIATION,
 				millis());		
 	#endif
 	
-	#if USE_KALMANVARIO
-	
-	// Kalman filter configuration
-	#define KF_ZMEAS_VARIANCE       400.0f
-	#define KF_ZACCEL_VARIANCE      1000.0f
-	#define KF_ACCELBIAS_VARIANCE   1.0f	
-	
-	vario.begin(KF_ZMEAS_VARIANCE, KF_ZACCEL_VARIANCE, KF_ACCELBIAS_VARIANCE);
+	#if VARIOMETER_CLASSS == CLASS_KALMANVARIO
+	//vario.begin(KF_ZMEAS_VARIANCE, KF_ZACCEL_VARIANCE, KF_ACCELBIAS_VARIANCE);
+	vario.begin(Config.kalman.var_zmeas, Config.kalman.var_zaccel, Config.kalman.var_accelbias);
 	#else
-	vario.begin(Config.kalman_sigmaP, Config.kalman_sigmaA);
-	#endif // USE_KALMANVARIO
+	vario.begin(Config.kalman.sigmaP, Config.kalman.sigmaA);
+	#endif // VARIOMETER_CLASSS == CLASS_KALMANVARIO
 	
 	// turn-on GPS & BT
 	keyPowerGPS.enable();
@@ -631,7 +550,8 @@ void loop_vario()
 			if (velocity < STABLE_SINKING_THRESHOLD || STABLE_CLIMBING_THRESHOLD < velocity)
 				deviceTick = millis(); // reset tick because it's not quiet.
 			
-			if ((millis() - deviceTick) > AUTO_SHUTDOWN_THRESHOLD)
+			//if ((millis() - deviceTick) > AUTO_SHUTDOWN_THRESHOLD)
+			if ((Config.threshold.auto_shutdown_vario) && ((millis() - deviceTick) > Config.threshold.auto_shutdown_vario))
 			{
 				Serial.println("Now process auto-shutdown!!");
 				
@@ -646,7 +566,7 @@ void loop_vario()
 		//
 		float altitude = vario.getCalibratedAltitude(); // getCalibratedAltitude or getAltitude
 		logger.update(altitude);
-		Serial.print(altitude); Serial.print(", "); Serial.println(vario.getAltitude2());
+		//Serial.print(altitude); Serial.print(", "); Serial.println(vario.getAltitude2());
 		
 		// update vario sentence periodically
 		if (varioNmea.checkInterval())
@@ -733,7 +653,11 @@ void loop_vario()
 			while (nmeaParser.availableIGC())
 				logger.write(nmeaParser.readIGC());
 		}
-	}	
+	}
+
+	//
+	//while (resStackUSB.available())
+	//	Serial.write(resStackUSB.read());	
 }
 
 
@@ -823,7 +747,8 @@ void loop_ums()
 		modeTick = millis(); 
 
 	// turn-off if it have been unplugged while a threshold
-	if ((millis() - modeTick) > AUTO_SHUTDOWN_THRESHOLD)
+	//if ((millis() - modeTick) > AUTO_SHUTDOWN_THRESHOLD)
+	if ((Config.threshold.auto_shutdown_ums) && ((millis() - modeTick) > Config.threshold.auto_shutdown_ums))
 	{
 		// synchronous beep!!
 		tonePlayer.beep(NOTE_C4, 400, 2, KEY_VOLUME);
@@ -993,7 +918,8 @@ void setup_shutdown()
 
 void loop_shutdown()
 {
-	if (millis() - deviceTick > SHUTDOWN_HOLD_TIME)
+	//if (millis() - deviceTick > SHUTDOWN_HOLD_TIME)
+	if ((millis() - deviceTick) > Config.threshold.shutdown_holdtime)
 	{
 		tonePlayer.setMute();
 		keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_ACTIVE);
@@ -1064,50 +990,65 @@ void processCommand()
 		
 		switch(cmd.code)
 		{
+		case CMD_STATUS 	:
+			resStackBT.push(RCODE_NOT_READY);
+			break;
+		case CMD_RESET 	:
+			// reset!!
+			board_reset();
+			break;
+		case CMD_SHUTDOWN:
+			// shutdown!!
+			changeDeviceMode(DEVICE_MODE_SHUTDOWN);
+			break;
+		case CMD_FIRMWARE_VERSION :
+			resStackBT.push(RCODE_NOT_READY);
+			break;
 		case CMD_MODE_SWITCH 	:
 			commandModeSwitch(&cmd);
-			break;
-//		case CMD_DEVICE_STATUS 	:
-//			break;
-		case CMD_SENSOR_DUMP 	:
-			commandSendsorDump(&cmd);
-			break;
-//		case CMD_NMEA_SENTENCE  :
-//			btMan.blockNmeaSentence(cmd.param);
-//			break;
-		case CMD_TONE_TEST 		:
-			commandToneTest(&cmd);
 			break;
 		case CMD_SOUND_LEVEL 	:
 			commandSoundLevel(&cmd);
 			break;
-		case CMD_DEVICE_RESET 	:
-			// reset!!
-			board_reset();
+		case CMD_TONE_TEST 		:
+			commandToneTest(&cmd);
 			break;
-		case CMD_DEVICE_SHUTDOWN:
-			// shutdown!!
-			changeDeviceMode(DEVICE_MODE_SHUTDOWN);
+		case CMD_DUMP_SENSOR 	:
+			commandSendsorDump(&cmd);
 			break;
+		case CMD_DUMP_PARAMETERS :
+			commandDumpParameters(&cmd);
+			break;
+//		case CMD_BLOCK_GPS_NMEA :
+//			btMan.blockNmeaSentence(cmd.param ? );
+//			break;
+//		case CMD_BLOCK_VARIO_NMEA :
+//			btMan.blockNmeaSentence(cmd.param ? );
+//			break;
 		case CMD_QUERY_PARAM 	:
-			if (cmd.param < PARAM_COUNT)
-				queryProc[cmd.param](&cmd);
-			else
-				queryParam_unsupport(&cmd);
+			commandQueryParameter(&cmd);
 			break;
 		case CMD_UPDATE_PARAM 	:
-			if (cmd.param < PARAM_COUNT)
-				updateProc[cmd.param](&cmd);
-			else
-				updateParam_unsupport(&cmd);
+			commandUpdateParameter(&cmd);
 			break;
 		case CMD_SAVE_PARAM :
 			Config.writeAll();
+			resStackBT.push(RCODE_OK);
 			break;
 		case CMD_RESTORE_PARAM :
 			Config.reset();
 			Config.readAll();
-			break;;
+			resStackBT.push(RCODE_OK);
+			break;
+		#if CONFIG_DEBUG_DUMP
+		case CMD_DUMP_CONFIG :
+			Config.dump();
+			break;
+		#endif // CONFIG_DEBUG_DUMP
+			
+		default :
+			resStackBT.push(RCODE_UNAVAILABLE);		
+			break;
 		}
 	}	
 }
@@ -1125,20 +1066,23 @@ void commandModeSwitch(Command * cmd)
 			//setup_calibration();
 			// loop
 			//main_loop = icalibration_loop();
+			resStackBT.push(RCODE_UNAVAILABLE);
 			break;
 		case PARAM_SW_CALIBRATION  :
 			changeDeviceMode(DEVICE_MODE_CALIBRATION);
+			resStackBT.push(RCODE_OK);
 			break;
 		case PARAM_SW_UMS          :
 			if (/*keyUSB.read() == INPUT_ACTIVE &&*/ logger.isInitialized())
 			{
-				changeDeviceMode(DEVICE_MODE_UMS);
-				return;
+				changeDeviceMode(DEVICE_MODE_UMS);			
+				resStackBT.push(RCODE_OK);
 			}
 			else
 			{
 				// sd-init failed!! : warning beep~~
 				tonePlayer.beep(NOTE_C3, 200, 4, KEY_VOLUME);
+				resStackBT.push(RCODE_FAIL);
 			}
 			break;
 		}
@@ -1155,7 +1099,7 @@ void commandSoundLevel(Command * cmd)
 	case PARAM_LV_LOUD 	:
 		volume = MAX_VOLUME;
 		break;
-	case PARAM_LV_QUIET :
+	case PARAM_LV_MEDIUM :
 		volume = MID_VOLUME;
 		break;
 	case PARAM_LV_MUTE	:
@@ -1172,30 +1116,41 @@ void commandSoundLevel(Command * cmd)
 
 		//
 		tonePlayer.setBeep(460, 800, 400, 3);
+		//
+		resStackBT.push(RCODE_OK);
+	}
+	else
+	{
+		resStackBT.push(RCODE_FAIL);
 	}
 }
+
 
 // CMD_TONE_TEST
 //
 // #TT,[0|1]
 //     0 : stop
 //     1 : start
+
 void commandToneTest(Command * cmd)
 {
 	if (cmd->param)
 	{
 		toneTestFlag = true;
 
-		toneTestVelocity = 0; // Config.vario_climbThreshold;
+		toneTestVelocity = 0; // Config.vario.climbThreshold;
 		toneTestDelta = TT_UPDATE_DELTA;
 	}
 	else
 	{
 		toneTestFlag = false;
 	}
+	
+	resStackBT.push(RCODE_OK);
 }
 
-// CMD_SENSOR_DUMP
+
+// CMD_DUMP_SENSOR
 //
 // #DU,[bitmask]
 //     0 : stop
@@ -1205,7 +1160,6 @@ void commandToneTest(Command * cmd)
 //     8 : temperature
 // response
 //     $SENSOR,ax,ay,az,gx,gy,gz,p,t*XX\r\n
-	
 
 void commandSendsorDump(Command * cmd)
 {
@@ -1233,230 +1187,176 @@ void commandSendsorDump(Command * cmd)
 	//btMan.blockSensorData(cmd.param);		
 }
 
-// PARAM_PROFILE_MODEL
-void queryParam_profileModel(Command * cmd)
-{	
-	Serial.print("%QU,"); 
-	Serial.print(cmd->param); 
-	Serial.print(","); 
-	Serial.println(Config.profile_model);	
-}
-
-// PARAM_PROFILE_PILOT
-void queryParam_profilePilot(Command * cmd)
-{	
-	Serial.print("%QU,"); 
-	Serial.print(cmd->param); 
-	Serial.print(","); 
-	Serial.println(Config.profile_pilot);	
-}
-
-// PARAM_PROFILE_GLIDER
-void queryParam_profileGlider(Command * cmd)
-{	
-	Serial.print("%QU,"); 
-	Serial.print(cmd->param); 
-	Serial.print(","); 
-	Serial.println(Config.profile_glider);	
-}
-
-// PARAM_VARIO_SINK_THRESHOLD
-void queryParam_varioSinkThreshold(Command * cmd)
+void commandQueryParameter(Command * cmd)
 {
-	Serial.print("%QU,"); 
-	Serial.print(cmd->param); 
-	Serial.print(","); 
-	Serial.println(Config.vario_sinkThreshold);	
-}
+	for (int i = 0; ParamMap[i].id != PARAM_EOF; i++)
+	{
+		PARAM_MappingInfo * info = &ParamMap[i];
+		
+		if (info->id == cmd->param)
+		{
+			//Serial.print("%QP,"); 
+			//Serial.print(cmd->param); 
+			//Serial.print(","); 
+			
+			switch (info->type)
+			{
+			case PARAM_INT8_T	:
+				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, *((int8_t *)info->ref));
+				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((int8_t *)info->ref));	
+				break;
+			case PARAM_INT16_T	:
+				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, *((int16_t *)info->ref));
+				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((int16_t *)info->ref));	
+				break;
+			case PARAM_INT32_T	:
+				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, *((int32_t *)info->ref));
+				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((int32_t *)info->ref));	
+				break;
+			case PARAM_UINT8_T	:
+				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, *((uint8_t *)info->ref));
+				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((uint8_t *)info->ref));	
+				break;
+			case PARAM_UINT16_T	:
+				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, *((uint16_t *)info->ref));
+				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((uint16_t *)info->ref));	
+				break;
+			case PARAM_UINT32_T	:
+				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, *((uint32_t *)info->ref));
+				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((uint32_t *)info->ref));	
+				break;
+			case PARAM_FLOAT	:
+				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, *((float *)info->ref));
+				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((float *)info->ref), MAX_FLOAT_PRECISION);	
+				break;
+			case PARAM_STRING	:
+				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, (char *)info->ref);
+				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); 
+				//{
+				//	char * ptr = (char *)info->ref;
+				//	
+				//	for(int i = 0; *ptr && i < MAX_STRING_SIZE; i++)
+				//		Serial.write(ptr[i]);
+				//	Serial.println("");
+				//}					
+				break;
+			}
 
-// PARAM_VARIO_CLIMB_THRESHOLD
-void queryParam_varioClimbThreshold(Command * cmd)
+			return;
+		}
+	}
+	
+	resStackBT.push(RCODE_ERROR/*, error code*/);
+	//Serial.println("%ER");
+}	
+
+void commandUpdateParameter(Command * cmd)
 {
-	Serial.print("%QU,"); 
-	Serial.print(cmd->param); 
-	Serial.print(","); 
-	Serial.println(Config.vario_climbThreshold);
+	for (int i = 0; ParamMap[i].id != PARAM_EOF; i++)
+	{
+		PARAM_MappingInfo * info = &ParamMap[i];
+		
+		if (info->id == cmd->param)
+		{
+			switch (info->type)
+			{
+			case PARAM_INT8_T	:
+				*((int8_t *)info->ref) = atoi((char *)cmd->valData);
+				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, *((int8_t *)info->ref));
+				break;
+			case PARAM_INT16_T	:
+				*((int16_t *)info->ref) = atoi((char *)cmd->valData);
+				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, *((int16_t *)info->ref));
+				break;
+			case PARAM_INT32_T	:
+				*((int32_t *)info->ref) = atoi((char *)cmd->valData);
+				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, *((int32_t *)info->ref));
+				break;
+			case PARAM_UINT8_T	:
+				*((uint8_t *)info->ref) = atoi((char *)cmd->valData);
+				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, *((uint8_t *)info->ref));
+				break;
+			case PARAM_UINT16_T	:
+				*((uint16_t *)info->ref) = atoi((char *)cmd->valData);
+				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, *((uint16_t *)info->ref));
+				break;
+			case PARAM_UINT32_T	:
+				*((uint32_t *)info->ref) = atoi((char *)cmd->valData);
+				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, *((uint32_t *)info->ref));
+				break;
+			case PARAM_FLOAT	:
+				//Serial.print("UP:"); Serial.print(cmd->param, HEX); Serial.print(" -> "); Serial.println((char *)cmd->valData);
+				*((float *)info->ref) = atof((char *)cmd->valData);
+				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, *((float *)info->ref));
+				break;
+			case PARAM_STRING	:
+				int len = cmd->valLen < MAX_STRING_SIZE ? cmd->valLen : MAX_STRING_SIZE;
+				memset((char *)info->ref, 0, MAX_STRING_SIZE);
+				memcpy((char *)info->ref, (char *)cmd->valData, len);
+				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, (char *)info->ref);
+				break;
+			}
+			
+			return;
+		}
+	}
+	
+	resStackBT.push(RCODE_ERROR/*, error code*/);
+	//Serial.println("%ER");
 }
 
-// PARAM_VARIO_SENSITIVITY
-void queryParam_varioSensitivity(Command * cmd)
-{	
-	Serial.print("%QU,"); 
-	Serial.print(cmd->param); 
-	Serial.print(","); 
-	Serial.println(Config.vario_sensitivity);
-}
-
-// PARAM_VARIO_BARO_ONLY
-void queryParam_varioBaroOnly(Command * cmd)
+void commandDumpParameters(Command * cmd)
 {
-	Serial.print("%QU,"); 
-	Serial.print(cmd->param); 
-	Serial.print(","); 
-	Serial.println(Config.vario_baroOnly);
+	//Serial.print("commandDumpParameters: "); Serial.println(dumpParam);
+	
+	if (dumpParam < 0)
+		dumpParam = pushParameters(0);
 }
 
-// PARAM_VARIO_VOLUMN
-void queryParam_varioVolumn(Command * cmd)
-{	
-	Serial.print("%QU,"); 
-	Serial.print(cmd->param); 
-	Serial.print(","); 
-	Serial.println(Config.vario_volume);
-}
-
-// PARAM_VARIO_TONE_00~11
-void queryParam_varioTone_XX(Command * cmd)
-{	
-	Serial.print("%QU,"); 
-	Serial.print(cmd->param);
-	Serial.print(","); 
-	Serial.print(Config.vario_tone[cmd->param-PARAM_VARIO_TONE_00].velocity);
-	Serial.print(","); 
-	Serial.print(Config.vario_tone[cmd->param-PARAM_VARIO_TONE_00].freq);
-	Serial.print(","); 
-	Serial.print(Config.vario_tone[cmd->param-PARAM_VARIO_TONE_00].period);
-	Serial.print(","); 
-	Serial.println(Config.vario_tone[cmd->param-PARAM_VARIO_TONE_00].duty);
-}
-
-
-// PARAM_TIME_ZONE
-void queryParam_timeZone(Command * cmd)
-{	
-	Serial.print("%QU,");
-	Serial.print(cmd->param);
-	Serial.print(","); 
-	Serial.println((int)Config.vario_timezone);
-}
-
-// PARAM_KALMAN_SIGMA
-void queryParam_kalmanSigma(Command * cmd)
+int pushParameters(int start)
 {
-	Serial.print("%QU,"); 
-	Serial.print(cmd->param); 
-	Serial.print(","); 
-	Serial.print(Config.kalman_sigmaP);
-	Serial.print(","); 
-	Serial.println(Config.kalman_sigmaA);
-}
+	int i;
+	
+	//Serial.print("push from "); Serial.println(start);
+	
+	for (i = start; ParamMap[i].id != PARAM_EOF && ! resStackBT.isFull(); i++)
+	{
+		//Serial.print("push QP,0x"); Serial.println(ParamMap[i].id, HEX);
+		
+		switch (ParamMap[i].type)
+		{
+		case PARAM_INT8_T	:
+			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, *((int8_t *)ParamMap[i].ref));
+			break;
+		case PARAM_INT16_T	:
+			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, *((int16_t *)ParamMap[i].ref));
+			break;
+		case PARAM_INT32_T	:
+			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, *((int32_t *)ParamMap[i].ref));
+			break;
+		case PARAM_UINT8_T	:
+			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, *((uint8_t *)ParamMap[i].ref));
+			break;
+		case PARAM_UINT16_T	:
+			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, *((uint16_t *)ParamMap[i].ref));
+			break;
+		case PARAM_UINT32_T	:
+			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, *((uint32_t *)ParamMap[i].ref));
+			break;
+		case PARAM_FLOAT	:
+			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, *((float *)ParamMap[i].ref));
+			break;
+		case PARAM_STRING	:
+			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, (char *)ParamMap[i].ref);
+			break;
+		} 
+	}
+	
+	if (ParamMap[i].id == PARAM_EOF && ! resStackBT.isFull())
+	{
+		resStackBT.push(RCODE_DUMP_PARAM, PARAM_EOF);
+		i = -1;
+	}
 
-// PARAM_KALMAN_VARIANCE
-void queryParam_kalmanVariance(Command * cmd)
-{	
-}
-
-// PARAM_CALIBRATION_ACCEL
-void queryParam_calibrationAccel(Command * cmd)
-{
-	Serial.print("%QU,"); 
-	Serial.print(cmd->param); 
-	Serial.print(","); 
-	Serial.print(Config.accel_calData[0]);
-	Serial.print(","); 
-	Serial.print(Config.accel_calData[1]);
-	Serial.print(","); 
-	Serial.println(Config.accel_calData[2]);
-}
-
-// PARAM_CALIBRATION_GYRO
-void queryParam_calibrationGyro(Command * cmd)
-{	
-	Serial.print("%QU,"); 
-	Serial.print(cmd->param); 
-	Serial.print(","); 
-	Serial.print(Config.gyro_calData[0]);
-	Serial.print(","); 
-	Serial.print(Config.gyro_calData[1]);
-	Serial.print(","); 
-	Serial.println(Config.gyro_calData[2]);
-}
-
-// UNSUPPORTED PARAMETER
-void queryParam_unsupport(Command * cmd)
-{	
-}
-
-
-// PARAM_PROFILE_MODEL
-void updateParam_profileModel(Command * cmd)
-{	
-}
-
-// PARAM_PROFILE_PILOT
-void updateParam_profilePilot(Command * cmd)
-{	
-}
-
-// PARAM_PROFILE_GLIDER
-void updateParam_profileGlider(Command * cmd)
-{	
-}
-
-// PARAM_VARIO_SINK_THRESHOLD
-void updateParam_varioSinkThreshold(Command * cmd)
-{	
-//	float value = toFloat(cmd->valData);
-//	Config.vario_sensitivity = value;
-}
-
-// PARAM_VARIO_CLIMB_THRESHOLD
-void updateParam_varioClimbThreshold(Command * cmd)
-{	
-//	float value = toFloat(cmd->valData);
-//	Config.vario_sensitivity = value;
-}
-
-// PARAM_VARIO_SENSITIVITY
-void updateParam_varioSensitivity(Command * cmd)
-{
-//	float value = toFloat(cmd->valData);
-//	Config.vario_sensitivity = value;
-}
-
-// PARAM_VARIO_BARO_ONLY
-void updateParam_varioBaroOnly(Command * cmd)
-{
-}
-
-// PARAM_VARIO_VOLUMN
-void updateParam_varioVolumn(Command * cmd)
-{	
-}
-
-// PARAM_VARIO_TONE_00~11
-void updateParam_varioTone_XX(Command * cmd)
-{	
-}
-
-// PARAM_TIME_ZONE
-void updateParam_timeZone(Command * cmd)
-{
-//	int32_t value = toNum(cmd->valData);
-//	Config.vario_timezone = value;
-}
-
-// PARAM_KALMAN_SIGMA
-void updateParam_kalmanSigma(Command * cmd)
-{
-}
-
-// PARAM_KALMAN_VARIANCE
-void updateParam_kalmanVariance(Command * cmd)
-{	
-}
-
-// PARAM_CALIBRATION_ACCEL
-void updateParam_calibrationAccel(Command * cmd)
-{	
-}
-
-// PARAM_CALIBRATION_GYRO
-void updateParam_calibrationGyro(Command * cmd)
-{	
-}
-
-// UNSUPPORTED PARAMETER
-void updateParam_unsupport(Command * cmd)
-{	
+	return i; // ParamMap[i].id != PARAM_EOF ? i : -1;
 }

@@ -67,26 +67,26 @@ void VarioBeeper::setVelocity(float velocity)
 	switch (beepType)
 	{
 	case BEEP_TYPE_SINKING :
-		if (Config.vario_sinkThreshold + Config.vario_sensitivity < velocity)
+		if (Config.vario.sinkThreshold + Config.vario.sensitivity < velocity)
 			typeChanged = true;
 		break;
 		
 	case BEEP_TYPE_SILENT :
-		if (velocity <= Config.vario_sinkThreshold || Config.vario_climbThreshold <= velocity)
+		if (velocity <= Config.vario.sinkThreshold || Config.vario.climbThreshold <= velocity)
 			typeChanged = true;
 		break;
 		
 	case BEEP_TYPE_CLIMBING :
-		if (velocity < Config.vario_climbThreshold - Config.vario_sensitivity)
+		if (velocity < Config.vario.climbThreshold - Config.vario.sensitivity)
 			typeChanged = true;
 		break;
 	}
 	
 	if (typeChanged)
 	{
-		if (velocity <= Config.vario_sinkThreshold)
+		if (velocity <= Config.vario.sinkThreshold)
 			beepType = BEEP_TYPE_SINKING;
-		else if (Config.vario_climbThreshold <= velocity)
+		else if (Config.vario.climbThreshold <= velocity)
 			beepType = BEEP_TYPE_CLIMBING;
 		else
 			beepType = BEEP_TYPE_SILENT;
@@ -109,28 +109,28 @@ void VarioBeeper::findTone(float velocity, int & freq, int & period, int & duty)
 {
 	int index;
 	
-	for (index = 0; index < (sizeof(Config.vario_tone) / sizeof(Config.vario_tone[0])); index++)
+	for (index = 0; index < (sizeof(Config.toneTable) / sizeof(Config.toneTable[0])); index++)
 	{
-		if (velocity <= Config.vario_tone[index].velocity)
+		if (velocity <= Config.toneTable[index].velocity)
 			break;
 	}
 	
-	if (index == 0 || index == (sizeof(Config.vario_tone) / sizeof(Config.vario_tone[0])))
+	if (index == 0 || index == (sizeof(Config.toneTable) / sizeof(Config.toneTable[0])))
 	{
 		if (index != 0)
 			index -= 1;
 		
-		freq = Config.vario_tone[index].freq;
-		period = Config.vario_tone[index].period;
-		duty = Config.vario_tone[index].duty;
+		freq = Config.toneTable[index].freq;
+		period = Config.toneTable[index].period;
+		duty = Config.toneTable[index].duty;
 	}
 	else
 	{
-		float ratio = Config.vario_tone[index].velocity / velocity;
+		float ratio = Config.toneTable[index].velocity / velocity;
 		
-		freq = (Config.vario_tone[index].freq - Config.vario_tone[index-1].freq) / (Config.vario_tone[index].velocity - Config.vario_tone[index-1].velocity) * (velocity - Config.vario_tone[index-1].velocity) + Config.vario_tone[index-1].freq;
-		period = (Config.vario_tone[index].period - Config.vario_tone[index-1].period) / (Config.vario_tone[index].velocity - Config.vario_tone[index-1].velocity) * (velocity - Config.vario_tone[index-1].velocity) + Config.vario_tone[index-1].period;
-		duty = (Config.vario_tone[index].duty - Config.vario_tone[index-1].duty) / (Config.vario_tone[index].velocity - Config.vario_tone[index-1].velocity) * (velocity - Config.vario_tone[index-1].velocity) + Config.vario_tone[index-1].duty;
+		freq = (Config.toneTable[index].freq - Config.toneTable[index-1].freq) / (Config.toneTable[index].velocity - Config.toneTable[index-1].velocity) * (velocity - Config.toneTable[index-1].velocity) + Config.toneTable[index-1].freq;
+		period = (Config.toneTable[index].period - Config.toneTable[index-1].period) / (Config.toneTable[index].velocity - Config.toneTable[index-1].velocity) * (velocity - Config.toneTable[index-1].velocity) + Config.toneTable[index-1].period;
+		duty = (Config.toneTable[index].duty - Config.toneTable[index-1].duty) / (Config.toneTable[index].velocity - Config.toneTable[index-1].velocity) * (velocity - Config.toneTable[index-1].velocity) + Config.toneTable[index-1].duty;
 	}
 	
 	//period = (int)(period * 1.0);

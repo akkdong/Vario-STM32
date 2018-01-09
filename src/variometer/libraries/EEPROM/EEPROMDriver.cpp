@@ -3,6 +3,9 @@
 
 #include "EEPROMDriver.h"
 
+#define MAX_WRITE_BLOCK_SIZE	30
+#define MAX_READ_BLOCK_SIZE		32
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // class EEPROMDriver
@@ -16,24 +19,62 @@ void EEPROMDriver::writeByte(unsigned char devAddr, unsigned short memAddr, unsi
 	int rdata = data;
 	
 	Wire.beginTransmission(devAddr);
-	Wire.write((int)(memAddr >> 8)); // MSB
-	Wire.write((int)(memAddr & 0xFF)); // LSB
+	Wire.write((int)((memAddr >> 8) & 0x00FF)); // MSB
+	Wire.write((int)(memAddr & 0x00FF)); // LSB
 	Wire.write(rdata);
 	Wire.endTransmission();
+	
+	// wait write completion
+	do
+	{
+		Wire.beginTransmission(devAddr);
+	} while (Wire.endTransmission(true) != 0);
 }
 
 // WARNING: address is a page address, 6-bit end will wrap around
 // also, data can be maximum of about 30 bytes, because the Wire library has a buffer of 32 bytes
-void EEPROMDriver::writePage(unsigned char devAddr, unsigned short memAddr, unsigned char * data, short dataLen)
+//
+// rename writePage to writeBuffer
+//   writeBuffer can write buffer greater than Wire library buffer
+//   but must be not exceed page size
+void EEPROMDriver::writeBuffer(unsigned char devAddr, unsigned short memAddr, unsigned char * buf, short bufLen)
 {
-	Wire.beginTransmission(devAddr);
-	Wire.write((int)(memAddr >> 8)); // MSB
-	Wire.write((int)(memAddr & 0xFF)); // LSB
+	short remainLen = bufLen;
+	short bufStart = 0, writeLen;
+	unsigned short writeTo = memAddr;
 	
-	for (short c = 0; c < dataLen; c++)
-		Wire.write(data[c]);
+	while (remainLen > 0)
+	{
+		Wire.beginTransmission(devAddr);
+		Wire.write((int)((writeTo >> 8) & 0x00FF)); // MSB
+		Wire.write((int)(writeTo & 0x00FF)); // LSB
+		
+		//Serial.print("W: ");
+		//Serial.print(writeTo, HEX);
+		//Serial.print(" ");
+		
+		for (writeLen = 0; writeLen < MAX_WRITE_BLOCK_SIZE && writeLen < remainLen; writeLen++)
+		{
+			//Serial.print(buf[bufStart+writeLen], HEX);
+			//Serial.print(" ");
+
+			Wire.write(buf[bufStart+writeLen]);
+		}
+		//Serial.println("");
+		
+		Wire.endTransmission();
+		
+		//
+		bufStart += writeLen;
+		writeTo += writeLen;		
+		remainLen -= writeLen;
 	
-	Wire.endTransmission();
+		// wait write completion
+		do
+		{
+			Wire.beginTransmission(devAddr);
+		} while (Wire.endTransmission(true) != 0);
+	}
 }
 
 unsigned char EEPROMDriver::readByte(unsigned char devAddr, unsigned short memAddr)
@@ -54,12 +95,42 @@ unsigned char EEPROMDriver::readByte(unsigned char devAddr, unsigned short memAd
 
 void EEPROMDriver::readBuffer(unsigned char devAddr, unsigned short memAddr, unsigned char * buf, short bufLen)
 {
-    Wire.beginTransmission(devAddr);
-    Wire.write((int)(memAddr >> 8)); // MSB
-    Wire.write((int)(memAddr & 0xFF)); // LSB
-    Wire.endTransmission();
+ 	short remainLen = bufLen;
+	short bufStart = 0, readLen;
+	unsigned short readFrom = memAddr;
 	
-    Wire.requestFrom(devAddr,bufLen);
-    for (short c = 0; c < bufLen; c++ )
-        if (Wire.available()) buf[c] = Wire.read();
+	while (remainLen > 0)
+	{
+		Wire.beginTransmission(devAddr);
+		Wire.write((int)(readFrom >> 8)); // MSB
+		Wire.write((int)(readFrom & 0xFF)); // LSB
+		Wire.endTransmission();
+		
+		//Serial.print("R: ");
+		//Serial.print(readFrom, HEX);
+		//Serial.print(" ");	
+		
+		readLen = remainLen < MAX_READ_BLOCK_SIZE ? remainLen : MAX_READ_BLOCK_SIZE;
+		
+		Wire.requestFrom(devAddr, readLen);
+		//delay(1);
+		for (short c = 0; c < readLen; c++ )
+		{
+			/*if (Wire.available())*/ buf[bufStart+c] = Wire.read();
+
+			//Serial.print(buf[bufStart+c], HEX);
+			//Serial.print(" ");
+		}
+		//Serial.println("");
+		
+		bufStart += readLen;
+		readFrom += readLen;	
+		remainLen -= readLen;
+		
+		//
+		do
+		{
+			Wire.beginTransmission(devAddr);
+		} while (Wire.endTransmission(true) != 0);		
+	}
 }

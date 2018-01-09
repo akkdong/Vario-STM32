@@ -59,33 +59,12 @@ void CommandParser::update()
 			{
 				if (c == ',' || c == '\r' || c == '\r')
 				{
-					switch (cmdCode)
-					{
-					case CMD_MODE_SWITCH	: // 'SW'
-					case CMD_DEVICE_STATUS	: // 'DS'
-					case CMD_DEVICE_RESET	: // 'RS'
-					case CMD_DEVICE_SHUTDOWN: // 'SH'
-					case CMD_SENSOR_DUMP	: // 'DU'
-					case CMD_NMEA_SENTENCE	: // 'NM'
-					case CMD_TONE_TEST		: // 'TT'
-					case CMD_SOUND_LEVEL	: // 'LV'
-					case CMD_QUERY_PARAM	: // 'QU'
-					case CMD_UPDATE_PARAM	: // 'UD'
-					case CMD_SAVE_PARAM		: // 'SA'
-					case CMD_RESTORE_PARAM	: // 'RE'
-						// known command
-						if (c == ',')
-							parseStep = 3; // next is param field
-						else if (c == '\r')
-							parseStep = 5; // next is '\n'
-						else
-							parseStep = 6; // end of command string
-						break;
-					default :
-						// unknown command
-						parseStep = -1;
-						break;
-					}
+					if (c == ',')
+						parseStep = 3; // next is param field
+					else if (c == '\r')
+						parseStep = 5; // next is '\n'
+					else
+						parseStep = 6; // end of command string
 				}
 				else
 				{

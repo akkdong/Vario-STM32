@@ -87,7 +87,7 @@ void setup_eeprom()
 	buf[4] = 3;
 	
 	Serial.println("write some data at 0x0000...");
-	eeprom.writePage(EEPROM_ADDRESS, 0, buf, 5);
+	eeprom.writeBuffer(EEPROM_ADDRESS, 0, buf, 5);
 	delay(1000);
 	
 	//
@@ -99,7 +99,7 @@ void setup_eeprom()
 	buf[5] = 9;
 	
 	Serial.println("write some data at 0x0008...");
-	eeprom.writePage(EEPROM_ADDRESS, 8, buf, 6);
+	eeprom.writeBuffer(EEPROM_ADDRESS, 8, buf, 6);
 	delay(1000);
 	
 	//
@@ -146,7 +146,7 @@ void setup_eeprom()
 		buf[0] = 0x55; buf[1] = 0xAA;
 		for (int i = 2; i < EEPROM_PAGE_SIZE; i++ )
 			buf[i] = 0x10 + i;
-		eeprom.writePage(EEPROM_ADDRESS, 0, buf, EEPROM_PAGE_SIZE);
+		eeprom.writeBuffer(EEPROM_ADDRESS, 0, buf, EEPROM_PAGE_SIZE);
 		
 		Serial.print("Write to 0x0000\r\n  ==> ");
 		for (int i = 0; i < EEPROM_PAGE_SIZE; i++ )
@@ -179,7 +179,7 @@ void setup_eeprom()
 		buf[0] = 0xDE; buf[1] = 0xAD;
 		for (int i = 2; i < EEPROM_PAGE_SIZE; i++ )
 			buf[i] = 0x50 + i;
-		eeprom.writePage(EEPROM_ADDRESS, 0, buf, 16);
+		eeprom.writeBuffer(EEPROM_ADDRESS, 0, buf, 16);
 		
 		Serial.print("Write to 0x0000\r\n  ==> ");
 		for (int i = 0; i < EEPROM_PAGE_SIZE; i++ )
@@ -225,25 +225,25 @@ void setup_GlobalConfig()
 	//
 	Config.readAll();
 	
-	Serial.print("vario_volume = "), Serial.println((int)Config.vario_volume);
-	Serial.print("vario_sinkThreshold = "), Serial.println(Config.vario_sinkThreshold);
-	Serial.print("vario_climbThreshold = "), Serial.println(Config.vario_climbThreshold);
-	Serial.print("vario_sensitivity = "), Serial.println(Config.vario_sensitivity);
+	Serial.print("vario_volume = "), Serial.println((int)Config.volume/vario);
+	Serial.print("vario_sinkThreshold = "), Serial.println(Config.vario/sinkThreshold);
+	Serial.print("vario_climbThreshold = "), Serial.println(Config.vario/climbThreshold);
+	Serial.print("vario_sensitivity = "), Serial.println(Config.vario/sensitivity);
 	
-	Serial.print("vario_sentence = "), Serial.println(Config.vario_sentence);
+	Serial.print("vario_sentence = "), Serial.println(Config.vario/sentence);
 	
-	Serial.print("kalman_sigmaP = "), Serial.println(Config.kalman_sigmaP);
-	Serial.print("kalman_sigmaA = "), Serial.println(Config.kalman_sigmaA);
+	Serial.print("kalman_sigmaP = "), Serial.println(Config.kalman/sigmaP);
+	Serial.print("kalman_sigmaA = "), Serial.println(Config.kalman/sigmaA);
 	
-	Serial.print("accel[0] = "), Serial.println(Config.accel[0]);
-	Serial.print("accel[1] = "), Serial.println(Config.accel[1]);
-	Serial.print("accel[2] = "), Serial.println(Config.accel[2]);
+	Serial.print("accel[0] = "), Serial.println(Config.calData.accel[0]);
+	Serial.print("accel[1] = "), Serial.println(Config.calData.accel[1]);
+	Serial.print("accel[2] = "), Serial.println(Config.calData.accel[2]);
 	
-	if (Config.accel[0] == 0.0 && Config.accel[1] == 0.0 && Config.accel[2] == 0.0)
+	if (Config.calData.accel[0] == 0.0 && Config.calData.accel[1] == 0.0 && Config.calData.accel[2] == 0.0)
 	{
-		Config.accel[0] = 0.123;
-		Config.accel[1] = -0.3;
-		Config.accel[2] = 0.032;
+		Config.calData.accel[0] = 0.123;
+		Config.calData.accel[1] = -0.3;
+		Config.calData.accel[2] = 0.032;
 		
 		Serial.println("write calibration data to EEPROM...");
 		Config.writeCalibrationData();
@@ -251,9 +251,9 @@ void setup_GlobalConfig()
 		// read-again
 		Config.readAll();
 	
-		Serial.print("accel[0] = "), Serial.println(Config.accel[0]);
-		Serial.print("accel[1] = "), Serial.println(Config.accel[1]);
-		Serial.print("accel[2] = "), Serial.println(Config.accel[2]);
+		Serial.print("accel[0] = "), Serial.println(Config.calData.accel[0]);
+		Serial.print("accel[1] = "), Serial.println(Config.calData.accel[1]);
+		Serial.print("accel[2] = "), Serial.println(Config.calData.accel[2]);
 	}
 }
 

@@ -26,9 +26,9 @@ void AccelCalibrator::init(void)
 	/* get the values stored in EEPROM */
 	//float* cal = imu.getCalibration();
 	
-	calibration[0] = Config.accel_calData[0];
-	calibration[1] = Config.accel_calData[1];
-	calibration[2] = Config.accel_calData[2];
+	calibration[0] = Config.calData.accel[0];
+	calibration[1] = Config.calData.accel[1];
+	calibration[2] = Config.calData.accel[2];
 }
 
 void AccelCalibrator::reset(void)
@@ -275,11 +275,12 @@ void AccelCalibrator::calibrate(void)
 
 	//vertaccel_saveCalibration(calibration);
 	//imu.setCalibration(calibration);
-	Config.accel_calData[0] = calibration[0];
-	Config.accel_calData[1] = calibration[1];
-	Config.accel_calData[2] = calibration[2];
+	Config.calData.accel[0] = calibration[0];
+	Config.calData.accel[1] = calibration[1];
+	Config.calData.accel[2] = calibration[2];
 	
-	Config.writeCalibrationData();
+	//Config.writeCalibrationData();
+	Config.writeBlock(BLOCK_ID_CALIBRATION_DATA);
 	
 	//
 	calibrated = true;

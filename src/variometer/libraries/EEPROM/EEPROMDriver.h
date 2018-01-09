@@ -18,7 +18,7 @@ public:
 	
 public:
 	void				writeByte(unsigned char devAddr, unsigned short memAddr, unsigned char data);
-	void				writePage(unsigned char devAddr, unsigned short memAddr, unsigned char * data, short dataLen);
+	void				writeBuffer(unsigned char devAddr, unsigned short memAddr, unsigned char * data, short dataLen);
 	
 	unsigned char		readByte(unsigned char devAddr, unsigned short memAddr);
 	void				readBuffer(unsigned char devAddr, unsigned short memAddr, unsigned char * buf, short bufLen);

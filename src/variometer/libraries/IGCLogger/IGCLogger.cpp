@@ -168,7 +168,7 @@ void IGCLogger::end(time_t date)
 	
 	if (date)
 	{
-		time_t localdate = date + (Config.vario_timezone * 60 * 60); 
+		time_t localdate = date + (Config.logger.timezone * 60 * 60); 
 		struct tm * _tm = localtime(&localdate);	
 		
 		sdFile.timestamp(T_ACCESS|T_WRITE,
@@ -294,7 +294,7 @@ const char * IGCLogger::makeFileName(char * buf, time_t date)
 	const char * ptr;
 	struct tm * _tm;
 
-	date = date + (Config.vario_timezone * 60 * 60); 
+	date = date + (Config.logger.timezone * 60 * 60); 
 	_tm = localtime(&date);
 	
 	// year
@@ -319,7 +319,7 @@ const char * IGCLogger::makeFileName(char * buf, time_t date)
 	buf[pos++] = '-';
 		
 	// FR serial number
-	ptr = Config.profile_pilot[0] ? Config.profile_pilot : serialNumber;
+	ptr = Config.logger.pilot[0] ? Config.logger.pilot : serialNumber;
 	for (i = 0; i < 3; i++)
 		buf[pos++] = (*ptr) && (*ptr != 0x20) ? *ptr++ : 'X';
 	buf[pos++] = '-';
@@ -361,14 +361,14 @@ void IGCLogger::writeHeader(uint32_t date)
 			}
 			break;
 		case IGC_HEADER_PILOT	 :
-			if (Config.profile_pilot[0])
-				sdFile.write((const char *)Config.profile_pilot);
+			if (Config.logger.pilot[0])
+				sdFile.write((const char *)Config.logger.pilot);
 			break;
 		case IGC_HEADER_CLASS	 :
 			break;
 		case IGC_HEADER_GLIDER	 :
-			if (Config.profile_glider[0])
-				sdFile.write((const char *)Config.profile_glider);
+			if (Config.logger.glider[0])
+				sdFile.write((const char *)Config.logger.glider);
 			break;
 		case IGC_HEADER_GPSDATUM :
 			// leave it empty!!
@@ -410,7 +410,7 @@ void IGCLogger::writeHeader(time_t date)
 					sdFile.write(digit.read());
 				
 				//
-				time_t localdate = date + (Config.vario_timezone * 60 * 60); 
+				time_t localdate = date + (Config.logger.timezone * 60 * 60); 
 				_tm = localtime(&localdate);	
 				
 				sdFile.timestamp(T_ACCESS|T_CREATE|T_WRITE,
@@ -419,14 +419,14 @@ void IGCLogger::writeHeader(time_t date)
 			}
 			break;
 		case IGC_HEADER_PILOT	 :
-			if (Config.profile_pilot[0])
-				sdFile.write((const char *)Config.profile_pilot);
+			if (Config.logger.pilot[0])
+				sdFile.write((const char *)Config.logger.pilot);
 			break;
 		case IGC_HEADER_CLASS	 :
 			break;
 		case IGC_HEADER_GLIDER	 :
-			if (Config.profile_glider[0])
-				sdFile.write((const char *)Config.profile_glider);
+			//if (Config.profile_glider[0])
+			//	sdFile.write((const char *)Config.profile_glider);
 			break;
 		case IGC_HEADER_GPSDATUM :
 			// leave it empty!!

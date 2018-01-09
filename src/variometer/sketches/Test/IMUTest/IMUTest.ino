@@ -52,12 +52,12 @@ void setup()
 	//
 	Config.readAll();
 	
-	Serial.print("Kalman filter sigmaP = "); Serial.println(Config.kalman_sigmaP);
-	Serial.print("Kalman filter sigmaA = "); Serial.println(Config.kalman_sigmaA);
+	Serial.print("Kalman filter sigmaP = "); Serial.println(Config.kalman.sigmaP);
+	Serial.print("Kalman filter sigmaA = "); Serial.println(Config.kalman.sigmaA);
 	Serial.print("Accelerometer calibration data = [");
-	Serial.print(Config.accel_calData[0], 10); Serial.print(", ");
-	Serial.print(Config.accel_calData[1], 10); Serial.print(", ");
-	Serial.print(Config.accel_calData[2], 10); Serial.println("]");
+	Serial.print(Config.calData.accel[0], 10); Serial.print(", ");
+	Serial.print(Config.calData.accel[1], 10); Serial.print(", ");
+	Serial.print(Config.calData.accel[2], 10); Serial.println("]");
 	Serial.println("");
 	
 	// initialize imu module & measure first data
@@ -155,8 +155,8 @@ void setup()
 	// initialize kalman filtered vertical velocity calculator
 	vertVel.init(imu.getAltitude(), 
 				imu.getVelocity(),
-				Config.kalman_sigmaP, // POSITION_MEASURE_STANDARD_DEVIATION,
-				Config.kalman_sigmaA, // ACCELERATION_MEASURE_STANDARD_DEVIATION,
+				Config.kalman.sigmaP, // POSITION_MEASURE_STANDARD_DEVIATION,
+				Config.kalman.sigmaA, // ACCELERATION_MEASURE_STANDARD_DEVIATION,
 				millis());
 
 				

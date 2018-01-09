@@ -85,13 +85,13 @@ void MPU60X0::update(int calibrateAccel)
 	
 	if (calibrateAccel)
 	{
-		gyroData[0] += Config.gyro_calData[0];
-		gyroData[1] += Config.gyro_calData[1];
-		gyroData[2] += Config.gyro_calData[2];		
+		gyroData[0] += Config.calData.gyro[0];
+		gyroData[1] += Config.calData.gyro[1];
+		gyroData[2] += Config.calData.gyro[2];		
 		
-		accelData[0] += Config.accel_calData[0];
-		accelData[1] += Config.accel_calData[1];
-		accelData[2] += Config.accel_calData[2];		
+		accelData[0] += Config.calData.accel[0];
+		accelData[1] += Config.calData.accel[1];
+		accelData[2] += Config.calData.accel[2];		
 	}
 	
 	// CJMCU-117 board is placed upside down in the case (when speaker is pointing up). We arbitrarily decide that 
@@ -191,8 +191,8 @@ void MPU60X0::calibateGyro()
 	//
 	if (count)
 	{
-		Config.gyro_calData[0] = -(sum[0] / count);
-		Config.gyro_calData[1] = -(sum[1] / count);
-		Config.gyro_calData[2] = -(sum[2] / count);
+		Config.calData.gyro[0] = -(sum[0] / count);
+		Config.calData.gyro[1] = -(sum[1] / count);
+		Config.calData.gyro[2] = -(sum[2] / count);
 	}
 }

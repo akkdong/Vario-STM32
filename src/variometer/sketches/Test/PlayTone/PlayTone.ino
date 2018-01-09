@@ -78,8 +78,8 @@ void setup()
 	
 	vertVel.init(imu.getAltitude(), 
 				imu.getVelocity(),
-				Config.kalman_sigmaP, // POSITION_MEASURE_STANDARD_DEVIATION,
-				Config.kalman_sigmaA, // ACCELERATION_MEASURE_STANDARD_DEVIATION,
+				Config.kalman.sigmaP, // POSITION_MEASURE_STANDARD_DEVIATION,
+				Config.kalman.sigmaA, // ACCELERATION_MEASURE_STANDARD_DEVIATION,
 				millis());	
 	
 	//

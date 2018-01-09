@@ -76,9 +76,9 @@ void MPU6050_::update(int calibrateAccel)
 	
 	if (calibrateAccel)
 	{
-		accelData[0] += Config.accel_calData[0];
-		accelData[1] += Config.accel_calData[1];
-		accelData[2] += Config.accel_calData[2];
+		accelData[0] += Config.calData.accel[0];
+		accelData[1] += Config.calData.accel[1];
+		accelData[2] += Config.calData.accel[2];
 	}
 	
 	quadData[0] = ((float)iquat[0])/MPU6050_QUAT_SCALE;

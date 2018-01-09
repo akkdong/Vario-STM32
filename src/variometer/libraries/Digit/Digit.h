@@ -7,74 +7,73 @@
 
 /* !!! can only display numbers with less than 10 digits !!! */
 
-class Digit {
+class Digit
+{
+public:
+	Digit(boolean plusDisplay = false);
+	
+	void 			begin(float value, uint8_t precision); //display float
+	void 			begin(unsigned long value);             //display unsigned integer
+	void 			begin(long value);                      //diplay signed integer
+	unsigned 		size(unsigned signSize = 1, unsigned digitSize = 1, unsigned dotSize = 1); //!! work only just after begin
+	boolean 		available(void);
+	uint8_t 		get(void);
+	unsigned long 	getIntegerDigit(void); //the integer formed by the digit displayed
 
- public:
-  Digit(boolean plusDisplay = false);
-  void begin(float value, uint8_t precision); //display float
-  void begin(unsigned long value);             //display unsigned integer
-  void begin(long value);                      //diplay signed integer
-  unsigned size(unsigned signSize = 1, unsigned digitSize = 1, unsigned dotSize = 1); //!! work only just after begin
-  boolean available(void);
-  uint8_t get(void);
-  unsigned long getIntegerDigit(void); //the integer formed by the digit displayed
-
-  
- protected:
-  void setPositive(void);
-  void setNegative(void);
-  void applySign(float& value);
-  void applySign(long& value);
-  void computeExponent(void);
-  float applyPrecision(float value, uint8_t precision);
-  void buildForPrecision(float value, uint8_t precision);
-  uint8_t state;
-  unsigned long ival;
-  unsigned long exp;
-  int8_t pos;
-
+protected:
+	void 			setPositive(void);
+	void 			setNegative(void);
+	void 			applySign(float& value);
+	void 			applySign(long& value);
+	void 			computeExponent(void);
+	float 			applyPrecision(float value, uint8_t precision);
+	void 			buildForPrecision(float value, uint8_t precision);
+	
+	uint8_t 		state;
+	unsigned long 	ival;
+	unsigned long 	exp;
+	int8_t 			pos;
 };
 
 /* fixed precision digit */
-class FPDigit : public Digit {
- public:
-  FPDigit(uint8_t precision, boolean plusDisplay = false)
-    : Digit(plusDisplay), precision(precision) { }
+class FPDigit : public Digit
+{
+public:
+	FPDigit(uint8_t precision, boolean plusDisplay = false)
+		: Digit(plusDisplay), precision(precision) { }
 
-  void begin(float value);
-  
- protected:
-  uint8_t precision;
+	void 			begin(float value);
+
+protected:
+	uint8_t 		precision;
 };
+
 
 /* fixed precision stabilized digit */
-class FPSDigit : public FPDigit {
- public :
-  FPSDigit(uint8_t precision, boolean plusDisplay = false)
-    : FPDigit(precision, plusDisplay), lastDisplayValue(100000000000.5) { }
+class FPSDigit : public FPDigit
+{
+public :
+	FPSDigit(uint8_t precision, boolean plusDisplay = false)
+		: FPDigit(precision, plusDisplay), lastDisplayValue(100000000000.5) { }
 
-  bool begin(float value); //return true if the stabilized value has changed
-  void rebuild(void); //rebuild with the last displayed value
+	bool 			begin(float value); //return true if the stabilized value has changed
+	void 			rebuild(void); //rebuild with the last displayed value
 
- private:
-  float lastDisplayValue;
-
+private:
+	float 			lastDisplayValue;
 };
      
-  
 
+class HexDigit
+{
+public:
+	void 			begin(uint8_t hexValue);
+	boolean 		available(void);
+	uint8_t 		get(void);
 
-class HexDigit {
-
- public:
-  void begin(uint8_t hexValue);
-  boolean available(void);
-  uint8_t get(void);
-
- private:
-  uint8_t value;
-  uint8_t pos;
-
+private:
+	uint8_t 		value;
+	uint8_t 		pos;
 };
 
 

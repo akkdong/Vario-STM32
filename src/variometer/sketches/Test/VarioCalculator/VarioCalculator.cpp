@@ -527,9 +527,9 @@ void VarioCalculator::updateVerticalAccel()
 	float rax, ray, raz;
 	float uv[3];
 
-	accelData[0] = ((float)iaccel[0])/MPU6050_ACCEL_SCALE + Config.accel_calData[0];
-	accelData[1] = ((float)iaccel[1])/MPU6050_ACCEL_SCALE + Config.accel_calData[1];
-	accelData[2] = ((float)iaccel[2])/MPU6050_ACCEL_SCALE + Config.accel_calData[2];
+	accelData[0] = ((float)iaccel[0])/MPU6050_ACCEL_SCALE + Config.calData.accel[0];
+	accelData[1] = ((float)iaccel[1])/MPU6050_ACCEL_SCALE + Config.calData.accel[1];
+	accelData[2] = ((float)iaccel[2])/MPU6050_ACCEL_SCALE + Config.calData.accel[2];
 
 	quadData[0] = ((float)iquat[0])/MPU6050_QUAT_SCALE;
 	quadData[1] = ((float)iquat[1])/MPU6050_QUAT_SCALE;

@@ -97,7 +97,7 @@ void KalmanVario::update()
 		imu.read(&va);
 		
 		// baroOnly : remove vertical acceleration factor
-		if (Config.vario_baroOnly)
+		if (Config.vario.baroOnly)
 			va = 0;
 		
 		//

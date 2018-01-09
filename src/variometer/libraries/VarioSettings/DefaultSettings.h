@@ -4,6 +4,24 @@
 #ifndef __DEFAULTSETTINGS_H__
 #define __DEFAULTSETTINGS_H__
 
+//
+//
+//
+
+// you can use one of KalmanVario and Variometer class
+#define CLASS_KALMANVARIO							(1)
+#define CLASS_VARIOMETER							(2)
+
+#define VARIOMETER_CLASSS							CLASS_KALMANVARIO
+
+
+// ADC has two choice. PRIMARY or ALTERNATE
+#define ADC_PRIMARY									(1)
+#define ADC_ALTERNATE								(2)
+
+#define BATTERY_ADC									ADC_ALTERNATE
+
+
 // Serial baud rate
 //
 
@@ -11,10 +29,15 @@
 #define BAUDRATE_BT								(115200)
 #define BAUDRATE_GPS							(9600)
 
+
 // Pin definitions
 //
 
+#if BATTERY_ADC == ADC_PRIMARY
+#define PIN_ADC_BATTERY							PA0		// ADC
+#else  // 
 #define PIN_ADC_BATTERY							PA1		// ADC
+#endif // BATTERY_ADC
 #define PIN_EMPTY_1								PA1		// empty
 #define PIN_USART2_TX							PA2		// USART2
 #define PIN_USART2_RX							PA3		// USART2
@@ -27,14 +50,12 @@
 #define PIN_USART1_RX							PA10	// USART1
 #define PIN_USB_DM								PA11	// USB
 #define PIN_USB_DP								PA12	// USB
-#define PIN_JTAG_JTMS							PA13	// JTAG
-#define PIN_JTAG_JTCK							PA14	// JTAG
-#define PIN_JTAG_JTDI							PA15	// JTAG
+#define PIN_IMU_FSYNC							PA13	// GPIO : output, active high, JTAG -> MPU6050 FSYNC
+#define PIN_IMU_INTA							PA14	// GPIO : input, active high, JTAG -> MPU6050 INT
+#define PIN_IMU_DRDY							PA15	// GPIO : input, active low, JTAG -> HMC5883L DRDY
 #define PIN_BT_EN								PB0		// GPIO : output, active low
 #define PIN_GPS_EN								PB1		// GPIO : output, active low
 #define PIN_BOOT1								PB2		// boot
-#define PIN_JTAG_JTDO							PB3		// JTAG
-#define PIN_JTAG_JNTRST							PB4		// JTAG
 #define PIN_FUNC_INPUT							PB5		// GPIO : input, active low
 #define PIN_I2C1_SCL							PB6		// I2C1
 #define PIN_I2C1_SDA							PB7		// I2C1
@@ -42,12 +63,11 @@
 #define PIN_USB_EN								PB9		// GPIO : output,	active high
 #define PIN_I2C2_SCL							PB10	// I2C2
 #define PIN_I2C2_SDA							PB11	// I2C2
-#define PIN_EMPTY_2								PB12	// empty
-#define PIN_EMPTY_3								PB13	// empty
+#define PIN_IMU_EN								PB12	// GPIO : output,	active high
+#define PIN_SD_EN								PB13	// GPIO : output,	active high
 #define PIN_KILL_PWR							PB14	// GPIO : input, active low
 #define PIN_SHDN_INT							PB15	// GPIO : input, active low
 #define PIN_MCU_STATE							PC13	// GPIO : output, active low(led on)
-#define PIN_MODE_SELECT							PC14	// GPIO : input, HIGH : UMS, LOW : DBG
 
 #define ACTIVE_LOW								(0)
 #define ACTIVE_HIGH								(1)
@@ -70,6 +90,7 @@
 
 #define VARIOMETER_TIME_ZONE					(9)	// GMT+9
 #define VARIOMETER_BEEP_VOLUME					(0)	// percentage (0 ~ 100)
+#define VARIOMETER_EFFECT_VOLUME				(3)
 
 #define VARIOMETER_SINKING_THRESHOLD 			(-3.0)
 #define VARIOMETER_CLIMBING_THRESHOLD 			(0.2)
@@ -111,8 +132,14 @@
 // Kalman filter settings
 //
 
+// Variometer class configuration
 #define POSITION_MEASURE_STANDARD_DEVIATION 	(0.1)
 #define ACCELERATION_MEASURE_STANDARD_DEVIATION (0.3)
+
+// KalmanFilter class configuration
+#define KF_ZMEAS_VARIANCE       				(400.0f)
+#define KF_ZACCEL_VARIANCE      				(1000.0f)
+#define KF_ACCELBIAS_VARIANCE   				(1.0f)
 
 
 // Voltage measurement settings
@@ -121,7 +148,11 @@
 #define ADC_SCALE_FACTOR						(1000.0 / (560.0 + 1000.0))	// voltage divisor : R1(560K), R2(1M)
 #define	ADC_LPF_FACTOR							(0.2)
 
+#if BATTERY_ADC == ADC_PRIMARY
+#define ADC_CH									ADC0
+#else
 #define ADC_CH									ADC1
+#endif // BATTERY_ADC
 #define ADC_PIN									PIN_ADC_BATTERY		// PA0
 #define ADC_VREF								(3.3)
 #define ADC_RESOLUTION							((1 << 12) - 1)
@@ -160,8 +191,9 @@
 // Flight detection settings
 //
 
-#define FLIGHT_START_MIN_SPEED 					(5.0)		// 5Km/h
+#define FLIGHT_START_MIN_SPEED 					(8.0)		// 8Km/h
 #define FLIGHT_LANDING_THRESHOLD 				(30000)		// 30s
+#define FLIGHT_LOGGING_INTERVAL					(1000)		// 1s
 
 
 // InvenSense settings

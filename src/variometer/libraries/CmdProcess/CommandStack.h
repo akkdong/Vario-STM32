@@ -13,18 +13,23 @@
 
 #define CMD_XXXX				(0xXXXX)	// consist of two bytes. each byte denotes alphabet 'A' to 'Z'
 										// ex) 0x5357 -> 'SW' : mode switch
-#define CMD_MODE_SWITCH			'SW'
-#define CMD_DEVICE_STATUS		'DS'
-#define CMD_DEVICE_RESET		'RS'
-#define CMD_DEVICE_SHUTDOWN		'SH'
-#define CMD_SENSOR_DUMP			'DU'
-#define CMD_NMEA_SENTENCE		'NM'
+#define CMD_STATUS				'ST'
+#define CMD_RESET				'RS'
+#define CMD_SHUTDOWN			'SD'
+#define CMD_FIRMWARE_VERSION	'FV'
+#define CMD_MODE_SWITCH			'MS'
+#define CMD_SOUND_LEVEL			'SL'
 #define CMD_TONE_TEST			'TT'
-#define CMD_SOUND_LEVEL			'LV'
-#define CMD_QUERY_PARAM			'QU'
-#define CMD_UPDATE_PARAM		'UD'
-#define CMD_SAVE_PARAM			'SV'
-#define CMD_RESTORE_PARAM		'RE'
+#define CMD_DUMP_SENSOR			'DS'
+#define CMD_DUMP_PARAMETERS		'DP'
+#define CMD_DUMP_CONFIG			'DC'
+#define CMD_BLOCK_GPS_NMEA		'BG'
+#define CMD_BLOCK_VARIO_NMEA	'BV'
+#define CMD_FACTORY_RESET		'FR'
+#define CMD_RESTORE_PARAM		'RP'
+#define CMD_SAVE_PARAM			'SP'
+#define CMD_QUERY_PARAM			'QP'
+#define CMD_UPDATE_PARAM		'UP'
 
 // mode switch
 #define PARAM_SW_ICALIBRATION	(1)		// interactive
@@ -57,22 +62,23 @@
 
 // sound level
 #define PARAM_LV_MUTE			(0)
-#define PARAM_LV_QUIET			(1)
+#define PARAM_LV_MEDIUM			(1)
 #define PARAM_LV_LOUD			(2)
 
 // device reset
 #define PARAM_RS_NOW			(0)
 #define PARAM_RS_AFTER_SAVE		(1)
 
+/*
 // query paramater
 enum VarioParameters
-{
+{	
 	PARAM_PROFILE_MODEL,
 	PARAM_PROFILE_PILOT,
 	PARAM_PROFILE_GLIDER,
-	PARAM_VARIO_SINK_THRESHOLD,
-	PARAM_VARIO_CLIMB_THRESHOLD,
-	PARAM_VARIO_SENSITIVITY,
+	PARAM_VARIO_SINK_THRESHOLD_,
+	PARAM_VARIO_CLIMB_THRESHOLD_,
+	PARAM_VARIO_SENSITIVITY_,
 	PARAM_VARIO_BARO_ONLY,
 	PARAM_VARIO_VOLUMN,
 	PARAM_VARIO_TONE_00,
@@ -94,6 +100,7 @@ enum VarioParameters
 	PARAM_CALIBRATION_GYRO,
 	PARAM_COUNT,
 };
+*/
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -127,39 +134,6 @@ public:
 	
 	uint8_t		valData[MAX_VALUE_STRING];
 	uint8_t		valLen;
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-
-enum RESDATA_TYPE
-{
-	RESDATA_NONE,
-	RESDATA_NUMBER,
-	RESDATA_FLOAT,
-	RESDATA_ARRAY,
-	RESDATA_STRING,
-};
-
-class Response
-{
-public:
-	Response();
-	
-public:
-	uint16_t	to;		// this response is transmitted to BT or USB
-	uint16_t	code;	// response code
-	uint32_t	param;	// response specific paramater
-	
-	union
-	{
-		uint32 	uData;
-		float	fData;
-		uint32	aData[4];
-		uint8_t	sData[MAX_VALUE_STRING];
-	};
-	uint8_t dataType;	// response data type
 };
 
 

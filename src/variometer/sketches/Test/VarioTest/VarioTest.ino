@@ -129,7 +129,7 @@ void setup()
 	#if TEST_KALMANVARIO
 	vario.begin(KF_ZMEAS_VARIANCE, KF_ZACCEL_VARIANCE, KF_ACCELBIAS_VARIANCE);
 	#else
-	vario.begin(Config.kalman_sigmaP, Config.kalman_sigmaA);
+	vario.begin(Config.kalman.sigmaP, Config.kalman.sigmaA);
 	#endif
 }
 
