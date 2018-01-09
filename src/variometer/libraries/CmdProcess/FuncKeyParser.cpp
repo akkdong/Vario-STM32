@@ -1,6 +1,7 @@
 // FuncKeyParser.cpp
 //
 
+#include <GlobalConfig.h>
 #include "FuncKeyParser.h"
 
 #define MAX_RESPONSE_INPUT_TIME		(5000)	// 5s
@@ -23,7 +24,7 @@ void FuncKeyParser::update()
 	if (inputCmd && (millis() - inputTick) > MAX_RESPONSE_INPUT_TIME)
 	{
 		// play cancel melody
-		Player.setBeep(NOTE_C3, 1000, 800, 1, KEY_VOLUME);
+		Player.setBeep(NOTE_C3, 1000, 800, 1, Config.volume.effect);
 		
 		// reset input command
 		inputCmd = 0;
@@ -36,7 +37,7 @@ void FuncKeyParser::update()
 		//Serial.print("Key input = "); Serial.println(value, HEX);
 
 		// replay key-input by sound
-		Player.setMelody(Input.getTone(), Input.getToneCount(), 1, PLAY_PREEMPTIVE, KEY_VOLUME);
+		Player.setMelody(Input.getTone(), Input.getToneCount(), 1, PLAY_PREEMPTIVE, Config.volume.effect);
 
 		switch (value)
 		{
@@ -98,7 +99,7 @@ void FuncKeyParser::update()
 			break;
 			
 		default : // unsupport(unused) key-input
-			Player.setBeep(NOTE_C3, 1000, 800, 1, KEY_VOLUME);
+			Player.setBeep(NOTE_C3, 1000, 800, 1, Config.volume.effect);
 			break;
 		}
 	}

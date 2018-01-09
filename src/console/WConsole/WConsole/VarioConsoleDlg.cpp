@@ -99,18 +99,18 @@ static SentenceInfo _SentenceTable[] =
 
 static VarioTone _ToneTable[TONE_TABLE_COUNT] =
 {
-	{ -10.0,  200, 200, 100 },
-	{ -3.0,  293, 200, 100 },
-	{ -2.0,  369, 200, 100 },
-	{ -1.0,  440, 200, 100 },
-	{ 0.09,  400, 600,  50 },
-	{ 0.10,  400, 600,  50 },
-	{ 1.98,  499, 552,  50 },
-	{ 3.14,  868, 347,  50 },
-	{ 4.57, 1084, 262,  50 },
-	{ 6.28, 1354, 185,  50 },
-	{ 8.15, 1593, 168,  50 },
-	{ 10.00, 1800, 150,  50 },
+	{ -10.0f,	200,	200,	100 },
+	{ -3.0f,	293,	200,	100 },
+	{ -2.0f,	369,	200,	100 },
+	{ -1.0f,	440,	200,	100 },
+	{ 0.09f,	400,	600,	50	},
+	{ 0.10f,	400,	600,	50	},
+	{ 1.98f,	499,	552,	50	},
+	{ 3.14f,	868,	347,	50	},
+	{ 4.57f,	1084,	262,	50	},
+	{ 6.28f,	1354,	185,	50	},
+	{ 8.15f,	1593,	168,	50	},
+	{ 10.00f,	1800,	150,	50	},
 };
 
 
@@ -232,6 +232,8 @@ CVarioConsoleDlg::CVarioConsoleDlg(CWnd* pParent /*=NULL*/)
 	, m_fCalDataGyroZ(0.0f)
 	, m_bConnected(FALSE)
 	, m_nBufLen(0)
+	, m_bRecvVarioMsg(FALSE)
+	, m_nTimerID(0)
 	, m_nPortNum(0)
 	, m_nBaudRate(CSerial::EBaud115200)
 	, m_nDataBits(CSerial::EData8)
@@ -322,6 +324,7 @@ BEGIN_MESSAGE_MAP(CVarioConsoleDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_WM_HSCROLL()
+	ON_WM_TIMER()
 	ON_REGISTERED_MESSAGE(CSerialWnd::mg_nDefaultComMsg, OnSerialMessage)
 	ON_BN_CLICKED(IDC_EDIT_TONE_TABLE, &CVarioConsoleDlg::OnEditToneTable)
 	ON_BN_CLICKED(IDC_CALIBRATION, &CVarioConsoleDlg::OnCalibration)
@@ -360,7 +363,6 @@ BOOL CVarioConsoleDlg::OnInitDialog()
 	//
 	m_wndVolumeVario.SetRange(0, 2);
 	m_wndVolumeEffect.SetRange(0, 2);
-
 
 	//
 	UpdateData(FALSE);
@@ -441,10 +443,58 @@ void CVarioConsoleDlg::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar
 	CDialogEx::OnHScroll(nSBCode, nPos, pScrollBar);
 }
 
+void CVarioConsoleDlg::OnTimer(UINT nIDEvent)
+{
+	if (nIDEvent == m_nTimerID)
+	{
+		KillTimer(m_nTimerID);
+		m_nTimerID = 0;
+
+		if (! m_bRecvVarioMsg)
+		{
+			CloseSerial();
+			UpdateTitle();
+
+			AfxMessageBox(_T("Device is not reponsding!"), MB_OK | MB_ICONEXCLAMATION);
+		}
+	}
+
+	CWnd::OnTimer(nIDEvent);
+}
+
 LRESULT CVarioConsoleDlg::OnSerialMessage(WPARAM wParam, LPARAM lParam)
 {
 	CSerial::EEvent eEvent = CSerial::EEvent(LOWORD(wParam));
 	CSerial::EError eError = CSerial::EError(HIWORD(wParam));
+
+#if 0
+	if (eError)
+		AfxMessageBox(_T("An internal error occurred."), MB_OK);
+
+	if (eEvent & CSerial::EEventBreak)
+		AfxMessageBox(_T("Break detected on input."), MB_OK);
+
+	if (eEvent & CSerial::EEventError)
+		AfxMessageBox(_T("A line-status error occurred."), MB_OK);
+
+	if (eEvent & CSerial::EEventRcvEv)
+		AfxMessageBox(_T("Event character has been received."), MB_OK);
+
+	if (eEvent & CSerial::EEventRing)
+		AfxMessageBox(_T("Ring detected"), MB_OK);
+
+	if (eEvent & CSerial::EEventSend)
+		AfxMessageBox(_T("All data is send"), MB_OK);
+
+	if (eEvent & CSerial::EEventCTS)
+		AfxMessageBox(_T("CTS signal change"), MB_OK);
+
+	if (eEvent & CSerial::EEventDSR)
+		AfxMessageBox(_T("DSR signal change"), MB_OK);
+
+	if (eEvent & CSerial::EEventRLSD)
+		AfxMessageBox(_T("RLSD signal change"), MB_OK);
+#endif
 
 	if (eEvent & CSerial::EEventRecv)
 	{
@@ -586,7 +636,7 @@ void CVarioConsoleDlg::OnReload()
 		return;
 
 	//
-	//m_SendMsgs.push_back(_T("#RP\r\n"));
+	m_SendMsgs.push_back(_T("#RP\r\n"));
 	m_SendMsgs.push_back(_T("#DP\r\n"));
 
 	//
@@ -600,6 +650,11 @@ void CVarioConsoleDlg::OnFactoryReset()
 		return;
 
 	//
+	m_SendMsgs.push_back(_T("#FR\r\n"));
+	m_SendMsgs.push_back(_T("#DP\r\n"));
+
+	//
+	PostMessage(WM_COMMAND, IDC_SEND_MESSAGE);
 }
 
 void CVarioConsoleDlg::OnConnect()
@@ -616,48 +671,24 @@ void CVarioConsoleDlg::OnConnect()
 
 		if (dlg.DoModal() == IDOK)
 		{
-			CWaitCursor wait;
-			LONG lResult;
+			//
+			m_nPortNum = dlg.m_sPortNum;
+			m_nBaudRate = dlg.m_sBaudRate;
+			m_nDataBits = dlg.m_sDataBits;
+			m_nParity = dlg.m_sParity;
+			m_nStopBits = dlg.m_sStopBits;
 
-			if ((lResult = m_Serial.Open(dlg.m_sPortName, m_hWnd)) == ERROR_SUCCESS)
-			{
-				//
-				m_nPortNum	= dlg.m_sPortNum;
-				m_nBaudRate = dlg.m_sBaudRate;
-				m_nDataBits = dlg.m_sDataBits;
-				m_nParity	= dlg.m_sParity;
-				m_nStopBits = dlg.m_sStopBits;
-
-				//
-				m_Serial.Setup(dlg.m_sBaudRate, dlg.m_sDataBits, dlg.m_sParity, dlg.m_sStopBits);
-				m_Serial.SetupHandshaking(dlg.m_sFlowControl);
-				//m_Serial.SetMask(CSerial::EEventRecv|CSerial::EEventSend);
-				m_Serial.SetupReadTimeouts(CSerial::EReadTimeoutNonblocking);
-
-				m_bConnected = TRUE;
-
-
-				//
-				PostMessage(WM_COMMAND, MAKEWPARAM(IDC_RELOAD, BN_CLICKED), (LPARAM)GetDlgItem(IDC_RELOAD)->GetSafeHwnd());
-			}
-			else
-			{
-				ShowLastError(_T("Serial connection"), lResult);
-			}
+			//
+			OpenSerial(dlg.m_sPortName, dlg.m_sBaudRate, dlg.m_sDataBits, dlg.m_sParity, dlg.m_sStopBits, dlg.m_sFlowControl);
 		}
 	}
 	else
 	{
 		//
-		m_Serial.Close();
+		CloseSerial();
 
-		//
-		m_RecvMsgs.clear();
-		m_SendMsgs.clear();
-		m_bConnected = FALSE;
 	}
 
-	GetDlgItem(IDC_CONNECT)->SetWindowTextA((m_bConnected ? _T("Disconnect") : _T("Connect")));
 	UpdateTitle();
 }
 
@@ -680,7 +711,7 @@ void CVarioConsoleDlg::OnSendMessage()
 	}
 }
 
-WORD ToCode(CString &str)
+WORD PStrToCode(CString &str)
 {
 	WORD code = 0;
 
@@ -690,6 +721,16 @@ WORD ToCode(CString &str)
 	return code;
 }
 
+CString PCodeToStr(WORD code)
+{
+	CString str;
+
+	str += (CHAR)(code >> 8);
+	str += (CHAR)(code & 0xFF);
+
+	return str;
+}
+
 void CVarioConsoleDlg::ParseReceivedMessage()
 {
 	while (m_RecvMsgs.begin() != m_RecvMsgs.end())
@@ -697,7 +738,10 @@ void CVarioConsoleDlg::ParseReceivedMessage()
 		CString strLine = m_RecvMsgs.front();
 		m_RecvMsgs.pop_front();
 
-		if (strLine.GetLength() > 0 && strLine.GetAt(0) == '%')
+		if (strLine.GetLength() == 0)
+			continue;
+
+		if (strLine.GetAt(0) == '%')
 		{
 			// %XX,<param>,<data1>,<data2>,...
 			CString strCode, strParam, strData;
@@ -710,8 +754,17 @@ void CVarioConsoleDlg::ParseReceivedMessage()
 			if (nStart > 0)
 				strData = strLine.Tokenize(strToken, nStart);
 
-			TRACE(">>> %s: %s, %s\n", strCode, strParam, strData);
-			ProcessReceivedMessage(ToCode(strCode), atoi(strParam), strData);
+			if (strCode.GetLength() == 2)
+			{
+				TRACE(">>> %s: %s, %s\n", strCode, strParam, strData);
+				ProcessReceivedMessage(PStrToCode(strCode), atoi(strParam), strData);
+
+				m_bRecvVarioMsg = TRUE;
+			}
+		}
+		else if (strLine.GetAt(0) == '$')
+		{
+			// processing NMEA setence
 		}
 	}
 }
@@ -753,13 +806,13 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			break;
 		// VarioSettings
 		case PARAM_VARIO_SINK_THRESHOLD				: // 0x1201
-			m_VarioParams.Vario_SinkThreshold = atof(lpszData);
+			m_VarioParams.Vario_SinkThreshold = (float)atof(lpszData);
 			break;
 		case PARAM_VARIO_CLIMB_THRESHOLD			: // 0x1202
-			m_VarioParams.Vario_ClimbThreshold = atof(lpszData);
+			m_VarioParams.Vario_ClimbThreshold = (float)atof(lpszData);
 			break;
 		case PARAM_VARIO_SENSITIVITY				: // 0x1203
-			m_VarioParams.Vario_Sensitivity = atof(lpszData);
+			m_VarioParams.Vario_Sensitivity = (float)atof(lpszData);
 			break;
 		case PARAM_VARIO_SENTENCE					: // 0x1204
 			m_VarioParams.Vario_Sentece = atoi(lpszData);
@@ -769,7 +822,7 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			break;
 			// ToneTables 
 		case PARAM_TONETABLE_00_VELOCITY			: // 0x1301
-			m_VarioParams.ToneTable[0].velocity = atof(lpszData);
+			m_VarioParams.ToneTable[0].velocity = (float)atof(lpszData);
 			break;
 		case PARAM_TONETABLE_00_FREQ				: // 0x1302
 			m_VarioParams.ToneTable[0].freq = atoi(lpszData);
@@ -781,7 +834,7 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			m_VarioParams.ToneTable[0].duty = atoi(lpszData);
 			break;
 		case PARAM_TONETABLE_01_VELOCITY			: // 0x1311
-			m_VarioParams.ToneTable[1].velocity = atof(lpszData);
+			m_VarioParams.ToneTable[1].velocity = (float)atof(lpszData);
 			break;
 		case PARAM_TONETABLE_01_FREQ				: // 0x1312
 			m_VarioParams.ToneTable[1].period = atoi(lpszData);
@@ -793,7 +846,7 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			m_VarioParams.ToneTable[1].duty = atoi(lpszData);
 			break;
 		case PARAM_TONETABLE_02_VELOCITY			: // 0x1321
-			m_VarioParams.ToneTable[2].velocity = atof(lpszData);
+			m_VarioParams.ToneTable[2].velocity = (float)atof(lpszData);
 			break;
 		case PARAM_TONETABLE_02_FREQ				: // 0x1322
 			m_VarioParams.ToneTable[2].period = atoi(lpszData);
@@ -805,7 +858,7 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			m_VarioParams.ToneTable[2].duty = atoi(lpszData);
 			break;
 		case PARAM_TONETABLE_03_VELOCITY			: // 0x1331
-			m_VarioParams.ToneTable[3].velocity = atof(lpszData);
+			m_VarioParams.ToneTable[3].velocity = (float)atof(lpszData);
 			break;
 		case PARAM_TONETABLE_03_FREQ				: // 0x1332
 			m_VarioParams.ToneTable[3].period = atoi(lpszData);
@@ -817,7 +870,7 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			m_VarioParams.ToneTable[3].duty = atoi(lpszData);
 			break;
 		case PARAM_TONETABLE_04_VELOCITY			: // 0x1341
-			m_VarioParams.ToneTable[4].velocity = atof(lpszData);
+			m_VarioParams.ToneTable[4].velocity = (float)atof(lpszData);
 			break;
 		case PARAM_TONETABLE_04_FREQ				: // 0x1342
 			m_VarioParams.ToneTable[4].period = atoi(lpszData);
@@ -829,7 +882,7 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			m_VarioParams.ToneTable[4].duty = atoi(lpszData);
 			break;
 		case PARAM_TONETABLE_05_VELOCITY			: // 0x1351
-			m_VarioParams.ToneTable[5].velocity = atof(lpszData);
+			m_VarioParams.ToneTable[5].velocity = (float)atof(lpszData);
 			break;
 		case PARAM_TONETABLE_05_FREQ				: // 0x1352
 			m_VarioParams.ToneTable[5].period = atoi(lpszData);
@@ -841,7 +894,7 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			m_VarioParams.ToneTable[5].duty = atoi(lpszData);
 			break;
 		case PARAM_TONETABLE_06_VELOCITY			: // 0x1361
-			m_VarioParams.ToneTable[6].velocity = atof(lpszData);
+			m_VarioParams.ToneTable[6].velocity = (float)atof(lpszData);
 			break;
 		case PARAM_TONETABLE_06_FREQ				: // 0x1362
 			m_VarioParams.ToneTable[6].period = atoi(lpszData);
@@ -853,7 +906,7 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			m_VarioParams.ToneTable[6].duty = atoi(lpszData);
 			break;
 		case PARAM_TONETABLE_07_VELOCITY			: // 0x1371
-			m_VarioParams.ToneTable[7].velocity = atof(lpszData);
+			m_VarioParams.ToneTable[7].velocity = (float)atof(lpszData);
 			break;
 		case PARAM_TONETABLE_07_FREQ				: // 0x1372
 			m_VarioParams.ToneTable[7].period = atoi(lpszData);
@@ -865,7 +918,7 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			m_VarioParams.ToneTable[7].duty = atoi(lpszData);
 			break;
 		case PARAM_TONETABLE_08_VELOCITY			: // 0x1381
-			m_VarioParams.ToneTable[8].velocity = atof(lpszData);
+			m_VarioParams.ToneTable[8].velocity = (float)atof(lpszData);
 			break;
 		case PARAM_TONETABLE_08_FREQ				: // 0x1382
 			m_VarioParams.ToneTable[8].period = atoi(lpszData);
@@ -877,7 +930,7 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			m_VarioParams.ToneTable[8].duty = atoi(lpszData);
 			break;
 		case PARAM_TONETABLE_09_VELOCITY			: // 0x1391
-			m_VarioParams.ToneTable[9].velocity = atof(lpszData);
+			m_VarioParams.ToneTable[9].velocity = (float)atof(lpszData);
 			break;
 		case PARAM_TONETABLE_09_FREQ				: // 0x1392
 			m_VarioParams.ToneTable[9].period = atoi(lpszData);
@@ -889,7 +942,7 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			m_VarioParams.ToneTable[9].duty = atoi(lpszData);
 			break;
 		case PARAM_TONETABLE_10_VELOCITY			: // 0x13A1
-			m_VarioParams.ToneTable[10].velocity = atof(lpszData);
+			m_VarioParams.ToneTable[10].velocity = (float)atof(lpszData);
 			break;
 		case PARAM_TONETABLE_10_FREQ				: // 0x13A2
 			m_VarioParams.ToneTable[10].period = atoi(lpszData);
@@ -901,7 +954,7 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			m_VarioParams.ToneTable[10].duty = atoi(lpszData);
 			break;
 		case PARAM_TONETABLE_11_VELOCITY			: // 0x13B1
-			m_VarioParams.ToneTable[11].velocity = atof(lpszData);
+			m_VarioParams.ToneTable[11].velocity = (float)atof(lpszData);
 			break;
 		case PARAM_TONETABLE_11_FREQ				: // 0x13B2
 			m_VarioParams.ToneTable[11].period = atoi(lpszData);
@@ -921,7 +974,7 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			break;
 		// ThresholdSettings
 		case PARAM_THRESHOLD_LOW_BATTERY			: // 0x1501
-			m_VarioParams.Threshold_LowBattery = atof(lpszData);
+			m_VarioParams.Threshold_LowBattery = (float)atof(lpszData);
 			break;
 		case PARAM_THRESHOLD_SHUTDOWN_HOLDTIME		: // 0x1502
 			m_VarioParams.Threshold_ShutdownHoldtime = atoi(lpszData);
@@ -934,35 +987,35 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			break;
 			// KalmanParameters
 		case PARAM_KALMAN_VAR_ZMEAS					: // 0x1601
-			m_VarioParams.Kalman_VarZMeas = atof(lpszData);
+			m_VarioParams.Kalman_VarZMeas = (float)atof(lpszData);
 			break;
 		case PARAM_KALMAN_VAR_ZACCEL				: // 0x1602
-			m_VarioParams.Kalman_VarZAccel = atof(lpszData);
+			m_VarioParams.Kalman_VarZAccel = (float)atof(lpszData);
 			break;
 		case PARAM_KALMAN_VAR_ACCELBIAS				: // 0x1603
-			m_VarioParams.Kalman_VarAccelbias = atof(lpszData);
+			m_VarioParams.Kalman_VarAccelbias = (float)atof(lpszData);
 			break;
 		case PARAM_KALMAN_SIGMA_P					: // 0x1611
 		case PARAM_KALMAN_SIGMA_A					: // 0x1612
 			break;
 		// CalibrationData
 		case PARAM_CALDATA_ACCEL_00					: // 0x1701
-			m_VarioParams.Caldata_Accel[0] = atof(lpszData);
+			m_VarioParams.Caldata_Accel[0] = (float)atof(lpszData);
 			break;
 		case PARAM_CALDATA_ACCEL_01					: // 0x1702
-			m_VarioParams.Caldata_Accel[1] = atof(lpszData);
+			m_VarioParams.Caldata_Accel[1] = (float)atof(lpszData);
 			break;
 		case PARAM_CALDATA_ACCEL_02					: // 0x1703
-			m_VarioParams.Caldata_Accel[2] = atof(lpszData);
+			m_VarioParams.Caldata_Accel[2] = (float)atof(lpszData);
 			break;
 		case PARAM_CALDATA_GYRO_00					: // 0x1711
-			m_VarioParams.Caldata_Gyro[0] = atof(lpszData);
+			m_VarioParams.Caldata_Gyro[0] = (float)atof(lpszData);
 			break;
 		case PARAM_CALDATA_GYRO_01					: // 0x1712
-			m_VarioParams.Caldata_Gyro[1] = atof(lpszData);
+			m_VarioParams.Caldata_Gyro[1] = (float)atof(lpszData);
 			break;
 		case PARAM_CALDATA_GYRO_02					: // 0x1713
-			m_VarioParams.Caldata_Gyro[2] = atof(lpszData);
+			m_VarioParams.Caldata_Gyro[2] = (float)atof(lpszData);
 			break;
 		case PARAM_CALDATA_MAG_00					: // 0x1721
 		case PARAM_CALDATA_MAG_01					: // 0x1722
@@ -1117,5 +1170,51 @@ void CVarioConsoleDlg::UpdateTitle()
 		strTitle.Format("Variometer - Unconnected!");
 	}
 
+	//
+	GetDlgItem(IDC_CONNECT)->SetWindowTextA((m_bConnected ? _T("Disconnect") : _T("Connect")));
+	//
 	SetWindowText(strTitle);
+}
+
+void CVarioConsoleDlg::OpenSerial(LPCTSTR lpszDevice, CSerial::EBaudrate nBaudRate, CSerial::EDataBits nDataBits, CSerial::EParity nParity, CSerial::EStopBits nStopBits, CSerial::EHandshake nHandshake)
+{
+	CWaitCursor wait;
+	LONG lResult;
+
+	if ((lResult = m_Serial.Open(lpszDevice, m_hWnd)) == ERROR_SUCCESS)
+	{
+		//
+		m_Serial.Setup(nBaudRate, nDataBits, nParity, nStopBits);
+		m_Serial.SetupHandshaking(nHandshake);
+		m_Serial.SetupReadTimeouts(CSerial::EReadTimeoutNonblocking);
+
+		m_bConnected = TRUE;
+		m_bRecvVarioMsg = FALSE;
+
+
+		//
+		PostMessage(WM_COMMAND, MAKEWPARAM(IDC_RELOAD, BN_CLICKED), (LPARAM)GetDlgItem(IDC_RELOAD)->GetSafeHwnd());
+		//
+		m_nTimerID = SetTimer(TIMER_CHECK_RESPONSE, 2000, NULL);
+	}
+	else
+	{
+		ShowLastError(_T("Serial connection"), lResult);
+	}
+}
+void CVarioConsoleDlg::CloseSerial()
+{
+	m_Serial.Close();
+
+	if (m_nTimerID)
+	{
+		KillTimer(m_nTimerID);
+		m_nTimerID = 0;
+	}
+
+	//
+	m_RecvMsgs.clear();
+	m_SendMsgs.clear();
+
+	m_bConnected = FALSE;
 }

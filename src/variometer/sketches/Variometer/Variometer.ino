@@ -286,10 +286,10 @@ CommandParser cmdParser1(CMD_FROM_USB, Serial, cmdStack); // USB serial parser
 CommandParser cmdParser2(CMD_FROM_BT, Serial1, cmdStack); // BT serial parser
 FuncKeyParser keyParser(keyFunc, cmdStack, tonePlayer);
 
-ResponseStack resStackUSB;
+//ResponseStack resStackUSB;
 ResponseStack resStackBT;
 
-
+int	commandReceiveFlag = 0; // when any new command is occured, set this. 
 
 
 //
@@ -348,7 +348,7 @@ void board_init()
 void board_reset()
 {
 	//
-	tonePlayer.setTone(NOTE_C3, KEY_VOLUME);
+	tonePlayer.setTone(NOTE_C3, Config.volume.effect);
 	delay(2000);
 	
 	// reset!!
@@ -410,8 +410,9 @@ void setup()
 	board_init();
 	
 	//
-	delay(500);
 	Config.reset();
+	Config.readAll();
+	delay(100);
 	Config.readAll();
 	
 	// ToneGenerator uses PIN_PWM_H(PA8 : Timer1, Channel1)
@@ -506,8 +507,8 @@ void setup_vario()
 	ledFlasher.blink(BTYPE_LONG_ON_SHORT_OFF);
 
 	// start vario-loop
-	//tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, PLAY_PREEMPTIVE, KEY_VOLUME);
-	tonePlayer.setBeep(NOTE_C4, 800, 500, 2, KEY_VOLUME);
+	//tonePlayer.setMelody(&startTone[0], sizeof(startTone) / sizeof(startTone[0]), 1, PLAY_PREEMPTIVE, Config.volume.effect);
+	tonePlayer.setBeep(NOTE_C4, 800, 500, 2, Config.volume.effect);
 	
 	//
 	deviceTick = millis();
@@ -549,6 +550,12 @@ void loop_vario()
 		{
 			if (velocity < STABLE_SINKING_THRESHOLD || STABLE_CLIMBING_THRESHOLD < velocity)
 				deviceTick = millis(); // reset tick because it's not quiet.
+			
+			if (commandReceiveFlag)
+			{
+				deviceTick = millis(); // reset tick because it's not quiet.
+				commandReceiveFlag = 0;
+			}
 			
 			//if ((millis() - deviceTick) > AUTO_SHUTDOWN_THRESHOLD)
 			if ((Config.threshold.auto_shutdown_vario) && ((millis() - deviceTick) > Config.threshold.auto_shutdown_vario))
@@ -595,7 +602,7 @@ void loop_vario()
 		//		
 		ledFlasher.blink(BTYPE_LONG_ON_OFF);
 		// play ready melody~~~
-		tonePlayer.setMelody(&melodyVarioReady[0], sizeof(melodyVarioReady) / sizeof(melodyVarioReady[0]), 1, PLAY_PREEMPTIVE, KEY_VOLUME);
+		tonePlayer.setMelody(&melodyVarioReady[0], sizeof(melodyVarioReady) / sizeof(melodyVarioReady[0]), 1, PLAY_PREEMPTIVE, Config.volume.effect);
 	}
 	else if (varioMode == VARIO_MODE_LANDING)
 	{
@@ -606,7 +613,7 @@ void loop_vario()
 			
 			ledFlasher.blink(BTYPE_SHORT_ON_OFF);
 			// play take-off melody
-			tonePlayer.setMelody(&melodyTakeOff[0], sizeof(melodyTakeOff) / sizeof(melodyTakeOff[0]), 1, PLAY_PREEMPTIVE, KEY_VOLUME);
+			tonePlayer.setMelody(&melodyTakeOff[0], sizeof(melodyTakeOff) / sizeof(melodyTakeOff[0]), 1, PLAY_PREEMPTIVE, Config.volume.effect);
 			
 			// start logging & change mode
 			logger.begin(nmeaParser.getDateTime());
@@ -627,7 +634,7 @@ void loop_vario()
 				//
 				ledFlasher.blink(BTYPE_LONG_ON_OFF);
 				// play landing melody
-				tonePlayer.setMelody(&melodyLanding[0], sizeof(melodyLanding) / sizeof(melodyLanding[0]), 1, PLAY_PREEMPTIVE, KEY_VOLUME);
+				tonePlayer.setMelody(&melodyLanding[0], sizeof(melodyLanding) / sizeof(melodyLanding[0]), 1, PLAY_PREEMPTIVE, Config.volume.effect);
 				
 				// stop logging & change mode
 				logger.end(nmeaParser.getDateTime());
@@ -719,7 +726,7 @@ void setup_ums()
 		//
 		ledFlasher.blink(BTYPE_BLINK_2_LONG_ON);
 		//
-		tonePlayer.setBeep(NOTE_G4, 500, 300, 2, KEY_VOLUME);
+		tonePlayer.setBeep(NOTE_G4, 500, 300, 2, Config.volume.effect);
 		
 		// set mode-tick
 		modeTick = millis();
@@ -727,7 +734,7 @@ void setup_ums()
 	else
 	{
 		// synchronous beep!!
-		tonePlayer.beep(NOTE_C3, 200, 3, KEY_VOLUME);
+		tonePlayer.beep(NOTE_C3, 200, 3, Config.volume.effect);
 		// return to vario mode
 		changeDeviceMode(DEVICE_MODE_VARIO);
 	}
@@ -751,7 +758,7 @@ void loop_ums()
 	if ((Config.threshold.auto_shutdown_ums) && ((millis() - modeTick) > Config.threshold.auto_shutdown_ums))
 	{
 		// synchronous beep!!
-		tonePlayer.beep(NOTE_C4, 400, 2, KEY_VOLUME);
+		tonePlayer.beep(NOTE_C4, 400, 2, Config.volume.effect);
 		// shutdown now
 		changeDeviceMode(DEVICE_MODE_SHUTDOWN);
 	}
@@ -817,7 +824,7 @@ void setup_calibration()
 	
 	//
 	ledFlasher.blink(BTYPE_BLINK_3_LONG_ON);
-	tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 2, BASE_BEEP_DURATION, 3, KEY_VOLUME);
+	tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 2, BASE_BEEP_DURATION, 3, Config.volume.effect);
 	
 	calibMode = CAL_MODE_MEASURE_DELAY;
 	deviceTick = millis();
@@ -850,9 +857,9 @@ void loop_calibration()
 
 			// make corresponding beep
 			if (measureValid)
-				tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 1, KEY_VOLUME);
+				tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 1, Config.volume.effect);
 			else 
-				tonePlayer.setBeep(LOW_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 1, KEY_VOLUME);	
+				tonePlayer.setBeep(LOW_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 1, Config.volume.effect);	
 			
 			// go back measure delay
 			calibMode = CAL_MODE_MEASURE_DELAY;
@@ -872,7 +879,7 @@ void loop_calibration()
 				// play completion melody & confirm
 				calibMode = CAL_MODE_COMPLETION;
 				
-				tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 2, BASE_BEEP_DURATION, 3, KEY_VOLUME);
+				tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 2, BASE_BEEP_DURATION, 3, Config.volume.effect);
 				ledFlasher.blink(BTYPE_SHORT_ON_OFF);
 			}
 			else
@@ -963,8 +970,8 @@ void processShutdownInterrupt()
 		logger.end(nmeaParser.getDateTime());
 		
 		// beep~
-		//tonePlayer.setBeep(420, 0, 0, KEY_VOLUME);
-		tonePlayer.setTone(360, KEY_VOLUME);
+		//tonePlayer.setBeep(420, 0, 0, Config.volume.effect);
+		tonePlayer.setTone(360, Config.volume.effect);
 		while(1)
 			tonePlayer.update();
 	}
@@ -987,6 +994,7 @@ void processCommand()
 	if(cmdStack.getSize())
 	{
 		Command cmd = cmdStack.dequeue();
+		commandReceiveFlag = 1; //
 		
 		switch(cmd.code)
 		{
@@ -1040,6 +1048,10 @@ void processCommand()
 			Config.readAll();
 			resStackBT.push(RCODE_OK);
 			break;
+		case CMD_FACTORY_RESET :
+			Config.reset();
+			Config.writeAll();
+			resStackBT.push(RCODE_OK);
 		#if CONFIG_DEBUG_DUMP
 		case CMD_DUMP_CONFIG :
 			Config.dump();
@@ -1081,7 +1093,7 @@ void commandModeSwitch(Command * cmd)
 			else
 			{
 				// sd-init failed!! : warning beep~~
-				tonePlayer.beep(NOTE_C3, 200, 4, KEY_VOLUME);
+				tonePlayer.beep(NOTE_C3, 200, 4, Config.volume.effect);
 				resStackBT.push(RCODE_FAIL);
 			}
 			break;

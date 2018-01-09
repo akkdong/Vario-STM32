@@ -97,7 +97,7 @@ void VarioBeeper::setVelocity(float velocity)
 		int freq, period, duty;
 		
 		findTone(velocity, freq, period, duty);		
-		player.setBeep(freq, period, duty);
+		player.setBeep(freq, period, duty, 0, Config.volume.vario);
 	}
 	else
 	{

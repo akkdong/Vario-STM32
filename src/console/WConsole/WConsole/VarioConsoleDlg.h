@@ -10,6 +10,8 @@
 
 #define MAX_SERIAL_BUFFER			(1024)
 
+#define TIMER_CHECK_RESPONSE		(0x1001)
+
 
 struct VarioParameters
 {
@@ -74,10 +76,15 @@ private:
 	BOOL				UpdateData(BOOL bSaveAndValidate);
 	void				UpdateTitle();
 
+	void				OpenSerial(LPCTSTR lpszDevice, CSerial::EBaudrate, CSerial::EDataBits, CSerial::EParity, CSerial::EStopBits, CSerial::EHandshake);
+	void				CloseSerial();
+
 // 구현입니다.
 protected:
+	//
 	HICON				m_hIcon;
 
+	//
 	CSerialWnd			m_Serial;
 	BOOL				m_bConnected;
 
@@ -86,6 +93,10 @@ protected:
 
 	std::list<CString>	m_RecvMsgs;
 	std::list<CString>	m_SendMsgs;
+	BOOL				m_bRecvVarioMsg;
+
+	//
+	UINT				m_nTimerID;
 
 	// Vario Parameters
 	VarioParameters		m_VarioParams;
@@ -143,6 +154,7 @@ protected:
 	afx_msg void		OnPaint();
 	afx_msg HCURSOR		OnQueryDragIcon();
 	afx_msg void		OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	afx_msg void		OnTimer(UINT nIDEvent);
 	afx_msg LRESULT		OnSerialMessage(WPARAM, LPARAM);
 	afx_msg void		OnEditToneTable();
 	afx_msg void		OnCalibration();
