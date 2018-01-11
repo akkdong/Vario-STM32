@@ -8,18 +8,26 @@
 //
 //
 
-// you can use one of KalmanVario and Variometer class
-#define CLASS_KALMANVARIO							(1)
-#define CLASS_VARIOMETER							(2)
+// Hardware version
 
-#define VARIOMETER_CLASSS							CLASS_KALMANVARIO
+#define HW_VERSION_V1							(0x0100)
+#define HW_VERSION_V1_REV2						(0x0102)
+
+#define HW_VERSION								HW_VERSION_V1_REV2
+
+
+// you can use one of KalmanVario and Variometer class
+#define CLASS_KALMANVARIO						(1)
+#define CLASS_VARIOMETER						(2)
+
+#define VARIOMETER_CLASSS						CLASS_KALMANVARIO
 
 
 // ADC has two choice. PRIMARY or ALTERNATE
-#define ADC_PRIMARY									(1)
-#define ADC_ALTERNATE								(2)
+#define ADC_PRIMARY								(1)
+#define ADC_ALTERNATE							(2)
 
-#define BATTERY_ADC									ADC_ALTERNATE
+#define BATTERY_ADC								ADC_ALTERNATE
 
 
 // Serial baud rate
@@ -50,11 +58,11 @@
 #define PIN_USART1_RX							PA10	// USART1
 #define PIN_USB_DM								PA11	// USB
 #define PIN_USB_DP								PA12	// USB
-#define PIN_IMU_FSYNC							PA13	// GPIO : output, active high, JTAG -> MPU6050 FSYNC
-#define PIN_IMU_INTA							PA14	// GPIO : input, active high, JTAG -> MPU6050 INT
-#define PIN_IMU_DRDY							PA15	// GPIO : input, active low, JTAG -> HMC5883L DRDY
-#define PIN_BT_EN								PB0		// GPIO : output, active low
-#define PIN_GPS_EN								PB1		// GPIO : output, active low
+#define PIN_IMU_FSYNC							PA13	// GPIO : output, active high, Rev2 : JTAG -> MPU6050 FSYNC
+#define PIN_IMU_INTA							PA14	// GPIO : input, active high, Rev2 : JTAG -> MPU6050 INT
+#define PIN_IMU_DRDY							PA15	// GPIO : input, active low, Rev2 : JTAG -> HMC5883L DRDY
+#define PIN_BT_EN								PB0		// GPIO : output, active low, Rev2 :  active high
+#define PIN_GPS_EN								PB1		// GPIO : output, active low, Rev2 :  active high
 #define PIN_BOOT1								PB2		// boot
 #define PIN_FUNC_INPUT							PB5		// GPIO : input, active low
 #define PIN_I2C1_SCL							PB6		// I2C1
@@ -63,11 +71,11 @@
 #define PIN_USB_EN								PB9		// GPIO : output,	active high
 #define PIN_I2C2_SCL							PB10	// I2C2
 #define PIN_I2C2_SDA							PB11	// I2C2
-#define PIN_IMU_EN								PB12	// GPIO : output,	active high
-#define PIN_SD_EN								PB13	// GPIO : output,	active high
+#define PIN_IMU_EN								PB12	// GPIO : output,	active high, Rev2 only
+#define PIN_SD_EN								PB13	// GPIO : output,	active high, Rev2 only
 #define PIN_KILL_PWR							PB14	// GPIO : input, active low
 #define PIN_SHDN_INT							PB15	// GPIO : input, active low
-#define PIN_MCU_STATE							PC13	// GPIO : output, active low(led on)
+#define PIN_MCU_STATE							PC13	// GPIO : output, active low(led on), Not used
 
 #define ACTIVE_LOW								(0)
 #define ACTIVE_HIGH								(1)

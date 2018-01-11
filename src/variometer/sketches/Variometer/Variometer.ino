@@ -253,6 +253,10 @@ IGCLogger logger;
 InputKey keyMode;
 InputKey keyShutdown;
 InputKey keyUSB;
+#if HW_VERSION == HW_VERSION_V1_REV2
+InputKey keyAccelInt;
+InputKey keyMagDReady;
+#endif // HW_VERSION == HW_VERSION_V1_REV2
 // functional input
 FunctionKey	keyFunc;
 // analog input
@@ -262,6 +266,11 @@ BatteryVoltage batVolt;
 OutputKey keyPowerGPS;
 OutputKey keyPowerBT;
 OutputKey keyPowerDev;
+#if HW_VERSION == HW_VERSION_V1_REV2
+//OutputKey keyAccelFSync;
+OutputKey keyPowerIMU;
+OutputKey keyPowerSD;
+#endif // HW_VERSION == HW_VERSION_V1_REV2
 // functional output
 LEDFlasher  ledFlasher;
 
@@ -331,15 +340,28 @@ void board_init()
 	//keyMode.begin(PIN_MODE_SELECT, ACTIVE_LOW); // not used
 	keyShutdown.begin(PIN_SHDN_INT, ACTIVE_LOW);
 	keyUSB.begin(PIN_USB_DETECT, ACTIVE_HIGH);
+	#if HW_VERSION == HW_VERSION_V1_REV2
+	keyAccelInt.begin(PIN_IMU_INTA, ACTIVE_HIGH);
+	keyMagDReady.begin(PIN_IMU_DRDY, ACTIVE_LOW);
+	#endif // HW_VERSION == HW_VERSION_V1_REV2
 	// function-key
 	keyFunc.begin(PIN_FUNC_INPUT, ACTIVE_HIGH);
 	// adc input
 	batVolt.begin(PIN_ADC_BATTERY);	
 	
 	// output pins
+	#if HW_VERSION == HW_VERSION_V1
 	keyPowerGPS.begin(PIN_GPS_EN, ACTIVE_LOW, OUTPUT_INACTIVE);
 	keyPowerBT.begin(PIN_BT_EN, ACTIVE_LOW, OUTPUT_INACTIVE);
 	//keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_ACTIVE);
+	#elif HW_VERSION == HW_VERSION_V1_REV2
+	keyPowerGPS.begin(PIN_GPS_EN, ACTIVE_HIGH, OUTPUT_INACTIVE);
+	keyPowerBT.begin(PIN_BT_EN, ACTIVE_HIGH, OUTPUT_INACTIVE);
+	//keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_ACTIVE);
+	//keyAccelFSync.begin(PIN_IMU_FSYNC, ACTIVE_HIGH, OUTPUT_INACTIVE);
+	keyPowerIMU.begin(PIN_IMU_EN, ACTIVE_HIGH, OUTPUT_INACTIVE);
+	keyPowerSD.begin(PIN_SD_EN, ACTIVE_HIGH, OUTPUT_INACTIVE);
+	#endif // HW_VERSION == HW_VERSION_V1_REV2
 	// state beacon
 	ledFlasher.begin(PIN_MCU_STATE, ACTIVE_LOW);
 	ledFlasher.turnOn();
@@ -372,6 +394,9 @@ void changeDeviceMode(int mode)
 		// turn-off GPS & BT
 		keyPowerGPS.disable();
 		keyPowerBT.disable();
+		#if HW_VERSION == HW_VERSION_V1_REV2
+		keyPowerIMU.disable();
+		#endif // HW_VERSION == HW_VERSION_V1_REV2
 		
 		//
 		logger.end(nmeaParser.getDateTime());		
@@ -471,6 +496,15 @@ void setup_vario()
 	//
 	varioMode = VARIO_MODE_INIT;
 	
+	// turn-on GPS & BT
+	#if HW_VERSION == HW_VERSION_V1_REV2
+	keyPowerIMU.enable();
+	keyPowerSD.enable();
+	#endif // HW_VERSION == HW_VERSION_V1_REV2
+	keyPowerGPS.enable();
+	keyPowerBT.enable();
+	delay(100);
+	
 	//
 	logger.init();
 
@@ -498,10 +532,7 @@ void setup_vario()
 	#else
 	vario.begin(Config.kalman.sigmaP, Config.kalman.sigmaA);
 	#endif // VARIOMETER_CLASSS == CLASS_KALMANVARIO
-	
-	// turn-on GPS & BT
-	keyPowerGPS.enable();
-	keyPowerBT.enable();
+
 
 	// led flash as init-state
 	ledFlasher.blink(BTYPE_LONG_ON_SHORT_OFF);
