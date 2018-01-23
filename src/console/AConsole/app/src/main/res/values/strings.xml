@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Vario Console</string>
+    <string name="action_favorite">Favorite</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_connect">Connect</string>
+    <string name="action_calibration">Calibration</string>
+    <string name="action_show_acc">Show Acceleration</string>
+    <string name="action_show_gyro">Show Gyroscope</string>
+    <string name="action_show_baro">Show Pressure</string>
+    <string name="toast_bt_not_available">Bluetooth is not available</string>
+    <string name="toast_bt_not_enabled">Bluetooth is not enabled</string>
+    <string name="toast_bt_connected">Vari connected!</string>
+    <string name="toast_bt_disconnected">Vario disconnected!</string>
+    <string name="toast_bt_connection_failed">Vario connection failed!!</string>
+</resources>
