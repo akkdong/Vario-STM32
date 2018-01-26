@@ -14,15 +14,20 @@
         android:icon="@drawable/ic_action_settings"
         android:title="@string/action_settings"
         app:showAsAction="ifRoom" />
-    <item
-        android:id="@+id/action_show_acc"
-        android:title="@string/action_show_acc" />
-    <item
-        android:id="@+id/action_show_gyro"
-        android:title="@string/action_show_gyro" />
-    <item
-        android:id="@+id/action_show_baro"
-        android:title="@string/action_show_baro" />
+    <group android:checkableBehavior="all">
+        <item
+            android:id="@+id/action_dump_acc"
+            android:checkable="true"
+            android:title="@string/action_dump_acc" />
+        <item
+            android:id="@+id/action_dump_gyro"
+            android:checkable="true"
+            android:title="@string/action_dump_gyro" />
+        <item
+            android:id="@+id/action_dump_pressure"
+            android:checkable="true"
+            android:title="@string/action_dump_pressure" />
+    </group>
     <item
         android:id="@+id/action_calibration"
         android:icon="@drawable/ic_action_calibration"

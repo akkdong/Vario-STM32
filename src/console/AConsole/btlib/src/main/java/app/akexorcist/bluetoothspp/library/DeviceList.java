@@ -28,7 +28,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.View.OnClickListener;
@@ -40,7 +43,7 @@ import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
 
 @SuppressLint("NewApi")
-public class DeviceList extends Activity {
+public class DeviceList extends AppCompatActivity {
     // Debugging
     private static final String TAG = "BluetoothSPP";
     private static final boolean D = true;
@@ -58,12 +61,19 @@ public class DeviceList extends Activity {
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         int listId = getIntent().getIntExtra("layout_list", R.layout.device_list);
         setContentView(listId);
-        
+
         String strBluetoothDevices = getIntent().getStringExtra("bluetooth_devices");
         if(strBluetoothDevices == null) 
         	strBluetoothDevices = "Bluetooth Devices";
         setTitle(strBluetoothDevices);
-        
+
+        //
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            // Show the Up button in the action bar.
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
+
         // Set result CANCELED in case the user backs out
         setResult(Activity.RESULT_CANCELED);
         
@@ -112,6 +122,16 @@ public class DeviceList extends Activity {
             String noDevices = "No devices found";
             mPairedDevicesArrayAdapter.add(noDevices);
         }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == android.R.id.home) {
+            onBackPressed();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     protected void onDestroy() {

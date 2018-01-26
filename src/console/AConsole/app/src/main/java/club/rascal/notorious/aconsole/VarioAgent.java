@@ -1,12 +1,14 @@
 package club.rascal.notorious.aconsole;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import app.akexorcist.bluetoothspp.library.BluetoothSPP;
@@ -19,30 +21,26 @@ import app.akexorcist.bluetoothspp.library.BluetoothState;
  */
 
 public class VarioAgent { // extends BluetoothSPP {
-
+    // VarioAgent is singleton, it coule be created(referensed) by getInstance method
     private static volatile VarioAgent agent = new VarioAgent();
 
     private BluetoothSPP mBluetooth = null;
     private Context mContext = null;
     private int mState = 0;
 
+    private LocationParser locParser = new LocationParser();
+
     private List<ListenerObject> mListeners = new ArrayList<ListenerObject>();
 
+    // declare listener interface
     public interface VarioListener {
-        void onGPSUpdated(float latitude, float longigute, float altitude, float speed, float trackAngle);
-        void onVarioUpdated(float vario, float pressure, float temperature, float voltage);
-        void onAccelerometerUpdated(float ax, float ay, float az);
-        void onGyrometerUpdated(float gx, float gy, float gz);
-        void onPressureUpdated(float prs);
-        void onParameterUpdated();
+        void onDataReceived(AbstractData data);
+        void onResponseReceived(VarioResponse response);
     }
 
-    public class VarioListenerFilter {
-        public static final int FILTER_GPS = 0x0001;
-        public static final int FILTER_VARIO = 0x0002;
-        public static final int FILTER_ACCELEROMETER = 0x0004;
-        public static final int FILTER_GYROMETER = 0x0008;
-        public static final int FILTER_PRESSURE = 0x0010;
+    public class ListenerFilter {
+        public static final int FILTER_DATA = 0x0001;
+        public static final int FILTER_RESPONSE = 0x0002;
     }
 
     public class ListenerObject {
@@ -74,9 +72,44 @@ public class VarioAgent { // extends BluetoothSPP {
                 public void onDataReceived(byte[] data, String message) {
                     Log.i("Vario", message);
 
-                    if (message.startsWith("$LK8")) {
-                        for (ListenerObject obj : mListeners) {
-                            obj.mListener.onVarioUpdated(0.0f, 0.0f, 0.0f, 0.0f);
+                    if (message.charAt(0) == '$') {
+                        AbstractData absData = null;
+
+                        if (message.startsWith("$LK8EX1,")) {
+                            absData = VarioParser.parse(message);
+                        } else if (message.startsWith("$GPRMC,")) {
+                            locParser.parse(message, LocationParser.NMEA_GPRMC);
+                            if (locParser.isReady()) {
+                                absData = locParser.getData();
+                            }
+                        } else if (message.startsWith(("$GPGGA,"))) {
+                            locParser.parse(message, LocationParser.NMEA_GPGGA);
+                            if (locParser.isReady())
+                                absData = locParser.getData();
+                        } else if (message.startsWith(("$SENSOR,"))) {
+                            absData = SensorParser.parse(message);
+                        }
+
+                        if (absData != null) {
+                            for (ListenerObject obj : mListeners) {
+                                // check validation of object.mActivity
+                                // ...
+
+                                if ((obj.mFilterMask & ListenerFilter.FILTER_DATA) == ListenerFilter.FILTER_DATA)
+                                    obj.mListener.onDataReceived(absData);
+                            }
+                        }
+                    } else if (message.charAt(0) == '%') {
+                        VarioResponse res = VarioResponse.parse(message);
+
+                        if (res != null) {
+                            for (ListenerObject obj : mListeners) {
+                                // check validation of object.mActivity
+                                // ...
+
+                                if ((obj.mFilterMask & ListenerFilter.FILTER_RESPONSE) == ListenerFilter.FILTER_RESPONSE)
+                                    obj.mListener.onResponseReceived(res);
+                            }
                         }
                     }
                 }
@@ -150,22 +183,14 @@ public class VarioAgent { // extends BluetoothSPP {
     }
 
     public void setVarioListener(Activity activity, int mask, VarioListener listener) {
-        for (ListenerObject obj : mListeners) {
-            if (obj.mActivity == activity) {
-                mListeners.remove(obj);
-                break;
-            }
-        }
-
+        unsetVarioListener(activity); // remove if is exist
         mListeners.add(new ListenerObject(activity, mask, listener));
     }
 
     public void unsetVarioListener(Activity activity) {
-        for (int i = 0; i < mListeners.size(); i++) {
-            ListenerObject obj = mListeners.get(i);
-
+        for (ListenerObject obj : mListeners) {
             if (obj.mActivity == activity) {
-                mListeners.remove(i);
+                mListeners.remove(obj);
                 break;
             }
         }
@@ -198,6 +223,17 @@ public class VarioAgent { // extends BluetoothSPP {
         return false;
     }
 
+    public boolean send(VarioCommand command) {
+        if (mBluetooth != null) {
+            Log.i("Vario", "Send command : " + command.toString());
+            mBluetooth.send(command.toString(), true);
+
+            return true;
+        }
+
+        return false;
+    }
+
     public boolean send(byte[] data, boolean CRLF) {
         if (mBluetooth != null) {
             mBluetooth.send(data, CRLF);
@@ -211,6 +247,19 @@ public class VarioAgent { // extends BluetoothSPP {
         if (mBluetooth != null) {
             mBluetooth.send(data, CRLF);
             return true;
+        }
+
+        return false;
+    }
+
+    protected Boolean isActivityRunning(Class activityClass)
+    {
+        ActivityManager activityManager = (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningTaskInfo> tasks = activityManager.getRunningTasks(Integer.MAX_VALUE);
+
+        for (ActivityManager.RunningTaskInfo task : tasks) {
+            if (activityClass.getCanonicalName().equalsIgnoreCase(task.baseActivity.getClassName()))
+                return true;
         }
 
         return false;
