@@ -1295,6 +1295,11 @@ void commandQueryParameter(Command * cmd)
 
 void commandUpdateParameter(Command * cmd)
 {
+	//Serial.print("commandUpdateParam(");
+	//Serial.print("code:"); Serial.print(cmd->code);
+	//Serial.print(", param: "); Serial.print(cmd->param);
+	//Serial.println(")");
+	
 	for (int i = 0; ParamMap[i].id != PARAM_EOF; i++)
 	{
 		PARAM_MappingInfo * info = &ParamMap[i];
@@ -1344,8 +1349,8 @@ void commandUpdateParameter(Command * cmd)
 		}
 	}
 	
+	//Serial.println("  -> unmatched command");
 	resStackBT.push(RCODE_ERROR/*, error code*/);
-	//Serial.println("%ER");
 }
 
 void commandDumpParameters(Command * cmd)

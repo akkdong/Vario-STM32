@@ -26,4 +26,28 @@ public class SensorData extends AbstractData {
         mGyroX = mGyroY = mGyroZ = 0;
         mPressure = 0;
     }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder(256);
+
+        //
+        sb.append('$');
+        sb.append("SENSOR");
+        // accelerometer
+        sb.append(',');
+        sb.append(mAccelX);
+        sb.append(',');
+        sb.append(mAccelY);
+        sb.append(',');
+        sb.append(mAccelZ);
+        // gyrometer
+        sb.append(',');
+        sb.append(mGyroX);
+        sb.append(',');
+        sb.append(mGyroY);
+        sb.append(',');
+        sb.append(mGyroZ);
+
+        return sb.toString();
+    }
 }

@@ -78,7 +78,7 @@ public class DeviceList extends AppCompatActivity {
         setResult(Activity.RESULT_CANCELED);
         
         // Initialize the button to perform device discovery
-        scanButton = (Button) findViewById(R.id.button_scan);
+        scanButton = (Button)findViewById(R.id.button_scan);
         String strScanDevice = getIntent().getStringExtra("scan_for_devices");
         if(strScanDevice == null) 
         	strScanDevice = "SCAN FOR DEVICES";

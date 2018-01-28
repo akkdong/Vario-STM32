@@ -1,0 +1,223 @@
+<PreferenceScreen xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- NOTE: EditTextPreference accepts EditText attributes. -->
+    <!-- NOTE: EditTextPreference's summary should be set to its value by the activity code. -->
+
+    <!-- NOTE: Hide buttons to simplify the UI. Users can touch outside the dialog to
+         dismiss it. -->
+    <!-- NOTE: ListPreference's summary should be set to its value by the activity code. -->
+
+    <PreferenceCategory android:title="@string/pref_category_glider_properties">
+        <ListPreference
+            android:defaultValue="1"
+            android:entries="@array/pref_glider_type_titles"
+            android:entryValues="@array/pref_glider_type_values"
+            android:key="@string/pref_key_glider_type"
+            android:title="@string/pref_title_glider_type" />
+        <EditTextPreference
+            android:key="@string/pref_key_glider_manufacture"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_glider_manufacture" />
+        <EditTextPreference
+            android:key="@string/pref_key_glider_model"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_glider_model" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_category_igc_logger">
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="@string/pref_key_igc_enable"
+            android:title="@string/pref_title_igc_enable" />
+        <EditTextPreference
+            android:defaultValue="10"
+            android:inputType="numberDecimal"
+            android:digits="0123456789"
+            android:key="@string/pref_key_igc_takeoff_speed"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_igc_takeoff_speed" />
+        <ListPreference
+            android:defaultValue="30000"
+            android:entries="@array/pref_landing_timeout_titles"
+            android:entryValues="@array/pref_landing_timeout_values"
+            android:key="@string/pref_key_igc_landing_timeout"
+            android:title="@string/pref_title_igc_landing_timeout" />
+        <ListPreference
+            android:defaultValue="1000"
+            android:entries="@array/pref_logging_interval_titles"
+            android:entryValues="@array/pref_logging_interval_values"
+            android:key="@string/pref_key_igc_logging_interval"
+            android:title="@string/pref_title_igc_logging_interval" />
+        <EditTextPreference
+            android:key="@string/pref_key_igc_pilot_name"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_igc_pilot_name" />
+        <ListPreference
+            android:defaultValue="9"
+            android:entries="@array/pref_igc_timezone_titles"
+            android:entryValues="@array/pref_igc_timezone_values"
+            android:key="@string/pref_key_igc_timezone"
+            android:title="@string/pref_title_igc_timezone" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_category_vario_settings">
+        <EditTextPreference
+            android:defaultValue="0.2"
+            android:inputType="numberDecimal"
+            android:key="@string/pref_key_vario_climb_threshold"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_vario_climb_threshold" />
+        <EditTextPreference
+            android:defaultValue="-3.0"
+            android:inputType="numberSigned|numberDecimal"
+            android:key="@string/pref_key_vario_sink_threshold"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_vario_sink_threshold" />
+        <EditTextPreference
+            android:defaultValue="0.1"
+            android:inputType="numberDecimal"
+            android:key="@string/pref_key_vario_sensitivity"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_vario_sensivitiy" />
+        <ListPreference
+            android:defaultValue="1"
+            android:entries="@array/pref_vario_sentence_titles"
+            android:entryValues="@array/pref_vario_sentence_values"
+            android:key="@string/pref_key_vario_sentence"
+            android:title="@string/pref_title_vario_sentence" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="@string/pref_key_vario_baro_only"
+            android:title="@string/pref_title_vario_baro_only" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_category_volume_threshold">
+        <ListPreference
+            android:defaultValue="100"
+            android:entries="@array/pref_volume_titles"
+            android:entryValues="@array/pref_volume_values"
+            android:key="@string/pref_key_volume_vario"
+            android:title="@string/pref_title_volume_vario" />
+        <ListPreference
+            android:defaultValue="5"
+            android:entries="@array/pref_volume_titles"
+            android:entryValues="@array/pref_volume_values"
+            android:key="@string/pref_key_volume_effect"
+            android:title="@string/pref_title_volume_effect" />
+        <Preference android:title="@string/pref_title_tone_editor">
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:targetPackage="club.rascal.notorious.aconsole"
+                android:targetClass="club.rascal.notorious.aconsole.ToneEditorActivity"/>
+        </Preference>
+        <EditTextPreference
+            android:defaultValue="2.8"
+            android:inputType="numberDecimal"
+            android:key="@string/pref_key_threshold_low_battery"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_threshold_low_battery" />
+        <ListPreference
+            android:defaultValue="1000"
+            android:entries="@array/pref_shutdown_holdtime_titles"
+            android:entryValues="@array/pref_shutdown_holdtime_values"
+            android:key="@string/pref_key_threshold_shutdown_holdtime"
+            android:title="@string/pref_title_threshold_shutdown_holdtime" />
+        <ListPreference
+            android:defaultValue="600000"
+            android:entries="@array/pref_auto_poweroff_titles"
+            android:entryValues="@array/pref_auto_poweroff_values"
+            android:key="@string/pref_key_auto_shutdown_vario"
+            android:title="@string/pref_title_auto_shutdown_vario" />
+        <ListPreference
+            android:defaultValue="600000"
+            android:entries="@array/pref_auto_poweroff_titles"
+            android:entryValues="@array/pref_auto_poweroff_values"
+            android:key="@string/pref_key_auto_shutdown_ums"
+            android:title="@string/pref_title_auto_shutdown_ums" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_category_kalman_filter_parameters">
+        <EditTextPreference
+            android:defaultValue="400"
+            android:inputType="numberDecimal"
+            android:key="@string/pref_key_kalman_zmeas"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_kalman_zmeas" />
+        <EditTextPreference
+            android:defaultValue="1000"
+            android:inputType="numberDecimal"
+            android:key="@string/pref_key_kalman_zaccel"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_kalman_zaccel" />
+        <EditTextPreference
+            android:defaultValue="1"
+            android:inputType="numberDecimal"
+            android:key="@string/pref_key_kalman_accelbias"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_kalman_accelbias" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_category_calibration">
+        <EditTextPreference
+            android:defaultValue="0.0"
+            android:editable="false"
+            android:key="@string/pref_key_caldata_accel_x"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_caldata_accel_x" />
+        <EditTextPreference
+            android:defaultValue="0.0"
+            android:editable="false"
+            android:key="@string/pref_key_caldata_accel_y"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_caldata_accel_y" />
+        <EditTextPreference
+            android:defaultValue="0.0"
+            android:editable="false"
+            android:key="@string/pref_key_caldata_accel_z"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_caldata_accel_z" />
+        <EditTextPreference
+            android:defaultValue="0.0"
+            android:editable="false"
+            android:key="@string/pref_key_caldata_gyro_x"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_caldata_gyro_x" />
+        <EditTextPreference
+            android:defaultValue="0.0"
+            android:editable="false"
+            android:key="@string/pref_key_caldata_gyro_y"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_caldata_gyro_y" />
+        <EditTextPreference
+            android:defaultValue="0.0"
+            android:editable="false"
+            android:key="@string/pref_key_caldata_gyro_z"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_caldata_gyro_z" />
+        <Preference android:title="@string/pref_title_calibration">
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:targetPackage="club.rascal.notorious.aconsole"
+                android:targetClass="club.rascal.notorious.aconsole.CalibrationActivity"/>
+        </Preference>
+    </PreferenceCategory>
+
+</PreferenceScreen>

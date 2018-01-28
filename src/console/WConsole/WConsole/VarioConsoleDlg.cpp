@@ -86,9 +86,9 @@ static TimeZoneInfo _TimezoneTable[] =
 
 static VolumeInfo _VolumeTable[] =
 {
-	{ 0,	_T("Mute") },
-	{ 5,	_T("Medium") },
-	{ 98,	_T("Loud") },
+	{   0,	_T("Mute") },
+	{   5,	_T("Medium") },
+	{ 100,	_T("Loud") },
 };
 
 static SentenceInfo _SentenceTable[] =

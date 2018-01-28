@@ -33,10 +33,9 @@ public class LocationParser {
     }
 
     private void parseRMC(String str) {
-        // $GPRMC,
-        // $GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A
+        // $GPRMC,123519.000,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A
         //`
-        // 123519       Fix taken at 12:35:19 UTC                   1
+        // 123519.sss   Fix taken at 12:35:19 UTC                   1
         // A            Status A=active or V=Void.                  2
         // 4807.038,N   Latitude 48 deg 07.038' N                   3,4
         // 01131.000,E  Longitude 11 deg 31.000' E                  5,6
@@ -49,7 +48,7 @@ public class LocationParser {
         String[] tokens = str.split(",");
 
         if (tokens[2].charAt(0) == 'A') {
-            int time = Integer.parseInt(tokens[1]);
+            int time = (int)Float.parseFloat(tokens[1]); // Integer.parseInt(tokens[1]);
             if (mTime != time) {
                 mTime = time;
                 mFlag = NMEA_GPRMC;
@@ -63,9 +62,9 @@ public class LocationParser {
     }
 
     private void parseGGA(String str) {
-        // $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47
+        // $GPGGA,123519.000,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47
         //
-        // 123519           Fix taken at 12:35:19 UTC                       1
+        // 123519.sss       Fix taken at 12:35:19 UTC                       1
         // 4807.038,N       Latitude 48 deg 07.038' N                       2,3
         // 01131.000,E      Longitude 11 deg 31.000' E                      4,5
         // 1                Fix quality: 0 = invalid                        6
@@ -89,7 +88,7 @@ public class LocationParser {
         String[] tokens = str.split(",");
 
         if (Integer.parseInt(tokens[6]) != 0) {
-            int time = Integer.parseInt(tokens[1]);
+            int time = (int)Float.parseFloat(tokens[1]); // Integer.parseInt(tokens[1]);
             if (mTime != time) {
                 mTime = time;
                 mFlag = NMEA_GPGGA;

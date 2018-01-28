@@ -6,7 +6,7 @@
 
     <item
         android:id="@+id/action_connect"
-        android:icon="@drawable/ic_action_bluetooth"
+        android:icon="@drawable/ic_action_disconnect"
         android:title="@string/action_connect"
         app:showAsAction="ifRoom" />
     <item
@@ -28,8 +28,4 @@
             android:checkable="true"
             android:title="@string/action_dump_pressure" />
     </group>
-    <item
-        android:id="@+id/action_calibration"
-        android:icon="@drawable/ic_action_calibration"
-        android:title="@string/action_calibration" />
 </menu>

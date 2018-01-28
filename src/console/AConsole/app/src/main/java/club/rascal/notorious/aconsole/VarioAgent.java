@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import app.akexorcist.bluetoothspp.library.BluetoothSPP;
@@ -22,7 +21,7 @@ import app.akexorcist.bluetoothspp.library.BluetoothState;
 
 public class VarioAgent { // extends BluetoothSPP {
     // VarioAgent is singleton, it coule be created(referensed) by getInstance method
-    private static volatile VarioAgent agent = new VarioAgent();
+    private static volatile VarioAgent mAgent = new VarioAgent();
 
     private BluetoothSPP mBluetooth = null;
     private Context mContext = null;
@@ -55,22 +54,26 @@ public class VarioAgent { // extends BluetoothSPP {
         }
     }
 
-    // private constructor
+    // singleton private constructor
     private  VarioAgent() { }
 
     public static VarioAgent getInstance() {
-        return agent;
+        return mAgent;
     }
 
     public boolean init(Context context, BluetoothSPP.BluetoothConnectionListener listener) {
         if (mBluetooth == null) {
+            //
+            mContext = context;
+
+            //
             mBluetooth = new BluetoothSPP(context);
             mBluetooth.setBluetoothConnectionListener(listener);
 
             mBluetooth.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() {
                 @Override
                 public void onDataReceived(byte[] data, String message) {
-                    Log.i("Vario", message);
+                    //Log.i("Vario", "VarioAgent.onDataReceived: " + message);
 
                     if (message.charAt(0) == '$') {
                         AbstractData absData = null;
@@ -92,7 +95,7 @@ public class VarioAgent { // extends BluetoothSPP {
 
                         if (absData != null) {
                             for (ListenerObject obj : mListeners) {
-                                // check validation of object.mActivity
+                                // ?? check validation of object.mActivity
                                 // ...
 
                                 if ((obj.mFilterMask & ListenerFilter.FILTER_DATA) == ListenerFilter.FILTER_DATA)
@@ -104,7 +107,7 @@ public class VarioAgent { // extends BluetoothSPP {
 
                         if (res != null) {
                             for (ListenerObject obj : mListeners) {
-                                // check validation of object.mActivity
+                                // ?? check validation of object.mActivity
                                 // ...
 
                                 if ((obj.mFilterMask & ListenerFilter.FILTER_RESPONSE) == ListenerFilter.FILTER_RESPONSE)

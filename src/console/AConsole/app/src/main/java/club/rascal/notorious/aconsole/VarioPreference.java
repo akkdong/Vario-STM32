@@ -1,12 +1,12 @@
 package club.rascal.notorious.aconsole;
 
 import android.annotation.TargetApi;
+import android.app.Fragment;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.ListPreference;
@@ -15,11 +15,13 @@ import android.preference.PreferenceActivity;
 import android.support.v7.app.ActionBar;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
-import android.preference.RingtonePreference;
-import android.text.TextUtils;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -33,7 +35,20 @@ import java.util.List;
  * href="http://developer.android.com/guide/topics/ui/settings.html">Settings
  * API Guide</a> for more information on developing a Settings UI.
  */
-public class VarioPreference extends AppCompatPreferenceActivity {
+public class VarioPreference extends AppCompatPreferenceActivity implements VarioAgent.VarioListener {
+
+    //
+    private VarioAgent mAgent = null;
+    private Fragment mActiveFragment = null;
+
+    private LinkedList<VarioCommand> mCommands = null;
+
+    /**
+     *
+     */
+    protected interface IPreferenceFragment {
+        void refreshFragment();
+    }
 
     /**
      * A preference value change listener that updates the preference's summary
@@ -96,6 +111,10 @@ public class VarioPreference extends AppCompatPreferenceActivity {
                         .getString(preference.getKey(), ""));
     }
 
+    /**
+     *
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Intent intent = getIntent();
@@ -103,6 +122,13 @@ public class VarioPreference extends AppCompatPreferenceActivity {
 
         super.onCreate(savedInstanceState);
         setupActionBar();
+
+        // get VarioAgent instance
+        mAgent = VarioAgent.getInstance();
+        // receive vario command response
+        mAgent.setVarioListener(this, VarioAgent.ListenerFilter.FILTER_RESPONSE, (VarioAgent.VarioListener)this);
+        // request all device's parameters
+        mAgent.send(new VarioCommand(VarioCommand.CMD_DUMP_PARAMETERS));
     }
 
     /**
@@ -116,18 +142,109 @@ public class VarioPreference extends AppCompatPreferenceActivity {
         }
     }
 
+    /**
+     *
+     */
+    @Override
+    public void onDestroy() {
+        //
+        mAgent.unsetVarioListener(this);
+        mAgent = null;
+
+        super.onDestroy();
+    }
+
+    /**
+     *
+     * @param fragment
+     */
+    @Override
+    public void onAttachFragment(Fragment fragment) {
+        mActiveFragment = fragment;
+    }
+
+    /**
+     *
+     * @param menu
+     * @return
+     */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_pref, menu);
+
+        return true;
+    }
+
+    /**
+     *
+     * @param item
+     * @return
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_upload_preference :
+                Log.i("Vario", "VarioPreference.onOptionSelected() -> action_upload_preference");
+
+                // reload ?
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.title_alert_reload_preference)
+                        .setMessage(R.string.message_reload_preference)
+                        .setIcon(android.R.drawable.ic_dialog_info)
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                // request device's paramters -> refresh prefereces to the device's parameters
+                                VarioCommand dp = new VarioCommand(VarioCommand.CMD_DUMP_PARAMETERS);
+                                mAgent.send(dp);
+                            }
+                        })
+                        .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                // nop
+                            }
+                        }).show();
+
+                return true;
+
+            case R.id.action_dnload_preference :
+                Log.i("Vario", "VarioPreference.onOptionSelected() -> action_dnload_preference");
+
+                // ? confirm
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.title_alert_download_preference)
+                        .setMessage(R.string.message_download_preference)
+                        .setIcon(android.R.drawable.ic_dialog_info)
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                //
+                                generateUpdateCommands();
+                                sendUpdateCommands();
+                            }
+                        }).show();
+
+                return true;
+
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
     @Override
     public boolean onMenuItemSelected(int featureId, MenuItem item) {
         int id = item.getItemId();
         if (id == android.R.id.home) {
-            //if (!super.onMenuItemSelected(featureId, item)) {
-            //    NavUtils.navigateUpFromSameTask(this);
-            //}
             onBackPressed();
             return true;
         }
         return super.onMenuItemSelected(featureId, item);
     }
+
     /**
      * {@inheritDoc}
      */
@@ -154,17 +271,107 @@ public class VarioPreference extends AppCompatPreferenceActivity {
     }
 
     /**
+     *
+     */
+    protected void generateUpdateCommands() {
+        //
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+
+        // ...
+        mCommands = new LinkedList<VarioCommand>();
+
+        // GliderInfo
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.GLIDER_TYPE, getLongPreference(pref,R.string.pref_key_glider_type, "1")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.GLIDER_MANUFACTURE, getStringPreference(pref, R.string.pref_key_glider_manufacture, "")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.GLIDER_MODEL, getStringPreference(pref, R.string.pref_key_glider_model, "")));
+        // IGC-Logger
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.LOGGER_ENABLE, pref.getBoolean(getString(R.string.pref_key_igc_enable), true) ? 1 : 0));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.LOGGER_TAKEOFF_SPEED, getLongPreference(pref, R.string.pref_key_igc_takeoff_speed, "10")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.LOGGER_LANDING_TIMEOUT, getLongPreference(pref, R.string.pref_key_igc_landing_timeout, "30000")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.LOGGER_LOGGING_INTERVAL, getLongPreference(pref, R.string.pref_key_igc_logging_interval, "1000")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.LOGGER_PILOT, getStringPreference(pref, R.string.pref_key_igc_pilot_name, "")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.LOGGER_TIMEZONE, getLongPreference(pref, R.string.pref_key_igc_timezone, "9")));
+        // Vario Settings
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.VARIO_CLIMB_THRESHOLD, getDoublePreference(pref, R.string.pref_key_vario_climb_threshold, "0.2")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.VARIO_SINK_THRESHOLD, getDoublePreference(pref, R.string.pref_key_vario_sink_threshold, "-3.0")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.VARIO_SENSITIVITY, getDoublePreference(pref, R.string.pref_key_vario_sensitivity, "0.1")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.VARIO_SENTENCE, getLongPreference(pref, R.string.pref_key_vario_sentence, "0")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.VARIO_BAROONLY, pref.getBoolean(getString(R.string.pref_key_vario_baro_only), true) ? 1 : 0));
+        // Volume Settings
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.VOLUME_VARIO, getLongPreference(pref, R.string.pref_key_volume_vario, "100")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.VOLUME_EFFECT, getLongPreference(pref, R.string.pref_key_volume_effect, "5")));
+        // Threshold Settings
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.THRESHOLD_LOW_BATTERY, getDoublePreference(pref, R.string.pref_key_threshold_low_battery, "2.8")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.THRESHOLD_SHUTDOWN_HOLDTIME, getLongPreference(pref, R.string.pref_key_threshold_shutdown_holdtime, "1000")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.THRESHOLD_AUTO_SHUTDOWN_VARIO, getLongPreference(pref, R.string.pref_key_auto_shutdown_vario, "600000")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.THRESHOLD_AUTO_SHUTDOWN_UMS, getLongPreference(pref, R.string.pref_key_auto_shutdown_ums, "600000")));
+        // Kalman Parameters
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.KALMAN_VAR_ZMEAS, getDoublePreference(pref, R.string.pref_key_kalman_zmeas, "400.0")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.KALMAN_VAR_ZACCEL, getDoublePreference(pref, R.string.pref_key_kalman_zaccel, "1000.0")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.KALMAN_VAR_ACCELBIAS, getDoublePreference(pref, R.string.pref_key_kalman_accelbias, "1.0")));
+
+        // save parameters to eeprom
+        mCommands.add(new VarioCommand(VarioCommand.CMD_SAVE_PARAM));
+    }
+
+    private long getLongPreference(SharedPreferences pref, int id, String strDefault) {
+        return Long.parseLong(pref.getString(getString(id), strDefault));
+    }
+
+    private double getDoublePreference(SharedPreferences pref, int id, String strDefault) {
+        return Double.parseDouble(pref.getString(getString(id), strDefault));
+    }
+
+    private String getStringPreference(SharedPreferences pref, int id, String strDefault) {
+        return pref.getString(getString(id), strDefault);
+    }
+
+    /**
+     *
+     */
+    protected void sendUpdateCommands() {
+        if (mCommands != null && ! mCommands.isEmpty()) {
+            mAgent.send(mCommands.removeFirst());
+        }
+    }
+
+    /**
      * This fragment shows general preferences only. It is used when the
      * activity is showing a two-pane settings UI.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class VarioPreferenceFragment extends PreferenceFragment {
+    public static class VarioPreferenceFragment extends PreferenceFragment implements IPreferenceFragment {
+
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.pref_vario);
             setHasOptionsMenu(true);
 
+            //
+            bindPreferenceSummary();
+        }
+
+        @Override
+        public boolean onOptionsItemSelected(MenuItem item) {
+             switch (item.getItemId()) {
+                case  android.R.id.home :
+                    startActivity(new Intent(getActivity(), VarioPreference.class));
+                    return true;
+            }
+
+            return super.onOptionsItemSelected(item);
+        }
+
+        @Override
+        public void refreshFragment() {
+            setPreferenceScreen(null);
+            addPreferencesFromResource(R.xml.pref_vario);
+
+            bindPreferenceSummary();
+        }
+
+        private void bindPreferenceSummary() {
             // Bind the summaries of EditText/List/Dialog/Ringtone preferences
             // to their values. When their values change, their summaries are
             // updated to reflect the new value, per the Android Design
@@ -203,35 +410,84 @@ public class VarioPreference extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_key_caldata_gyro_x)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_key_caldata_gyro_y)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_key_caldata_gyro_z)));
-
-            /*
-            Preference prefToneEditor = (Preference)findPreference("pref_title_tone_editor");
-            prefToneEditor.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    startActivity(new Intent(CurrentActivity.this, ToneEditorActivity.class));
-                    return true;
-                }
-            });
-            Preference prefCalibration = (Preference)findPreference("pref_title_calibration");
-            prefCalibration.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    startActivity(new Intent(this, CalibrationActivity.class));
-                    return true;
-                }
-            });
-            */
         }
+    }
 
-        @Override
-        public boolean onOptionsItemSelected(MenuItem item) {
-            int id = item.getItemId();
-            if (id == android.R.id.home) {
-                startActivity(new Intent(getActivity(), VarioPreference.class));
-                return true;
+    @Override
+    public void onDataReceived(AbstractData data) {
+        // nop
+        Log.i("Vario", "VarioPreference.onDataReceived: " + data.toString());
+    }
+
+    @Override
+    public void onResponseReceived(VarioResponse response) {
+        // ...
+        Log.i("Vario", "VarioPreference.onResponseReceived: " + response.toString());
+
+        switch (response.mCode) {
+            case VarioResponse.RCODE_DUMP_PARAM :
+                //
+                saveParameter(response);
+
+                //
+                if (response.mParam == VarioParam.EOF) {
+                    if (mActiveFragment != null) {
+                        ((IPreferenceFragment) mActiveFragment).refreshFragment();
+
+                        Toast.makeText(this, R.string.toast_pref_reload_success, Toast.LENGTH_SHORT).show();
+                    }
+                }
+                break;
+
+            case VarioResponse.RCODE_UPDATE_PARAM :
+                // ? check update completion
+                //   ... nop
+
+                // send next if exists
+                sendUpdateCommands();
+                break;
+
+            case VarioResponse.RCODE_OK :
+                Toast.makeText(this, R.string.toast_pref_download_success, Toast.LENGTH_SHORT).show();
+                break;
+
+            case VarioResponse.RCODE_ERROR :
+                // something wroing!! -> remove all VarioCommand & alert
+                mCommands.clear();
+                mCommands = null;
+
+                // alert?
+                Toast.makeText(this, R.string.toast_pref_download_failed, Toast.LENGTH_SHORT).show();
+                break;
+        }
+    }
+
+    private void saveParameter(VarioResponse response) {
+        //
+        for (VarioParamMapData map : VarioParamMaps.mMaps) {
+            if (map.mParam == response.mParam) {
+                SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+                SharedPreferences.Editor editor = pref.edit();
+
+                switch (map.mType) {
+                    case VarioParamMapData.TYPE_BOOLEAN :
+                        editor.putBoolean(getString(map.mPrefName), response.getInteger() != 0);
+                        editor.apply();
+                        break;
+                    case VarioParamMapData.TYPE_INTEGER:
+                        editor.putString(getString(map.mPrefName), Integer.toString(response.getInteger()));
+                        editor.apply();
+                        break;
+                    case VarioParamMapData.TYPE_FLOAT:
+                        editor.putString(getString(map.mPrefName), Float.toString(response.getFloat()));
+                        editor.apply();
+                        break;
+                    case VarioParamMapData.TYPE_STRING:
+                        editor.putString(getString(map.mPrefName), response.getString());
+                        editor.apply();
+                        break;
+                }
             }
-            return super.onOptionsItemSelected(item);
         }
     }
 }

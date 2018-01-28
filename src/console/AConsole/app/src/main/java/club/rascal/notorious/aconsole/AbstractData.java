@@ -1,5 +1,7 @@
 package club.rascal.notorious.aconsole;
 
+import android.util.Log;
+
 /**
  * Created by Jasmine on 2018-01-24.
  */

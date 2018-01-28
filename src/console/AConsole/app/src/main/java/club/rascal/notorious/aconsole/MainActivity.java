@@ -1,6 +1,7 @@
 package club.rascal.notorious.aconsole;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -26,28 +27,34 @@ import app.akexorcist.bluetoothspp.library.DeviceList;
 
 public class MainActivity extends AppCompatActivity implements VarioAgent.VarioListener, BluetoothSPP.BluetoothConnectionListener {
 
-    private VarioAgent mAgent;
+    private VarioAgent mAgent = null;
     private Toolbar mToolbar;
+    //private ProgressDialog mProgDialog = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.i("Vario", "MainActivity.onCreate() is called");
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
 
-        // get singleton instance
-        mAgent = VarioAgent.getInstance();
-        // initialize vario-agnent
-        mAgent.init(this, (BluetoothSPP.BluetoothConnectionListener)this);
-        // bluetooth must be available
-        if (! mAgent.isBluetoothAvailable()) {
-            Toast.makeText(this, R.string.toast_bt_not_available, Toast.LENGTH_SHORT).show();
-            finish();
+        if (mAgent == null) {
+            Log.i("Vario", "    -> initialize mAgnet!!");
+            // get singleton instance
+            mAgent = VarioAgent.getInstance();
+            // initialize vario-agnent
+            mAgent.init(this, (BluetoothSPP.BluetoothConnectionListener) this);
+            // bluetooth must be available
+            if (!mAgent.isBluetoothAvailable()) {
+                Toast.makeText(this, R.string.toast_bt_not_available, Toast.LENGTH_SHORT).show();
+                finish();
+            }
+            // receive all sensor data : gps, vario, imu(acc,gyro,baro)
+            mAgent.setVarioListener(this, VarioAgent.ListenerFilter.FILTER_DATA /*| VarioAgent.ListenerFilter.FILTER_RESPONSE*/, (VarioAgent.VarioListener) this);
         }
-        // receive all sensor data : gps, vario, imu(acc,gyro,baro)
-        mAgent.setVarioListener(this, VarioAgent.ListenerFilter.FILTER_DATA | VarioAgent.ListenerFilter.FILTER_RESPONSE, (VarioAgent.VarioListener)this);
     }
 
     @Override
@@ -68,6 +75,7 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
 
     @Override
     public void onDestroy() {
+        Log.i("Vario", "MainActivity.onDestroy() is called");
         super.onDestroy();
 
         mAgent.unsetVarioListener(this);
@@ -116,6 +124,7 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
                 item.setChecked(! item.isChecked());
                 return true;
 
+            /*
             case R.id.action_calibration:
                 if (mAgent.getServiceState() == BluetoothState.STATE_CONNECTED) {
                     startActivity(new Intent(this, CalibrationActivity.class));
@@ -123,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
                     Toast.makeText(this, R.string.toast_bt_not_connected, Toast.LENGTH_SHORT).show();
                 }
                 return true;
+             */
 
             default:
                 // If we got here, the user's action was not recognized.
@@ -135,8 +145,12 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == BluetoothState.REQUEST_CONNECT_DEVICE) {
-            if(resultCode == Activity.RESULT_OK)
+            if(resultCode == Activity.RESULT_OK) {
                 mAgent.connect(data);
+
+                //mProgDialog = new ProgressDialog.show(this, "Progress_bar or give anything you want",
+                //        "Give message like ....please wait....", true);
+            }
         } else if (requestCode == BluetoothState.REQUEST_ENABLE_BT) {
             if (resultCode == Activity.RESULT_OK) {
                 mAgent.startService();
@@ -152,8 +166,8 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
     public void onDeviceConnected(String name, String address) {
         Toast.makeText(this, R.string.toast_bt_connected, Toast.LENGTH_SHORT).show();
 
-        VarioCommand dp = new VarioCommand(VarioCommand.CMD_DUMP_PARAMETERS);
-        mAgent.send(dp);
+        // request device's paramters -> refresh prefereces to the device's parameters
+        //mAgent.send(new VarioCommand(VarioCommand.CMD_DUMP_PARAMETERS));
 
         //
         updateMenu();
@@ -165,6 +179,12 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
 
         //
         updateMenu();
+
+        // How can I close top activities???? (ex: VarioPreferece)
+        //
+        //Intent intent = new Intent(this, MainActivity.class);
+        //intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        //startActivity(intent);
     }
 
     @Override
@@ -174,6 +194,9 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
 
     @Override
     public void onDataReceived(AbstractData data) {
+        //
+        //Log.i("Vario", "MainActivity.onDataReceived: " + data.toString());
+
         // ...
         if (data.mType == AbstractData.DATA_VARIO) {
             VarioData vario = (VarioData)data;
@@ -232,9 +255,9 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
     @Override
     public void onResponseReceived(VarioResponse response) {
         // ...
-        Log.i("Vario", "onResponseReceived : " + response.toString());
-        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        Log.i("Vario", "MainActivity.onResponseReceived: " + response.toString());
 
+        /*
         switch (response.mCode) {
             case VarioResponse.RCODE_DUMP_PARAM :
                 saveParameter(response);
@@ -242,10 +265,12 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
             case VarioResponse.RCODE_UPDATE_PARAM :
                 break;
         }
+        */
     }
 
+    /*
     private void saveParameter(VarioResponse response) {
-
+    //
         for (VarioParamMapData map : VarioParamMaps.mMaps) {
             if (map.mParam == response.mParam) {
                 SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
@@ -271,27 +296,49 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
                         editor.apply();
                         break;
                 }
-
-                //Log.i("Vario", "   -> " + pref.getString(getString(map.mPrefName), ""));
             }
         }
     }
+    */
 
     private void updateMenu() {
-        Menu menu = ((Toolbar)findViewById(R.id.toolbar)).getMenu();
+        Menu menu = mToolbar.getMenu();
+        MenuItem item;
 
-        if (mAgent.getServiceState() == BluetoothState.STATE_CONNECTED) {
-            MenuItem item = menu.findItem(R.id.action_calibration);
-            if (item != null) {
-                item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
-                //item.setVisible(true);
-            }
-        } else {
-            MenuItem item = menu.findItem(R.id.action_calibration);
-            if (item != null) {
-                item.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
-                //item.setVisible(false);
-            }
+        //
+        /*
+        if ((item = menu.findItem(R.id.action_calibration)) != null) {
+            int show = (mAgent.getServiceState() == BluetoothState.STATE_CONNECTED) ? MenuItem.SHOW_AS_ACTION_IF_ROOM : MenuItem.SHOW_AS_ACTION_NEVER;
+
+            item.setShowAsAction(show);
+        }
+        */
+
+        //
+        if ((item = menu.findItem(R.id.action_connect)) != null) {
+            int icon = (mAgent.getServiceState() == BluetoothState.STATE_CONNECTED) ? R.drawable.ic_action_connect : R.drawable.ic_action_disconnect;
+            item.setIcon(icon);
         }
     }
+
+    /*
+    private void setAnimatedIocn() {
+        // ref : http://www.andronotes.org/uncategorized/animation-of-menuitem-in-actionbar/
+        View button = toolbar.findViewById(R.id.action_button);
+
+        //Remove icon animation
+        if (button != null) {
+            Animation animation = AnimationUtils.loadAnimation(getBaseContext(), R.anim.fragment_fade_out);
+            animation.setStartOffset(0);
+            button.startAnimation(animation);
+        }
+
+        //Add icon animation
+        if (button != null) {
+            Animation animation = AnimationUtils.loadAnimation(getBaseContext(), R.anim.fragment_slide_in_up);
+            animation.setStartOffset(0);
+            button.startAnimation(animation);
+        }
+    }
+    */
 }

@@ -20,4 +20,29 @@ public class LocationData extends AbstractData {
         mSpeed = 0;
         mTrackangle = 0;
     }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder(256);
+
+        //
+        sb.append('$');
+        sb.append("LOCATION");
+        // latitude
+        sb.append(',');
+        sb.append(mLatitude);
+        // longitude
+        sb.append(',');
+        sb.append(mLongitude);
+        // altitude
+        sb.append(',');
+        sb.append(mAltitude);
+        // speed
+        sb.append(',');
+        sb.append(mSpeed);
+        // track-angle
+        sb.append(',');
+        sb.append(mTrackangle);
+
+        return sb.toString();
+    }
 }

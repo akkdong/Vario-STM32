@@ -34,7 +34,7 @@
 //
 
 #define BAUDRATE_DEBUG							(115200)
-#define BAUDRATE_BT								(115200)
+#define BAUDRATE_BT								(38400)
 #define BAUDRATE_GPS							(9600)
 
 

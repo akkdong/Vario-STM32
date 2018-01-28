@@ -13,10 +13,12 @@ public class VarioCommand {
     public int mDataType;
     public long mDataL;
     public double mDataD;
+    public String mDataS;
 
     public static final int DTYPE_NONE = 0;
     public static final int DTYPE_NUMBER = 1;
     public static final int DTYPE_FLOAT = 2;
+    public static final int DTYPE_STRING = 3;
 
     public static final int  CMD_STATUS				= 'S' * 256 + 'T';
     public static final int  CMD_RESET				    = 'R' * 256 + 'S';
@@ -43,6 +45,7 @@ public class VarioCommand {
         mDataType = DTYPE_NONE;
         mDataL = 0;
         mDataD = 0;
+        mDataS = null;
     }
 
     public VarioCommand(int code, int param) {
@@ -52,24 +55,37 @@ public class VarioCommand {
         mDataType = DTYPE_NONE;
         mDataL = 0;
         mDataD = 0;
+        mDataS = null;
     }
 
     public VarioCommand(int code, int param, long data) {
         mCode = code;
-        mParam = 0;
+        mParam = param;
 
         mDataType = DTYPE_NUMBER;
         mDataL = data;
         mDataD = data;
+        mDataS = null;
     }
 
     public VarioCommand(int code, int param, double data) {
         mCode = code;
-        mParam = 0;
+        mParam = param;
 
         mDataType = DTYPE_FLOAT;
         mDataL = (long)data;
         mDataD = data;
+        mDataS = null;
+    }
+
+    public VarioCommand(int code, int param, String data) {
+        mCode = code;
+        mParam = param;
+
+        mDataType = DTYPE_STRING;
+        mDataL = 0;
+        mDataD = 0;
+        mDataS = data;
     }
 
     public String toString() {
@@ -85,13 +101,15 @@ public class VarioCommand {
             sb.append(',');
             sb.append(mParam);
 
-            if (mDataType == DTYPE_NUMBER) {
+            if (mDataType != DTYPE_NONE)
                 sb.append(',');
+
+            if (mDataType == DTYPE_NUMBER)
                 sb.append(mDataL);
-            } else if (mDataType == DTYPE_FLOAT) {
-                sb.append(',');
+            else if (mDataType == DTYPE_FLOAT)
                 sb.append(mDataD);
-            }
+            else if (mDataType == DTYPE_STRING)
+                sb.append(mDataS);
         }
 
         return sb.toString();

@@ -7,15 +7,27 @@
     <string name="action_dump_acc">Dump Acceleration data</string>
     <string name="action_dump_gyro">Dump Gyroscope data</string>
     <string name="action_dump_pressure">Dump Pressure data</string>
+    <string name="action_dnload_preference">Downlaod Preference</string>
+    <string name="action_upload_preference">Upload Preference</string>
+
     <string name="toast_bt_not_available">Bluetooth is not available</string>
     <string name="toast_bt_not_enabled">Bluetooth is not enabled</string>
     <string name="toast_bt_connected">Vario connected!</string>
     <string name="toast_bt_disconnected">Vario disconnected!</string>
     <string name="toast_bt_connection_failed">Vario connection failed!!</string>
     <string name="toast_bt_not_connected">Connect variometer first!</string>
+    <string name="toast_pref_download_success">Download Preference done.</string>
+    <string name="toast_pref_download_failed">Download Preference FAILED!!</string>
+    <string name="toast_pref_reload_success">Reload Preference done.</string>
+
     <string name="title_activity_vario_preference">Vario Preference</string>
     <string name="title_activity_tone_editor">Vario ToneEditor</string>
     <string name="title_activity_calibration">Vario Calibration</string>
+    <string name="title_alert_download_preference">Download Preference</string>
+    <string name="title_alert_reload_preference">Reload Preference</string>
+
+    <string name="message_download_preference">"Save current settings to device!"</string>
+    <string name="message_reload_preference">"The current settings will be lost.\nAre you sure?"</string>
 
     <string name="pref_header_vario">Vario Preference</string>
 
