@@ -25,11 +25,13 @@ public class VarioAgent { // extends BluetoothSPP {
 
     private BluetoothSPP mBluetooth = null;
     private Context mContext = null;
-    private int mState = 0;
+    private int mState = STATE_UNINITIALIZED;
 
     private LocationParser locParser = new LocationParser();
-
     private List<ListenerObject> mListeners = new ArrayList<ListenerObject>();
+
+    public static final int STATE_UNINITIALIZED = 0;
+    public static final int STATE_INITIALIZED = 1;
 
     // declare listener interface
     public interface VarioListener {
@@ -62,66 +64,70 @@ public class VarioAgent { // extends BluetoothSPP {
     }
 
     public boolean init(Context context, BluetoothSPP.BluetoothConnectionListener listener) {
+        // save context
+        mContext = context;
+
         if (mBluetooth == null) {
-            //
-            mContext = context;
-
-            //
+            // create new
             mBluetooth = new BluetoothSPP(context);
-            mBluetooth.setBluetoothConnectionListener(listener);
+        }
+        else {
+            // change context
+            mBluetooth.init(context);
+        }
 
-            mBluetooth.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() {
-                @Override
-                public void onDataReceived(byte[] data, String message) {
-                    //Log.i("Vario", "VarioAgent.onDataReceived: " + message);
+        // set bluetooth connection listener
+        mBluetooth.setBluetoothConnectionListener(listener);
+        // set bluetooth data receive listener
+        mBluetooth.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() {
+            @Override
+            public void onDataReceived(byte[] data, String message) {
+                Log.i("Vario", "VarioAgent.onDataReceived: " + message);
 
-                    if (message.charAt(0) == '$') {
-                        AbstractData absData = null;
+                if (message.charAt(0) == '$') {
+                    AbstractData absData = null;
 
-                        if (message.startsWith("$LK8EX1,")) {
-                            absData = VarioParser.parse(message);
-                        } else if (message.startsWith("$GPRMC,")) {
-                            locParser.parse(message, LocationParser.NMEA_GPRMC);
-                            if (locParser.isReady()) {
-                                absData = locParser.getData();
-                            }
-                        } else if (message.startsWith(("$GPGGA,"))) {
-                            locParser.parse(message, LocationParser.NMEA_GPGGA);
-                            if (locParser.isReady())
-                                absData = locParser.getData();
-                        } else if (message.startsWith(("$SENSOR,"))) {
-                            absData = SensorParser.parse(message);
+                    if (message.startsWith("$LK8EX1,")) {
+                        absData = VarioParser.parse(message);
+                    } else if (message.startsWith("$GPRMC,")) {
+                        locParser.parse(message, LocationParser.NMEA_GPRMC);
+                        if (locParser.isReady()) {
+                            absData = locParser.getData();
                         }
+                    } else if (message.startsWith(("$GPGGA,"))) {
+                        locParser.parse(message, LocationParser.NMEA_GPGGA);
+                        if (locParser.isReady())
+                            absData = locParser.getData();
+                    } else if (message.startsWith(("$SENSOR,"))) {
+                        absData = SensorParser.parse(message);
+                    }
 
-                        if (absData != null) {
-                            for (ListenerObject obj : mListeners) {
-                                // ?? check validation of object.mActivity
-                                // ...
+                    if (absData != null) {
+                        for (ListenerObject obj : mListeners) {
+                            // ?? check validation of object.mActivity
+                            // ...
 
-                                if ((obj.mFilterMask & ListenerFilter.FILTER_DATA) == ListenerFilter.FILTER_DATA)
-                                    obj.mListener.onDataReceived(absData);
-                            }
+                            if ((obj.mFilterMask & ListenerFilter.FILTER_DATA) == ListenerFilter.FILTER_DATA)
+                                obj.mListener.onDataReceived(absData);
                         }
-                    } else if (message.charAt(0) == '%') {
-                        VarioResponse res = VarioResponse.parse(message);
+                    }
+                } else if (message.charAt(0) == '%') {
+                    VarioResponse res = VarioResponse.parse(message);
 
-                        if (res != null) {
-                            for (ListenerObject obj : mListeners) {
-                                // ?? check validation of object.mActivity
-                                // ...
+                    if (res != null) {
+                        for (ListenerObject obj : mListeners) {
+                            // ?? check validation of object.mActivity
+                            // ...
 
-                                if ((obj.mFilterMask & ListenerFilter.FILTER_RESPONSE) == ListenerFilter.FILTER_RESPONSE)
-                                    obj.mListener.onResponseReceived(res);
-                            }
+                            if ((obj.mFilterMask & ListenerFilter.FILTER_RESPONSE) == ListenerFilter.FILTER_RESPONSE)
+                                obj.mListener.onResponseReceived(res);
                         }
                     }
                 }
-            });
+            }
+        });
 
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     public boolean isBluetoothAvailable() {
@@ -266,5 +272,9 @@ public class VarioAgent { // extends BluetoothSPP {
         }
 
         return false;
+    }
+
+    public int getState() {
+        return mState;
     }
 }

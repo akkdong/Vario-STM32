@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.i("Vario", "MainActivity.onCreate() is called");
+        //Log.i("Vario", "MainActivity.onCreate() is called");
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -41,20 +41,18 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
 
-        if (mAgent == null) {
-            Log.i("Vario", "    -> initialize mAgnet!!");
-            // get singleton instance
-            mAgent = VarioAgent.getInstance();
-            // initialize vario-agnent
-            mAgent.init(this, (BluetoothSPP.BluetoothConnectionListener) this);
-            // bluetooth must be available
-            if (!mAgent.isBluetoothAvailable()) {
-                Toast.makeText(this, R.string.toast_bt_not_available, Toast.LENGTH_SHORT).show();
-                finish();
-            }
-            // receive all sensor data : gps, vario, imu(acc,gyro,baro)
-            mAgent.setVarioListener(this, VarioAgent.ListenerFilter.FILTER_DATA /*| VarioAgent.ListenerFilter.FILTER_RESPONSE*/, (VarioAgent.VarioListener) this);
+        // get singleton instance
+        mAgent = VarioAgent.getInstance();
+
+        // initialize vario-agnent
+        mAgent.init(this, (BluetoothSPP.BluetoothConnectionListener) this);
+        // bluetooth must be available
+        if (!mAgent.isBluetoothAvailable()) {
+            Toast.makeText(this, R.string.toast_bt_not_available, Toast.LENGTH_SHORT).show();
+            finish();
         }
+        // receive all sensor data : gps, vario, imu(acc,gyro,baro)
+        mAgent.setVarioListener(this, VarioAgent.ListenerFilter.FILTER_DATA /*| VarioAgent.ListenerFilter.FILTER_RESPONSE*/, (VarioAgent.VarioListener) this);
     }
 
     @Override
@@ -75,7 +73,7 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
 
     @Override
     public void onDestroy() {
-        Log.i("Vario", "MainActivity.onDestroy() is called");
+        //Log.i("Vario", "MainActivity.onDestroy() is called");
         super.onDestroy();
 
         mAgent.unsetVarioListener(this);
@@ -182,9 +180,9 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
 
         // How can I close top activities???? (ex: VarioPreferece)
         //
-        //Intent intent = new Intent(this, MainActivity.class);
-        //intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        //startActivity(intent);
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
     }
 
     @Override
@@ -195,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
     @Override
     public void onDataReceived(AbstractData data) {
         //
-        //Log.i("Vario", "MainActivity.onDataReceived: " + data.toString());
+        Log.i("Vario", "MainActivity.onDataReceived: " + data.toString());
 
         // ...
         if (data.mType == AbstractData.DATA_VARIO) {
