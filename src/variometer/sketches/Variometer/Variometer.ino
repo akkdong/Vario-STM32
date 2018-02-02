@@ -102,11 +102,11 @@ void commandModeSwitch(Command * cmd);
 void commandSoundLevel(Command * cmd);
 void commandToneTest(Command * cmd);
 void commandSendsorDump(Command * cmd);
-void commandQueryParameter(Command * cmd);
-void commandUpdateParameter(Command * cmd);
-void commandDumpParameters(Command * cmd);
+void commandQueryProperty(Command * cmd);
+void commandUpdateProperty(Command * cmd);
+void commandDumpProperties(Command * cmd);
 
-int pushParameters(int start);
+int pushProperties(int start);
 
 
 //
@@ -134,10 +134,10 @@ float	toneTestVelocity;
 float	toneTestDelta;
 
 //
-// dump parameters
+// dump properties
 //
 
-int		dumpParam = -1;
+int		dumpProp = -1;
 
 
 //
@@ -189,14 +189,14 @@ static Tone melodyLanding[] =
 // I2C2 is used by EEPROM
 //
 
-HardWire Wire1(1, I2C_FAST_MODE);
-HardWire Wire2(2, I2C_FAST_MODE);
+TwoWire Wire1(1, I2C_FAST_MODE);
+TwoWire Wire2(2, I2C_FAST_MODE);
 
 // initialize some static member of I2CDevice(I2C1)
 //
 
 // set wire reference member to I2C1
-HardWire & I2CDevice::Wire = Wire1;
+TwoWire & I2CDevice::Wire = Wire1;
 
 // set unlock callback function
 unlockCallback I2CDevice::cbUnlock = MS5611::unlockI2C;
@@ -482,8 +482,8 @@ void loop()
 	processShutdownInterrupt();	
 	
 	//
-	if (dumpParam >= 0)
-		dumpParam = pushParameters(dumpParam);	
+	if (dumpProp >= 0)
+		dumpProp = pushProperties(dumpProp);	
 }
 
 
@@ -1030,7 +1030,7 @@ void processCommand()
 		switch(cmd.code)
 		{
 		case CMD_STATUS 	:
-			resStackBT.push(RCODE_NOT_READY);
+			resStackBT.push(cmd.code, RPARAM_UNAVAILABLE);
 			break;
 		case CMD_RESET 	:
 			// reset!!
@@ -1041,7 +1041,7 @@ void processCommand()
 			changeDeviceMode(DEVICE_MODE_SHUTDOWN);
 			break;
 		case CMD_FIRMWARE_VERSION :
-			resStackBT.push(RCODE_NOT_READY);
+			resStackBT.push(cmd.code, RPARAM_UNAVAILABLE);
 			break;
 		case CMD_MODE_SWITCH 	:
 			commandModeSwitch(&cmd);
@@ -1055,8 +1055,8 @@ void processCommand()
 		case CMD_DUMP_SENSOR 	:
 			commandSendsorDump(&cmd);
 			break;
-		case CMD_DUMP_PARAMETERS :
-			commandDumpParameters(&cmd);
+		case CMD_DUMP_PROPERTY :
+			commandDumpProperties(&cmd);
 			break;
 //		case CMD_BLOCK_GPS_NMEA :
 //			btMan.blockNmeaSentence(cmd.param ? );
@@ -1064,25 +1064,25 @@ void processCommand()
 //		case CMD_BLOCK_VARIO_NMEA :
 //			btMan.blockNmeaSentence(cmd.param ? );
 //			break;
-		case CMD_QUERY_PARAM 	:
-			commandQueryParameter(&cmd);
+		case CMD_QUERY_PROPERTY 	:
+			commandQueryProperty(&cmd);
 			break;
-		case CMD_UPDATE_PARAM 	:
-			commandUpdateParameter(&cmd);
+		case CMD_UPDATE_PROPERTY 	:
+			commandUpdateProperty(&cmd);
 			break;
-		case CMD_SAVE_PARAM :
+		case CMD_SAVE_PROPERTY :
 			Config.writeAll();
-			resStackBT.push(RCODE_OK);
+			resStackBT.push(cmd.code, RPARAM_OK);
 			break;
-		case CMD_RESTORE_PARAM :
+		case CMD_RESTORE_PROPERTY :
 			Config.reset();
 			Config.readAll();
-			resStackBT.push(RCODE_OK);
+			resStackBT.push(cmd.code, RPARAM_OK);
 			break;
 		case CMD_FACTORY_RESET :
 			Config.reset();
 			Config.writeAll();
-			resStackBT.push(RCODE_OK);
+			resStackBT.push(cmd.code, RPARAM_OK);
 		#if CONFIG_DEBUG_DUMP
 		case CMD_DUMP_CONFIG :
 			Config.dump();
@@ -1090,7 +1090,7 @@ void processCommand()
 		#endif // CONFIG_DEBUG_DUMP
 			
 		default :
-			resStackBT.push(RCODE_UNAVAILABLE);		
+			resStackBT.push(cmd.code, RPARAM_UNAVAILABLE);		
 			break;
 		}
 	}	
@@ -1109,23 +1109,23 @@ void commandModeSwitch(Command * cmd)
 			//setup_calibration();
 			// loop
 			//main_loop = icalibration_loop();
-			resStackBT.push(RCODE_UNAVAILABLE);
+			resStackBT.push(cmd->code, RPARAM_UNAVAILABLE);
 			break;
 		case PARAM_SW_CALIBRATION  :
 			changeDeviceMode(DEVICE_MODE_CALIBRATION);
-			resStackBT.push(RCODE_OK);
+			resStackBT.push(cmd->code, RPARAM_OK);
 			break;
 		case PARAM_SW_UMS          :
 			if (/*keyUSB.read() == INPUT_ACTIVE &&*/ logger.isInitialized())
 			{
 				changeDeviceMode(DEVICE_MODE_UMS);			
-				resStackBT.push(RCODE_OK);
+				resStackBT.push(cmd->code, RPARAM_OK);
 			}
 			else
 			{
 				// sd-init failed!! : warning beep~~
 				tonePlayer.beep(NOTE_C3, 200, 4, Config.volume.effect);
-				resStackBT.push(RCODE_FAIL);
+				resStackBT.push(cmd->code, RPARAM_FAIL);
 			}
 			break;
 		}
@@ -1160,11 +1160,11 @@ void commandSoundLevel(Command * cmd)
 		//
 		tonePlayer.setBeep(460, 800, 400, 3);
 		//
-		resStackBT.push(RCODE_OK);
+		resStackBT.push(cmd->code, RPARAM_OK);
 	}
 	else
 	{
-		resStackBT.push(RCODE_FAIL);
+		resStackBT.push(cmd->code, RPARAM_FAIL);
 	}
 }
 
@@ -1189,7 +1189,7 @@ void commandToneTest(Command * cmd)
 		toneTestFlag = false;
 	}
 	
-	resStackBT.push(RCODE_OK);
+	resStackBT.push(cmd->code, RPARAM_OK);
 }
 
 
@@ -1230,7 +1230,7 @@ void commandSendsorDump(Command * cmd)
 	//btMan.blockSensorData(cmd.param);		
 }
 
-void commandQueryParameter(Command * cmd)
+void commandQueryProperty(Command * cmd)
 {
 	for (int i = 0; ParamMap[i].id != PARAM_EOF; i++)
 	{
@@ -1245,35 +1245,35 @@ void commandQueryParameter(Command * cmd)
 			switch (info->type)
 			{
 			case PARAM_INT8_T	:
-				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, *((int8_t *)info->ref));
+				resStackBT.push(cmd->code, cmd->param, *((int8_t *)info->ref));
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((int8_t *)info->ref));	
 				break;
 			case PARAM_INT16_T	:
-				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, *((int16_t *)info->ref));
+				resStackBT.push(cmd->code, cmd->param, *((int16_t *)info->ref));
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((int16_t *)info->ref));	
 				break;
 			case PARAM_INT32_T	:
-				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, *((int32_t *)info->ref));
+				resStackBT.push(cmd->code, cmd->param, *((int32_t *)info->ref));
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((int32_t *)info->ref));	
 				break;
 			case PARAM_UINT8_T	:
-				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, *((uint8_t *)info->ref));
+				resStackBT.push(cmd->code, cmd->param, *((uint8_t *)info->ref));
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((uint8_t *)info->ref));	
 				break;
 			case PARAM_UINT16_T	:
-				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, *((uint16_t *)info->ref));
+				resStackBT.push(cmd->code, cmd->param, *((uint16_t *)info->ref));
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((uint16_t *)info->ref));	
 				break;
 			case PARAM_UINT32_T	:
-				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, *((uint32_t *)info->ref));
+				resStackBT.push(cmd->code, cmd->param, *((uint32_t *)info->ref));
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((uint32_t *)info->ref));	
 				break;
 			case PARAM_FLOAT	:
-				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, *((float *)info->ref));
+				resStackBT.push(cmd->code, cmd->param, *((float *)info->ref));
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((float *)info->ref), MAX_FLOAT_PRECISION);	
 				break;
 			case PARAM_STRING	:
-				resStackBT.push(RCODE_QUERY_PARAM, cmd->param, (char *)info->ref);
+				resStackBT.push(cmd->code, cmd->param, (char *)info->ref);
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); 
 				//{
 				//	char * ptr = (char *)info->ref;
@@ -1289,11 +1289,11 @@ void commandQueryParameter(Command * cmd)
 		}
 	}
 	
-	resStackBT.push(RCODE_ERROR/*, error code*/);
+	resStackBT.push(cmd->code, RPARAM_ERROR/*, error code*/);
 	//Serial.println("%ER");
 }	
 
-void commandUpdateParameter(Command * cmd)
+void commandUpdateProperty(Command * cmd)
 {
 	//Serial.print("commandUpdateParam(");
 	//Serial.print("code:"); Serial.print(cmd->code);
@@ -1310,38 +1310,38 @@ void commandUpdateParameter(Command * cmd)
 			{
 			case PARAM_INT8_T	:
 				*((int8_t *)info->ref) = atoi((char *)cmd->valData);
-				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, *((int8_t *)info->ref));
+				resStackBT.push(cmd->code, cmd->param, *((int8_t *)info->ref));
 				break;
 			case PARAM_INT16_T	:
 				*((int16_t *)info->ref) = atoi((char *)cmd->valData);
-				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, *((int16_t *)info->ref));
+				resStackBT.push(cmd->code, cmd->param, *((int16_t *)info->ref));
 				break;
 			case PARAM_INT32_T	:
 				*((int32_t *)info->ref) = atoi((char *)cmd->valData);
-				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, *((int32_t *)info->ref));
+				resStackBT.push(cmd->code, cmd->param, *((int32_t *)info->ref));
 				break;
 			case PARAM_UINT8_T	:
 				*((uint8_t *)info->ref) = atoi((char *)cmd->valData);
-				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, *((uint8_t *)info->ref));
+				resStackBT.push(cmd->code, cmd->param, *((uint8_t *)info->ref));
 				break;
 			case PARAM_UINT16_T	:
 				*((uint16_t *)info->ref) = atoi((char *)cmd->valData);
-				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, *((uint16_t *)info->ref));
+				resStackBT.push(cmd->code, cmd->param, *((uint16_t *)info->ref));
 				break;
 			case PARAM_UINT32_T	:
 				*((uint32_t *)info->ref) = atoi((char *)cmd->valData);
-				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, *((uint32_t *)info->ref));
+				resStackBT.push(cmd->code, cmd->param, *((uint32_t *)info->ref));
 				break;
 			case PARAM_FLOAT	:
 				//Serial.print("UP:"); Serial.print(cmd->param, HEX); Serial.print(" -> "); Serial.println((char *)cmd->valData);
 				*((float *)info->ref) = atof((char *)cmd->valData);
-				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, *((float *)info->ref));
+				resStackBT.push(cmd->code, cmd->param, *((float *)info->ref));
 				break;
 			case PARAM_STRING	:
 				int len = cmd->valLen < MAX_STRING_SIZE ? cmd->valLen : MAX_STRING_SIZE;
 				memset((char *)info->ref, 0, MAX_STRING_SIZE);
 				memcpy((char *)info->ref, (char *)cmd->valData, len);
-				resStackBT.push(RCODE_UPDATE_PARAM, cmd->param, (char *)info->ref);
+				resStackBT.push(cmd->code, cmd->param, (char *)info->ref);
 				break;
 			}
 			
@@ -1350,18 +1350,18 @@ void commandUpdateParameter(Command * cmd)
 	}
 	
 	//Serial.println("  -> unmatched command");
-	resStackBT.push(RCODE_ERROR/*, error code*/);
+	resStackBT.push(cmd->code, RPARAM_ERROR/*, error code*/);
 }
 
-void commandDumpParameters(Command * cmd)
+void commandDumpProperties(Command * cmd)
 {
-	//Serial.print("commandDumpParameters: "); Serial.println(dumpParam);
+	//Serial.print("commandDumpProperties: "); Serial.println(dumpProp);
 	
-	if (dumpParam < 0)
-		dumpParam = pushParameters(0);
+	if (dumpProp < 0)
+		dumpProp = pushProperties(0);
 }
 
-int pushParameters(int start)
+int pushProperties(int start)
 {
 	int i;
 	
@@ -1374,35 +1374,35 @@ int pushParameters(int start)
 		switch (ParamMap[i].type)
 		{
 		case PARAM_INT8_T	:
-			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, *((int8_t *)ParamMap[i].ref));
+			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((int8_t *)ParamMap[i].ref));
 			break;
 		case PARAM_INT16_T	:
-			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, *((int16_t *)ParamMap[i].ref));
+			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((int16_t *)ParamMap[i].ref));
 			break;
 		case PARAM_INT32_T	:
-			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, *((int32_t *)ParamMap[i].ref));
+			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((int32_t *)ParamMap[i].ref));
 			break;
 		case PARAM_UINT8_T	:
-			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, *((uint8_t *)ParamMap[i].ref));
+			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((uint8_t *)ParamMap[i].ref));
 			break;
 		case PARAM_UINT16_T	:
-			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, *((uint16_t *)ParamMap[i].ref));
+			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((uint16_t *)ParamMap[i].ref));
 			break;
 		case PARAM_UINT32_T	:
-			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, *((uint32_t *)ParamMap[i].ref));
+			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((uint32_t *)ParamMap[i].ref));
 			break;
 		case PARAM_FLOAT	:
-			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, *((float *)ParamMap[i].ref));
+			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((float *)ParamMap[i].ref));
 			break;
 		case PARAM_STRING	:
-			resStackBT.push(RCODE_DUMP_PARAM, ParamMap[i].id, (char *)ParamMap[i].ref);
+			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, (char *)ParamMap[i].ref);
 			break;
 		} 
 	}
 	
 	if (ParamMap[i].id == PARAM_EOF && ! resStackBT.isFull())
 	{
-		resStackBT.push(RCODE_DUMP_PARAM, PARAM_EOF);
+		resStackBT.push(CMD_DUMP_PROPERTY, PARAM_EOF);
 		i = -1;
 	}
 

@@ -21,15 +21,15 @@
 #define CMD_SOUND_LEVEL			'SL'
 #define CMD_TONE_TEST			'TT'
 #define CMD_DUMP_SENSOR			'DS'
-#define CMD_DUMP_PARAMETERS		'DP'
+#define CMD_DUMP_PROPERTY		'DP'
 #define CMD_DUMP_CONFIG			'DC'
 #define CMD_BLOCK_GPS_NMEA		'BG'
 #define CMD_BLOCK_VARIO_NMEA	'BV'
 #define CMD_FACTORY_RESET		'FR'
-#define CMD_RESTORE_PARAM		'RP'
-#define CMD_SAVE_PARAM			'SP'
-#define CMD_QUERY_PARAM			'QP'
-#define CMD_UPDATE_PARAM		'UP'
+#define CMD_RESTORE_PROPERTY	'RP'
+#define CMD_SAVE_PROPERTY		'SP'
+#define CMD_QUERY_PROPERTY		'QP'
+#define CMD_UPDATE_PROPERTY		'UP'
 
 // mode switch
 #define PARAM_SW_ICALIBRATION	(1)		// interactive

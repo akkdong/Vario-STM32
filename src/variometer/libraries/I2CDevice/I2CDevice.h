@@ -53,7 +53,7 @@ public:
 	
 	static unlockCallback		cbUnlock;
 	
-	static HardWire &			Wire;
+	static TwoWire &			Wire;
 };
 
 

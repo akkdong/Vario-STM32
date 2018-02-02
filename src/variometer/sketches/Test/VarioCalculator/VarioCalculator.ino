@@ -10,11 +10,11 @@
 
 
 //
-HardWire Wire1(1, I2C_FAST_MODE);
-HardWire Wire2(2, I2C_FAST_MODE);
+TwoWire Wire1(1, I2C_FAST_MODE);
+TwoWire Wire2(2, I2C_FAST_MODE);
 
 // set wire reference member to I2C1
-HardWire & I2CDevice::Wire = Wire1;
+TwoWire & I2CDevice::Wire = Wire1;
 
 // set unlock callback function
 unlockCallback I2CDevice::cbUnlock = VarioCalculator::unlockI2C;

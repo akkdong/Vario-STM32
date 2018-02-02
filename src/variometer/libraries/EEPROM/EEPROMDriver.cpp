@@ -10,7 +10,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // class EEPROMDriver
 
-EEPROMDriver::EEPROMDriver(HardWire & wire) : Wire(wire)
+EEPROMDriver::EEPROMDriver(TwoWire & wire) : Wire(wire)
 {
 }
 
