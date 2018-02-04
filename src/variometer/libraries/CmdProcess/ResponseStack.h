@@ -17,13 +17,14 @@
 
 
 //
-// reponse format
+// response format
 //
 //     %{CODE}[,{PARAM}[,{VALUE1}[,{VALUE2}[,{VALUE3}[,{VALUE4}]]]]]\r\n
 //     %{CODE}[,{PARAM}[,{STRING}]]\r\n
 //
 
-// response code
+// response code --> command code
+/*
 #define RCODE_RESULT			'RS'
 #define RCODE_OK				'OK'
 #define RCODE_FAIL				'FA'
@@ -33,6 +34,17 @@
 #define RCODE_DUMP_PARAM		'DP'
 #define RCODE_QUERY_PARAM		'QP'
 #define RCODE_UPDATE_PARAM		'UP'
+*/
+
+// PARAM -> result of command processing
+//       -> id of property
+#define RPARAM_OK				(0)
+#define RPARAM_SUCCESS			(1)
+#define RPARAM_FAIL				(2)
+#define RPARAM_ERROR			(3)
+#define RPARAM_NOT_READY		(4)
+#define RPARAM_UNAVAILABLE		(5)
+
 
 enum RDATA_TYPE
 {

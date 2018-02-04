@@ -19,7 +19,7 @@ const char * strings[] = // max string size limits to 16 * 4
 	"woopa doopa",
 };
 
-HardWire wire(2, I2C_FAST_MODE);
+TwoWire wire(2, I2C_FAST_MODE);
 EEPROMDriver eeprom(wire);
 GlobalConfig Config(eeprom, EEPROM_ADDRESS);
 

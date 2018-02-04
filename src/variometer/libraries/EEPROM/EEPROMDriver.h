@@ -14,7 +14,7 @@
 class EEPROMDriver
 {
 public:
-	EEPROMDriver(HardWire & wire);
+	EEPROMDriver(TwoWire & wire);
 	
 public:
 	void				writeByte(unsigned char devAddr, unsigned short memAddr, unsigned char data);
@@ -24,7 +24,7 @@ public:
 	void				readBuffer(unsigned char devAddr, unsigned short memAddr, unsigned char * buf, short bufLen);
 	
 private:
-	HardWire &			Wire;
+	TwoWire &			Wire;
 };
 
 

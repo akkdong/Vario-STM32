@@ -9,7 +9,7 @@
 //
 //
 
-HardWire Wire2(2, I2C_FAST_MODE);
+TwoWire Wire2(2, I2C_FAST_MODE);
 EEPROMDriver eeprom(Wire2);
 GlobalConfig Config(eeprom, EEPROM_ADDRESS);
 
@@ -17,7 +17,7 @@ GlobalConfig Config(eeprom, EEPROM_ADDRESS);
 //
 //
 
-void scan(HardWire & HWire)
+void scan(TwoWire & HWire)
 {
   byte error, address;
   int nDevices;
