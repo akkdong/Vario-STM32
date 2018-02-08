@@ -128,7 +128,7 @@ public class VarioPreference extends AppCompatPreferenceActivity implements Vari
         // receive vario command response
         mAgent.setVarioListener(this, VarioAgent.ListenerFilter.FILTER_RESPONSE, (VarioAgent.VarioListener)this);
         // request all device's parameters
-        mAgent.send(new VarioCommand(VarioCommand.CMD_DUMP_PARAMETERS));
+        mAgent.send(new VarioCommand(VarioCommand.CMD_DUMP_PROPERTY));
     }
 
     /**
@@ -146,7 +146,28 @@ public class VarioPreference extends AppCompatPreferenceActivity implements Vari
      *
      */
     @Override
-    public void onDestroy() {
+    protected void onResume() {
+        super.onResume();
+
+        // activity resumed! -> enable listener
+        mAgent.enableVarioListener(this);
+    }
+
+    /**
+     *
+     */
+    protected void onPause() {
+        super.onPause();
+
+        // activity paused! -> disable listener
+        mAgent.disableVarioListener(this);
+    }
+
+    /**
+     *
+     */
+    @Override
+    protected void onDestroy() {
         //
         mAgent.unsetVarioListener(this);
         mAgent = null;
@@ -196,7 +217,7 @@ public class VarioPreference extends AppCompatPreferenceActivity implements Vari
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 // request device's paramters -> refresh prefereces to the device's parameters
-                                VarioCommand dp = new VarioCommand(VarioCommand.CMD_DUMP_PARAMETERS);
+                                VarioCommand dp = new VarioCommand(VarioCommand.CMD_DUMP_PROPERTY);
                                 mAgent.send(dp);
                             }
                         })
@@ -281,37 +302,37 @@ public class VarioPreference extends AppCompatPreferenceActivity implements Vari
         mCommands = new LinkedList<VarioCommand>();
 
         // GliderInfo
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.GLIDER_TYPE, getLongPreference(pref,R.string.pref_key_glider_type, "1")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.GLIDER_MANUFACTURE, getStringPreference(pref, R.string.pref_key_glider_manufacture, "")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.GLIDER_MODEL, getStringPreference(pref, R.string.pref_key_glider_model, "")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.GLIDER_TYPE, getLongPreference(pref,R.string.pref_key_glider_type, "1")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.GLIDER_MANUFACTURE, getStringPreference(pref, R.string.pref_key_glider_manufacture, "")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.GLIDER_MODEL, getStringPreference(pref, R.string.pref_key_glider_model, "")));
         // IGC-Logger
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.LOGGER_ENABLE, pref.getBoolean(getString(R.string.pref_key_igc_enable), true) ? 1 : 0));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.LOGGER_TAKEOFF_SPEED, getLongPreference(pref, R.string.pref_key_igc_takeoff_speed, "10")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.LOGGER_LANDING_TIMEOUT, getLongPreference(pref, R.string.pref_key_igc_landing_timeout, "30000")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.LOGGER_LOGGING_INTERVAL, getLongPreference(pref, R.string.pref_key_igc_logging_interval, "1000")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.LOGGER_PILOT, getStringPreference(pref, R.string.pref_key_igc_pilot_name, "")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.LOGGER_TIMEZONE, getLongPreference(pref, R.string.pref_key_igc_timezone, "9")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.LOGGER_ENABLE, pref.getBoolean(getString(R.string.pref_key_igc_enable), true) ? 1 : 0));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.LOGGER_TAKEOFF_SPEED, getLongPreference(pref, R.string.pref_key_igc_takeoff_speed, "10")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.LOGGER_LANDING_TIMEOUT, getLongPreference(pref, R.string.pref_key_igc_landing_timeout, "30000")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.LOGGER_LOGGING_INTERVAL, getLongPreference(pref, R.string.pref_key_igc_logging_interval, "1000")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.LOGGER_PILOT, getStringPreference(pref, R.string.pref_key_igc_pilot_name, "")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.LOGGER_TIMEZONE, getLongPreference(pref, R.string.pref_key_igc_timezone, "9")));
         // Vario Settings
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.VARIO_CLIMB_THRESHOLD, getDoublePreference(pref, R.string.pref_key_vario_climb_threshold, "0.2")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.VARIO_SINK_THRESHOLD, getDoublePreference(pref, R.string.pref_key_vario_sink_threshold, "-3.0")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.VARIO_SENSITIVITY, getDoublePreference(pref, R.string.pref_key_vario_sensitivity, "0.1")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.VARIO_SENTENCE, getLongPreference(pref, R.string.pref_key_vario_sentence, "0")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.VARIO_BAROONLY, pref.getBoolean(getString(R.string.pref_key_vario_baro_only), true) ? 1 : 0));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.VARIO_CLIMB_THRESHOLD, getDoublePreference(pref, R.string.pref_key_vario_climb_threshold, "0.2")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.VARIO_SINK_THRESHOLD, getDoublePreference(pref, R.string.pref_key_vario_sink_threshold, "-3.0")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.VARIO_SENSITIVITY, getDoublePreference(pref, R.string.pref_key_vario_sensitivity, "0.1")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.VARIO_SENTENCE, getLongPreference(pref, R.string.pref_key_vario_sentence, "0")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.VARIO_BAROONLY, pref.getBoolean(getString(R.string.pref_key_vario_baro_only), true) ? 1 : 0));
         // Volume Settings
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.VOLUME_VARIO, getLongPreference(pref, R.string.pref_key_volume_vario, "100")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.VOLUME_EFFECT, getLongPreference(pref, R.string.pref_key_volume_effect, "5")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.VOLUME_VARIO, getLongPreference(pref, R.string.pref_key_volume_vario, "100")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.VOLUME_EFFECT, getLongPreference(pref, R.string.pref_key_volume_effect, "5")));
         // Threshold Settings
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.THRESHOLD_LOW_BATTERY, getDoublePreference(pref, R.string.pref_key_threshold_low_battery, "2.8")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.THRESHOLD_SHUTDOWN_HOLDTIME, getLongPreference(pref, R.string.pref_key_threshold_shutdown_holdtime, "1000")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.THRESHOLD_AUTO_SHUTDOWN_VARIO, getLongPreference(pref, R.string.pref_key_auto_shutdown_vario, "600000")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.THRESHOLD_AUTO_SHUTDOWN_UMS, getLongPreference(pref, R.string.pref_key_auto_shutdown_ums, "600000")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.THRESHOLD_LOW_BATTERY, getDoublePreference(pref, R.string.pref_key_threshold_low_battery, "2.8")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.THRESHOLD_SHUTDOWN_HOLDTIME, getLongPreference(pref, R.string.pref_key_threshold_shutdown_holdtime, "1000")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.THRESHOLD_AUTO_SHUTDOWN_VARIO, getLongPreference(pref, R.string.pref_key_auto_shutdown_vario, "600000")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.THRESHOLD_AUTO_SHUTDOWN_UMS, getLongPreference(pref, R.string.pref_key_auto_shutdown_ums, "600000")));
         // Kalman Parameters
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.KALMAN_VAR_ZMEAS, getDoublePreference(pref, R.string.pref_key_kalman_zmeas, "400.0")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.KALMAN_VAR_ZACCEL, getDoublePreference(pref, R.string.pref_key_kalman_zaccel, "1000.0")));
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PARAM, VarioParam.KALMAN_VAR_ACCELBIAS, getDoublePreference(pref, R.string.pref_key_kalman_accelbias, "1.0")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.KALMAN_VAR_ZMEAS, getDoublePreference(pref, R.string.pref_key_kalman_zmeas, "400.0")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.KALMAN_VAR_ZACCEL, getDoublePreference(pref, R.string.pref_key_kalman_zaccel, "1000.0")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.KALMAN_VAR_ACCELBIAS, getDoublePreference(pref, R.string.pref_key_kalman_accelbias, "1.0")));
 
         // save parameters to eeprom
-        mCommands.add(new VarioCommand(VarioCommand.CMD_SAVE_PARAM));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_SAVE_PROPERTY));
     }
 
     private long getLongPreference(SharedPreferences pref, int id, String strDefault) {
@@ -425,7 +446,7 @@ public class VarioPreference extends AppCompatPreferenceActivity implements Vari
         Log.i("Vario", "VarioPreference.onResponseReceived: " + response.toString());
 
         switch (response.mCode) {
-            case VarioResponse.RCODE_DUMP_PARAM :
+            case VarioCommand.CMD_DUMP_PROPERTY :
                 //
                 saveParameter(response);
 
@@ -439,25 +460,27 @@ public class VarioPreference extends AppCompatPreferenceActivity implements Vari
                 }
                 break;
 
-            case VarioResponse.RCODE_UPDATE_PARAM :
-                // ? check update completion
-                //   ... nop
+            case VarioCommand.CMD_UPDATE_PROPERTY :
 
-                // send next if exists
-                sendUpdateCommands();
+                if (response.mParam == VarioResponse.RPARAM_ERROR) {
+                    // something wroing!! -> remove all VarioCommand & alert
+                    mCommands.clear();
+                    mCommands = null;
+
+                    // alert?
+                    Toast.makeText(this, R.string.toast_pref_download_failed, Toast.LENGTH_SHORT).show();
+                }
+                else {
+                    // send next if exists
+                    sendUpdateCommands();
+                }
                 break;
 
-            case VarioResponse.RCODE_OK :
-                Toast.makeText(this, R.string.toast_pref_download_success, Toast.LENGTH_SHORT).show();
-                break;
-
-            case VarioResponse.RCODE_ERROR :
-                // something wroing!! -> remove all VarioCommand & alert
-                mCommands.clear();
-                mCommands = null;
-
-                // alert?
-                Toast.makeText(this, R.string.toast_pref_download_failed, Toast.LENGTH_SHORT).show();
+            case VarioCommand.CMD_SAVE_PROPERTY:
+                if (response.mParam == VarioResponse.RPARAM_OK) {
+                    Toast.makeText(this, R.string.toast_pref_download_success, Toast.LENGTH_SHORT).show();
+                }
+                // else nop : CMD_SAVE_PROPERTY always returns RPARAM_OK
                 break;
         }
     }

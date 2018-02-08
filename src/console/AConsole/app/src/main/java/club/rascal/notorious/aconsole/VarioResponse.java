@@ -22,6 +22,7 @@ public class VarioResponse {
     public static final int DTYPE_FLOAT = 2;
     public static final int DTYPE_STRING = 3;
 
+    /*
     public static final int RCODE_RESULT		    = 'R' * 256 + 'S';
     public static final int RCODE_OK				= 'O' * 256 + 'K';
     public static final int RCODE_FAIL			    = 'F' * 256 + 'A';
@@ -31,6 +32,14 @@ public class VarioResponse {
     public static final int RCODE_DUMP_PARAM		= 'D' * 256 + 'P';
     public static final int RCODE_QUERY_PARAM		= 'Q' * 256 + 'P';
     public static final int RCODE_UPDATE_PARAM	= 'U' * 256 + 'P';
+    */
+
+    public static final int RPARAM_OK = 0;
+    public static final int RPARAM_SUCCESS = 1;
+    public static final int RPARAM_FAIL = 2;
+    public static final int RPARAM_ERROR = 3;
+    public static final int RPARAM_NOT_READY = 4;
+    public static final int RPARAM_UNAVAILABLE = 5;
 
     public static final int MAX_DATACOUNT   = 4;
 

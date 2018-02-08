@@ -28,15 +28,15 @@ public class VarioCommand {
     public static final int  CMD_SOUND_LEVEL		    = 'S' * 256 + 'L';
     public static final int  CMD_TONE_TEST			    = 'T' * 256 + 'T';
     public static final int  CMD_DUMP_SENSOR		    = 'D' * 256 + 'S';
-    public static final int  CMD_DUMP_PARAMETERS	    = 'D' * 256 + 'P';
+    public static final int  CMD_DUMP_PROPERTY	    = 'D' * 256 + 'P';
     public static final int  CMD_DUMP_CONFIG		    = 'D' * 256 + 'C';
     public static final int  CMD_BLOCK_GPS_NMEA		= 'B' * 256 + 'G';
     public static final int  CMD_BLOCK_VARIO_NMEA	    = 'B' * 256 + 'V';
     public static final int  CMD_FACTORY_RESET		= 'F' * 256 + 'R';
-    public static final int  CMD_RESTORE_PARAM		= 'R' * 256 + 'P';
-    public static final int  CMD_SAVE_PARAM			= 'S' * 256 + 'P';
-    public static final int  CMD_QUERY_PARAM		    = 'Q' * 256 + 'P';
-    public static final int  CMD_UPDATE_PARAM		    = 'U' * 256 + 'P';
+    public static final int CMD_RESTORE_PROPERTY      = 'R' * 256 + 'P';
+    public static final int CMD_SAVE_PROPERTY         = 'S' * 256 + 'P';
+    public static final int CMD_QUERY_PROPERTY        = 'Q' * 256 + 'P';
+    public static final int CMD_UPDATE_PROPERTY       = 'U' * 256 + 'P';
 
     public VarioCommand(int code) {
         mCode = code;

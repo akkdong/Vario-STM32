@@ -48,11 +48,13 @@ public class VarioAgent { // extends BluetoothSPP {
         public Activity mActivity;
         public int mFilterMask;
         public VarioListener mListener;
+        public boolean mEnabled;
 
         public ListenerObject(Activity activity, int mask, VarioListener listener) {
             mActivity = activity;
             mFilterMask = mask;
             mListener = listener;
+            mEnabled = true;
         }
     }
 
@@ -107,7 +109,7 @@ public class VarioAgent { // extends BluetoothSPP {
                             // ?? check validation of object.mActivity
                             // ...
 
-                            if ((obj.mFilterMask & ListenerFilter.FILTER_DATA) == ListenerFilter.FILTER_DATA)
+                            if (obj.mEnabled && (obj.mFilterMask & ListenerFilter.FILTER_DATA) == ListenerFilter.FILTER_DATA)
                                 obj.mListener.onDataReceived(absData);
                         }
                     }
@@ -119,7 +121,7 @@ public class VarioAgent { // extends BluetoothSPP {
                             // ?? check validation of object.mActivity
                             // ...
 
-                            if ((obj.mFilterMask & ListenerFilter.FILTER_RESPONSE) == ListenerFilter.FILTER_RESPONSE)
+                            if (obj.mEnabled && (obj.mFilterMask & ListenerFilter.FILTER_RESPONSE) == ListenerFilter.FILTER_RESPONSE)
                                 obj.mListener.onResponseReceived(res);
                         }
                     }
@@ -200,6 +202,24 @@ public class VarioAgent { // extends BluetoothSPP {
         for (ListenerObject obj : mListeners) {
             if (obj.mActivity == activity) {
                 mListeners.remove(obj);
+                break;
+            }
+        }
+    }
+
+    public void enableVarioListener(Activity activity) {
+        for (ListenerObject obj : mListeners) {
+            if (obj.mActivity == activity) {
+                obj.mEnabled = true;
+                break;
+            }
+        }
+    }
+
+    public void disableVarioListener(Activity activity) {
+        for (ListenerObject obj : mListeners) {
+            if (obj.mActivity == activity) {
+                obj.mEnabled = false;
                 break;
             }
         }
