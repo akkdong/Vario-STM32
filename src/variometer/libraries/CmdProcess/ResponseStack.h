@@ -38,10 +38,12 @@
 
 // PARAM -> result of command processing
 //       -> id of property
+#define RPARAM_SUCCESS			(0)
 #define RPARAM_OK				(0)
-#define RPARAM_SUCCESS			(1)
-#define RPARAM_FAIL				(2)
-#define RPARAM_ERROR			(3)
+
+#define RPARAM_FAIL				(1)
+#define RPARAM_INVALID_COMMAND	(2)
+#define RPARAM_INVALID_PROPERTY	(3)
 #define RPARAM_NOT_READY		(4)
 #define RPARAM_UNAVAILABLE		(5)
 
@@ -70,7 +72,7 @@ class Response
 public:
 	Response();
 	Response(const Response & res);
-	Response(uint16_t code, uint32_t param = 0);
+	Response(uint16_t code, uint32_t param = -1);
 
 public:
 	Response operator=(const Response & res);

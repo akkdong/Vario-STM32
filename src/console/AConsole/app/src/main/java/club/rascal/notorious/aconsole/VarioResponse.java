@@ -34,10 +34,12 @@ public class VarioResponse {
     public static final int RCODE_UPDATE_PARAM	= 'U' * 256 + 'P';
     */
 
+    public static final int RPARAM_SUCCESS = 0;
     public static final int RPARAM_OK = 0;
-    public static final int RPARAM_SUCCESS = 1;
-    public static final int RPARAM_FAIL = 2;
-    public static final int RPARAM_ERROR = 3;
+
+    public static final int RPARAM_FAIL = 1;
+    public static final int RPARAM_INVALID_COMMAND = 2;
+    public static final int RPARAM_INVALID_PROPERTY = 3;
     public static final int RPARAM_NOT_READY = 4;
     public static final int RPARAM_UNAVAILABLE = 5;
 
@@ -45,7 +47,7 @@ public class VarioResponse {
 
     private VarioResponse(int code) {
         mCode = code;
-        mParam = 0;
+        mParam = 0xFFFFFFFF;
 
         mDataType = DTYPE_NONE;
         mDataCount = 0;
@@ -64,7 +66,7 @@ public class VarioResponse {
         sb.append((char)(mCode % 256));
 
         // param
-        if (mParam != 0) {
+        if (mParam < 0xFFFFFFFF) {
             sb.append(',');
             sb.append(mParam);
 

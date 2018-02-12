@@ -65,7 +65,7 @@ public class VarioAgent { // extends BluetoothSPP {
         return mAgent;
     }
 
-    public boolean init(Context context, BluetoothSPP.BluetoothConnectionListener listener) {
+    public boolean init(Context context) {
         // save context
         mContext = context;
 
@@ -78,8 +78,6 @@ public class VarioAgent { // extends BluetoothSPP {
             mBluetooth.init(context);
         }
 
-        // set bluetooth connection listener
-        mBluetooth.setBluetoothConnectionListener(listener);
         // set bluetooth data receive listener
         mBluetooth.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() {
             @Override
@@ -191,6 +189,13 @@ public class VarioAgent { // extends BluetoothSPP {
         }
 
         return -1;
+    }
+
+    public void setConnectionListener(BluetoothSPP.BluetoothConnectionListener listener) {
+        if (mBluetooth != null) {
+            // set bluetooth connection listener
+            mBluetooth.setBluetoothConnectionListener(listener);
+        }
     }
 
     public void setVarioListener(Activity activity, int mask, VarioListener listener) {

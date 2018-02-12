@@ -9,7 +9,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // class Response
 
-Response::Response() : code(0), param(0), dataType(RDATA_INVALID)
+Response::Response() : code(0), param(-1), dataType(RDATA_INVALID)
 {
 }
 
@@ -45,7 +45,7 @@ void Response::dump()
 	Serial.print("Response : "); Serial.write((code >> 8) & 0x00FF); Serial.write(code & 0x00FF);
 	Serial.println("");
 
-	if (param)
+	if (param != (uint32_t)-1)
 	{
 		Serial.print("  param : "); Serial.println(param, HEX);
 		
@@ -195,7 +195,7 @@ int ResponseStack::read()
 		//outc = toHex(active->code &0x0F);			// low_nibble(code);
 		outc = active->code & 0x00FF;
 		
-		if (active->param == 0)
+		if (active->param == (uint32_t)-1)
 		{
 			column = COLUMN_CARRAGE_RETURN;
 		}

@@ -29,7 +29,6 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
 
     private VarioAgent mAgent = null;
     private Toolbar mToolbar;
-    //private ProgressDialog mProgDialog = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,18 +44,21 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
         mAgent = VarioAgent.getInstance();
 
         // initialize vario-agnent
-        mAgent.init(this, (BluetoothSPP.BluetoothConnectionListener) this);
+        mAgent.init(this);
         // bluetooth must be available
         if (!mAgent.isBluetoothAvailable()) {
             Toast.makeText(this, R.string.toast_bt_not_available, Toast.LENGTH_SHORT).show();
             finish();
         }
+        // BT connection/disconnection listener
+        mAgent.setConnectionListener((BluetoothSPP.BluetoothConnectionListener) this);
         // receive all sensor data : gps, vario, imu(acc,gyro,baro)
         mAgent.setVarioListener(this, VarioAgent.ListenerFilter.FILTER_DATA /*| VarioAgent.ListenerFilter.FILTER_RESPONSE*/, (VarioAgent.VarioListener) this);
     }
 
     @Override
-    public void onStart() {
+    protected void onStart() {
+        //Log.i("Vario", "MainActivity.onStart() is called");
         super.onStart();
 
         if (! mAgent.isBluetoothEnabled()) {
@@ -72,10 +74,29 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
     }
 
     @Override
-    public void onDestroy() {
+    protected void onResume() {
+        //Log.i("Vario", "MainActivity.onResume() is called");
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        //Log.i("Vario", "MainActivity.onPause() is called");
+        super.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+        //Log.i("Vario", "MainActivity.onStop() is called");
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
         //Log.i("Vario", "MainActivity.onDestroy() is called");
         super.onDestroy();
 
+        mAgent.setConnectionListener(null);
         mAgent.unsetVarioListener(this);
         mAgent.stopService();
     }

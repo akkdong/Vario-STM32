@@ -1072,17 +1072,17 @@ void processCommand()
 			break;
 		case CMD_SAVE_PROPERTY :
 			Config.writeAll();
-			resStackBT.push(cmd.code, RPARAM_OK);
+			resStackBT.push(cmd.code, RPARAM_SUCCESS);
 			break;
 		case CMD_RESTORE_PROPERTY :
 			Config.reset();
 			Config.readAll();
-			resStackBT.push(cmd.code, RPARAM_OK);
+			resStackBT.push(cmd.code, RPARAM_SUCCESS);
 			break;
 		case CMD_FACTORY_RESET :
 			Config.reset();
 			Config.writeAll();
-			resStackBT.push(cmd.code, RPARAM_OK);
+			resStackBT.push(cmd.code, RPARAM_SUCCESS);
 		#if CONFIG_DEBUG_DUMP
 		case CMD_DUMP_CONFIG :
 			Config.dump();
@@ -1090,7 +1090,7 @@ void processCommand()
 		#endif // CONFIG_DEBUG_DUMP
 			
 		default :
-			resStackBT.push(cmd.code, RPARAM_UNAVAILABLE);		
+			resStackBT.push(cmd.code, RPARAM_INVALID_COMMAND);		
 			break;
 		}
 	}	
@@ -1109,17 +1109,17 @@ void commandModeSwitch(Command * cmd)
 			//setup_calibration();
 			// loop
 			//main_loop = icalibration_loop();
-			resStackBT.push(cmd->code, RPARAM_UNAVAILABLE);
+			resStackBT.push(cmd->code, RPARAM_NOT_READY);
 			break;
 		case PARAM_SW_CALIBRATION  :
 			changeDeviceMode(DEVICE_MODE_CALIBRATION);
-			resStackBT.push(cmd->code, RPARAM_OK);
+			resStackBT.push(cmd->code, RPARAM_SUCCESS);
 			break;
 		case PARAM_SW_UMS          :
 			if (/*keyUSB.read() == INPUT_ACTIVE &&*/ logger.isInitialized())
 			{
 				changeDeviceMode(DEVICE_MODE_UMS);			
-				resStackBT.push(cmd->code, RPARAM_OK);
+				resStackBT.push(cmd->code, RPARAM_SUCCESS);
 			}
 			else
 			{
@@ -1160,7 +1160,7 @@ void commandSoundLevel(Command * cmd)
 		//
 		tonePlayer.setBeep(460, 800, 400, 3);
 		//
-		resStackBT.push(cmd->code, RPARAM_OK);
+		resStackBT.push(cmd->code, RPARAM_SUCCESS);
 	}
 	else
 	{
@@ -1189,7 +1189,7 @@ void commandToneTest(Command * cmd)
 		toneTestFlag = false;
 	}
 	
-	resStackBT.push(cmd->code, RPARAM_OK);
+	resStackBT.push(cmd->code, RPARAM_SUCCESS);
 }
 
 
@@ -1289,7 +1289,7 @@ void commandQueryProperty(Command * cmd)
 		}
 	}
 	
-	resStackBT.push(cmd->code, RPARAM_ERROR/*, error code*/);
+	resStackBT.push(cmd->code, RPARAM_INVALID_PROPERTY/*, error code*/);
 	//Serial.println("%ER");
 }	
 
@@ -1350,7 +1350,7 @@ void commandUpdateProperty(Command * cmd)
 	}
 	
 	//Serial.println("  -> unmatched command");
-	resStackBT.push(cmd->code, RPARAM_ERROR/*, error code*/);
+	resStackBT.push(cmd->code, RPARAM_INVALID_PROPERTY/*, error code*/);
 }
 
 void commandDumpProperties(Command * cmd)

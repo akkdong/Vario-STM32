@@ -462,7 +462,7 @@ public class VarioPreference extends AppCompatPreferenceActivity implements Vari
 
             case VarioCommand.CMD_UPDATE_PROPERTY :
 
-                if (response.mParam == VarioResponse.RPARAM_ERROR) {
+                if (response.mParam != VarioResponse.RPARAM_SUCCESS) {
                     // something wroing!! -> remove all VarioCommand & alert
                     mCommands.clear();
                     mCommands = null;
@@ -477,10 +477,10 @@ public class VarioPreference extends AppCompatPreferenceActivity implements Vari
                 break;
 
             case VarioCommand.CMD_SAVE_PROPERTY:
-                if (response.mParam == VarioResponse.RPARAM_OK) {
+                if (response.mParam == VarioResponse.RPARAM_SUCCESS) {
                     Toast.makeText(this, R.string.toast_pref_download_success, Toast.LENGTH_SHORT).show();
                 }
-                // else nop : CMD_SAVE_PROPERTY always returns RPARAM_OK
+                // else nop : CMD_SAVE_PROPERTY always returns RPARAM_SUCCESS
                 break;
         }
     }
