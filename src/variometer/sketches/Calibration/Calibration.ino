@@ -7,7 +7,7 @@
 #include <SPI.h>
 #include <I2CDevice.h>
 #include <EEPROMDriver.h>
-#include <IMUModule.h>
+#include <Variometer.h>
 #include <GlobalConfig.h>
 #include <AccelCalibrator.h>
 
@@ -97,9 +97,9 @@ const char* const calMsgE[] 				= {calMsgE01, calMsgE02, calMsgE03};
 //    It internally uses I2CDevice 
 //
 
-IMUModule imu;
+Variometer vario;
 
-AccelCalibrator accelCalibrator(imu);
+AccelCalibrator accelCalibrator;
 
 //
 // declare I2C instance
@@ -118,7 +118,7 @@ TwoWire Wire2(2, I2C_FAST_MODE);
 TwoWire & I2CDevice::Wire = Wire1;
 
 // set unlock callback function
-unlockCallback I2CDevice::cbUnlock = SensorMS5611::UnlockI2C;
+unlockCallback I2CDevice::cbUnlock = MS5611::unlockI2C;
 
 // declare EEPROMDriver
 EEPROMDriver eeprom(Wire2);
@@ -169,6 +169,8 @@ void setup()
 	Wire2.begin();
 	
 	//
+	Config.readAll();
+	delay(100);
 	Config.readAll();
 	
 	/*************************************/

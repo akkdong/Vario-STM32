@@ -75,6 +75,11 @@ public:
 
 	/* launch accel measure and compute standard deviation */
 	void measure(LEDFlasher * flasher = 0);
+	
+	void startMeasure();
+	int continueMeasure();
+	void finishMeasure();
+
 
 	/* return measure orientation */
 	int getMeasureOrientation(void);
@@ -96,6 +101,7 @@ private:
 	void computeCenter(float* v1, float* v2, float* v3, float radius, float* center);
 	float computeDistanceVariance(float *v, float* center);
 	
+	int readRawAccelAsync(float * accel);
 	void readRawAccel(float * accel);
 
 public:
@@ -114,6 +120,13 @@ public:
 	
 	//
 	MPU6050_ & imu;
+	
+private:
+	// for asynchronous measurement
+	unsigned long measureTime;
+	int measureCount;
+
+	float measureSquareMean[3];
 };
 
 #endif // __ACCELCALIBRATOR_H__

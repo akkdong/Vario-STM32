@@ -41,6 +41,19 @@ void AccelCalibrator::reset(void)
 	calibrated = false;
 }
 
+int AccelCalibrator::readRawAccelAsync(float * accel)
+{
+	if (imu.available())
+	{
+		imu.update(false);
+		imu.read(accel, 0);
+		
+		return 1;
+	}
+	
+	return 0;
+}
+
 void AccelCalibrator::readRawAccel(float * accel)
 {
 	while (! imu.available())
@@ -48,7 +61,68 @@ void AccelCalibrator::readRawAccel(float * accel)
 	
 	imu.read(accel, 0);
 }
-  
+
+void AccelCalibrator::startMeasure()
+{
+	// start time-stamp
+	measureTime = millis();
+
+	//
+	measuredAccel[0] = 0.0;
+	measuredAccel[1] = 0.0;
+	measuredAccel[2] = 0.0;
+	
+	measureSquareMean[0] = 0.0;
+	measureSquareMean[1] = 0.0;
+	measureSquareMean[2] = 0.0;
+	
+	measureCount = 0;
+}
+
+int AccelCalibrator::continueMeasure()
+{
+	if (measureCount >= ACCEL_CALIBRATOR_FILTER_SIZE)
+		return 0;
+
+	//
+	float accel[3];
+	
+	if ((millis() - measureTime) > ACCEL_CALIBRATOR_WAIT_DURATION && readRawAccelAsync(accel))
+	{
+		//
+		measuredAccel[0] += accel[0];
+		measuredAccel[1] += accel[1];
+		measuredAccel[2] += accel[2];
+
+		measureSquareMean[0] += accel[0] * accel[0];
+		measureSquareMean[1] += accel[1] * accel[1];
+		measureSquareMean[2] += accel[2] * accel[2];
+
+		measureCount++;
+	}
+	// else : It's in stabilizing zone now or DATA is not ready
+
+	return 1; // try again
+}
+
+void AccelCalibrator::finishMeasure()
+{
+	// compute mean accel
+	measuredAccel[0] /= (float)measureCount;
+	measuredAccel[1] /= (float)measureCount;
+	measuredAccel[2] /= (float)measureCount;
+
+	// compute mean square
+	measureSquareMean[0] /= (float)measureCount;
+	measureSquareMean[1] /= (float)measureCount;
+	measureSquareMean[2] /= (float)measureCount;
+
+	// compute standard deviation
+	measuredAccelSD = sqrt(measureSquareMean[0] - measuredAccel[0] * measuredAccel[0]);
+	measuredAccelSD += sqrt(measureSquareMean[1] - measuredAccel[1] * measuredAccel[1]);
+	measuredAccelSD += sqrt(measureSquareMean[2] - measuredAccel[2] * measuredAccel[2]);
+}
+
 void AccelCalibrator::measure(LEDFlasher * flasher)
 {
 	float accel[3];

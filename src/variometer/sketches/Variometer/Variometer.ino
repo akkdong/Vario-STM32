@@ -292,7 +292,7 @@ VarioBeeper varioBeeper(tonePlayer);
 CommandStack cmdStack;
 
 CommandParser cmdParser1(CMD_FROM_USB, Serial, cmdStack); // USB serial parser
-CommandParser cmdParser2(CMD_FROM_BT, Serial1, cmdStack); // BT serial parser
+CommandParser cmdParser2(CMD_FROM_BT, SerialEx1, cmdStack); // BT serial parser
 FuncKeyParser keyParser(keyFunc, cmdStack, tonePlayer);
 
 //ResponseStack resStackUSB;
@@ -326,11 +326,11 @@ void board_init()
 	Serial.begin();
 	//while (! Serial);
 	
-	Serial1.begin(BAUDRATE_BT); 	// Serial1(USART1) : for BT
-	//while (! Serial1);
+	SerialEx1.begin(BAUDRATE_BT); 	// Serial1(USART1) : for BT
+	//while (! SerialEx1);
 	
-	Serial2.begin(BAUDRATE_GPS);	// Serial2(USART2) : for GPS
-	//while (! Serial2);
+	SerialEx2.begin(BAUDRATE_GPS);	// Serial2(USART2) : for GPS
+	//while (! SerialEx2);
 	
 	// Initialize I2C
 	Wire1.begin();
@@ -853,74 +853,85 @@ void setup_calibration()
 	//
 	accelCalibrator.init();
 	
-	//
-	ledFlasher.blink(BTYPE_BLINK_3_LONG_ON);
-	tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 2, BASE_BEEP_DURATION, 3, Config.volume.effect);
-	
+	// ready~
+	tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 4, BASE_BEEP_DURATION * 3, 2, Config.volume.effect);
+	ledFlasher.blink(BTYPE_SHORT_ON_LONG_OFF);	
+
 	calibMode = CAL_MODE_MEASURE_DELAY;
 	deviceTick = millis();
 }
 
 void loop_calibration()
 {
+	// led(measure-ready)		BTYPE_SHORT_ON_LONG_OFF
+	// led(measure-run)			BTYPE_SHORT_ON_OFF
+	// led(complete)			BTYPE_LONG_ON_OFF
+	
+	// beep(measure-ready)		삑~___삑~___
+	// beep(measure-enter)		삑~~~___삑~~~___삑~~~___
+	// beep(measure-success)  	삑~~~~~_
+	// beep(measure-fail)     	뷕~~~~~_
+	// beep(complete)			삑~~~_삑~~~_
+	
 	//
 	if (calibMode == CAL_MODE_MEASURE_DELAY)
 	{
 		if (millis() - deviceTick > MEASURE_DELAY)
-			calibMode = CAL_MODE_MEASURE;
+		{
+			// start measure
+			Serial.println("start measure....");
+			accelCalibrator.startMeasure();
+			
+			tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 3, Config.volume.effect);
+			ledFlasher.blink(BTYPE_SHORT_ON_OFF);
+
+			calibMode = CAL_MODE_MEASURE;			
+		}
 	}
 	else if (calibMode == CAL_MODE_MEASURE)
 	{
-		Serial.println("start measure....");
-		
-		// make measure
-		accelCalibrator.measure(&ledFlasher);
+		if (accelCalibrator.continueMeasure())
+			return; // continue
+
+		//
+		Serial.println("done measure....");
+		accelCalibrator.finishMeasure();
 		
 		// get orientation
 		int orient = accelCalibrator.getMeasureOrientation();
 		Serial.print("  orientation = "); Serial.println(orient);
 		
-		if (orient != ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION)
+		if (orient == ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION && accelCalibrator.canCalibrate())
 		{
-			// push measure
-			boolean measureValid = accelCalibrator.pushMeasure();
-			Serial.print("  measurement "); Serial.println(measureValid?"valid":"invalid");
+			Serial.println("calibrate!!!");
+			// calibrate & save result
+			accelCalibrator.calibrate();
 
-			// make corresponding beep
-			if (measureValid)
-				tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 1, Config.volume.effect);
-			else 
-				tonePlayer.setBeep(LOW_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 1, Config.volume.effect);	
+			// play completion melody & confirm
+			tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 4, BASE_BEEP_DURATION, 2, Config.volume.effect);
+			ledFlasher.blink(BTYPE_LONG_ON_OFF);
 			
-			// go back measure delay
-			calibMode = CAL_MODE_MEASURE_DELAY;
-			// reset delay tick
+			calibMode = CAL_MODE_COMPLETION;
 			deviceTick = millis();
-			Serial.println("wait to next measurement!");
 		}
 		else
 		{
-			//
-			if( accelCalibrator.canCalibrate() )
+			boolean measureValid = false;
+			
+			if (orient != ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION)
 			{
-				Serial.println("calibrate!!!");
-				// calibrate & save result
-				accelCalibrator.calibrate();
+				// push measure
+				measureValid = accelCalibrator.pushMeasure();
+				Serial.print("  measurement "); Serial.println(measureValid?"valid":"invalid");
+			}
 
-				// play completion melody & confirm
-				calibMode = CAL_MODE_COMPLETION;
-				
-				tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 2, BASE_BEEP_DURATION, 3, Config.volume.effect);
-				ledFlasher.blink(BTYPE_SHORT_ON_OFF);
-			}
-			else
-			{
-				// go back measure delay
-				calibMode = CAL_MODE_MEASURE_DELAY;
-				// reset delay tick
-				deviceTick = millis();
-				Serial.println("wait to next measurement!");
-			}
+			// next~
+			Serial.println("wait to next measurement!");
+			tonePlayer.setBeep(measureValid ? HIGH_BEEP_FREQ : LOW_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION, 1, Config.volume.effect);	
+			ledFlasher.blink(BTYPE_SHORT_ON_LONG_OFF);
+			
+			calibMode = CAL_MODE_MEASURE_DELAY;
+			deviceTick = millis();			
 		}
 	}
 	else if (calibMode == CAL_MODE_COMPLETION)
@@ -929,6 +940,9 @@ void loop_calibration()
 		{
 			Serial.println("calibrate complete!!!");
 			Serial.println("reset now....");
+			
+			// ??? beep
+			//
 			
 			// jobs done. reset now!
 			board_reset();
