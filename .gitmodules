@@ -4,3 +4,6 @@
 [submodule "src/variometer/libraries/STM32Sleep"]
 	path = src/variometer/libraries/STM32Sleep
 	url = https://github.com/chacal/stm32sleep.git
+[submodule "ref-src/iap-example"]
+	path = ref-src/iap-example
+	url = https://github.com/rurume/STM32-Bootloader.git
