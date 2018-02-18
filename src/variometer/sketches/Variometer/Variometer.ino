@@ -395,7 +395,7 @@ void changeDeviceMode(int mode)
 		keyPowerGPS.disable();
 		keyPowerBT.disable();
 		#if HW_VERSION == HW_VERSION_V1_REV2
-		keyPowerIMU.disable();
+		//keyPowerIMU.disable();
 		#endif // HW_VERSION == HW_VERSION_V1_REV2
 		
 		//
@@ -854,7 +854,7 @@ void setup_calibration()
 	accelCalibrator.init();
 	
 	// ready~
-	tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 4, BASE_BEEP_DURATION * 3, 2, Config.volume.effect);
+	tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 4, BASE_BEEP_DURATION, 2, Config.volume.effect);
 	ledFlasher.blink(BTYPE_SHORT_ON_LONG_OFF);	
 
 	calibMode = CAL_MODE_MEASURE_DELAY;
@@ -927,7 +927,7 @@ void loop_calibration()
 
 			// next~
 			Serial.println("wait to next measurement!");
-			tonePlayer.setBeep(measureValid ? HIGH_BEEP_FREQ : LOW_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION, 1, Config.volume.effect);	
+			tonePlayer.setBeep(measureValid ? HIGH_BEEP_FREQ : LOW_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 6, 1, Config.volume.effect);	
 			ledFlasher.blink(BTYPE_SHORT_ON_LONG_OFF);
 			
 			calibMode = CAL_MODE_MEASURE_DELAY;

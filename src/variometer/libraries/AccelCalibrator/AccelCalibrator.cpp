@@ -43,15 +43,16 @@ void AccelCalibrator::reset(void)
 
 int AccelCalibrator::readRawAccelAsync(float * accel)
 {
+	imu.update(false);
+	
 	if (imu.available())
 	{
-		imu.update(false);
 		imu.read(accel, 0);
 		
 		return 1;
 	}
 	
-	return 0;
+	return 0;	
 }
 
 void AccelCalibrator::readRawAccel(float * accel)
@@ -64,9 +65,6 @@ void AccelCalibrator::readRawAccel(float * accel)
 
 void AccelCalibrator::startMeasure()
 {
-	// start time-stamp
-	measureTime = millis();
-
 	//
 	measuredAccel[0] = 0.0;
 	measuredAccel[1] = 0.0;
@@ -77,32 +75,41 @@ void AccelCalibrator::startMeasure()
 	measureSquareMean[2] = 0.0;
 	
 	measureCount = 0;
+
+	// start time-stamp
+	measureTime = millis();
 }
 
 int AccelCalibrator::continueMeasure()
 {
-	if (measureCount >= ACCEL_CALIBRATOR_FILTER_SIZE)
-		return 0;
-
-	//
-	float accel[3];
-	
-	if ((millis() - measureTime) > ACCEL_CALIBRATOR_WAIT_DURATION && readRawAccelAsync(accel))
+	if (measureCount < ACCEL_CALIBRATOR_FILTER_SIZE)
 	{
-		//
-		measuredAccel[0] += accel[0];
-		measuredAccel[1] += accel[1];
-		measuredAccel[2] += accel[2];
+		float accel[3];
+		
+		// try reading
+		int done = readRawAccelAsync(accel);
+		
+		if ((millis() - measureTime) < ACCEL_CALIBRATOR_WAIT_DURATION)
+			return 1; // continue : it's in stabilizing zone
+		
+		if (done)
+		{
+			//
+			measuredAccel[0] += accel[0];
+			measuredAccel[1] += accel[1];
+			measuredAccel[2] += accel[2];
 
-		measureSquareMean[0] += accel[0] * accel[0];
-		measureSquareMean[1] += accel[1] * accel[1];
-		measureSquareMean[2] += accel[2] * accel[2];
+			measureSquareMean[0] += accel[0] * accel[0];
+			measureSquareMean[1] += accel[1] * accel[1];
+			measureSquareMean[2] += accel[2] * accel[2];
 
-		measureCount++;
+			measureCount++;
+		}
+
+		return 1;  // continue
 	}
-	// else : It's in stabilizing zone now or DATA is not ready
-
-	return 1; // try again
+	
+	return 0;
 }
 
 void AccelCalibrator::finishMeasure()
