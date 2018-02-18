@@ -44,6 +44,6 @@ void BatteryVoltage::update()
 
 float BatteryVoltage::getVoltage()
 {
-	return measVoltage;
+	return measVoltage + ADC_BIAS_VOLTAGEDROP;
 }
 

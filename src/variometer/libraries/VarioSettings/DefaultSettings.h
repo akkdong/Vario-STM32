@@ -169,6 +169,8 @@
 #define ADC_MEASURE_COUNT						(10)
 #define ADC_MEASURE_INTERVAL					(2000)
 
+#define ADC_BIAS_VOLTAGEDROP					(0.2)
+
 
 // Function key settings
 //
