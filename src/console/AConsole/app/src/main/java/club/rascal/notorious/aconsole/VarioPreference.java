@@ -461,7 +461,7 @@ public class VarioPreference extends AppCompatPreferenceActivity implements Vari
                 break;
 
             case VarioCommand.CMD_UPDATE_PROPERTY :
-
+                /*
                 if (response.mParam != VarioResponse.RPARAM_SUCCESS) {
                     // something wroing!! -> remove all VarioCommand & alert
                     mCommands.clear();
@@ -474,6 +474,9 @@ public class VarioPreference extends AppCompatPreferenceActivity implements Vari
                     // send next if exists
                     sendUpdateCommands();
                 }
+                */
+                // send next if exists
+                sendUpdateCommands();
                 break;
 
             case VarioCommand.CMD_SAVE_PROPERTY:
