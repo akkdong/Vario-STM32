@@ -19,6 +19,7 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,13 +28,16 @@
         </activity>
         <activity
             android:name=".VarioPreference"
-            android:label="@string/title_activity_vario_preference" />
+            android:label="@string/title_activity_vario_preference"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".ToneEditorActivity"
-            android:label="@string/title_activity_tone_editor"/>
+            android:label="@string/title_activity_tone_editor"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".CalibrationActivity"
-            android:label="@string/title_activity_calibration"/>
+            android:label="@string/title_activity_calibration"
+            android:screenOrientation="portrait"/>
     </application>
 
 </manifest>
