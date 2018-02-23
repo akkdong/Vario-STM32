@@ -41,6 +41,13 @@ void AccelCalibrator::reset(void)
 	calibrated = false;
 }
 
+void AccelCalibrator::prepareMeasure()
+{
+	float accel[3];
+	
+	readRawAccelAsync(accel);
+}
+
 int AccelCalibrator::readRawAccelAsync(float * accel)
 {
 	imu.update(false);
@@ -128,6 +135,13 @@ void AccelCalibrator::finishMeasure()
 	measuredAccelSD = sqrt(measureSquareMean[0] - measuredAccel[0] * measuredAccel[0]);
 	measuredAccelSD += sqrt(measureSquareMean[1] - measuredAccel[1] * measuredAccel[1]);
 	measuredAccelSD += sqrt(measureSquareMean[2] - measuredAccel[2] * measuredAccel[2]);
+}
+
+void AccelCalibrator::getCalibratedMeasure(float * accel)
+{
+	accel[0] = measuredAccel[0] + calibration[0];
+	accel[1] = measuredAccel[1] + calibration[1];
+	accel[2] = measuredAccel[2] + calibration[2];
 }
 
 void AccelCalibrator::measure(LEDFlasher * flasher)

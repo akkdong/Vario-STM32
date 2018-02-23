@@ -42,6 +42,21 @@ public class VarioResponse {
     public static final int RPARAM_INVALID_PROPERTY = 3;
     public static final int RPARAM_NOT_READY = 4;
     public static final int RPARAM_UNAVAILABLE = 5;
+    public static final int RPARAM_NOT_ALLOWED = 6;
+    public static final int RPARAM_INVALID_PARAMETER = 7;
+    public static final int RPARAM_INVALID_DATA = 8;
+
+    public static final int RPARAM_CAL_START = (0x1000);
+    public static final int RPARAM_CAL_MODE_CHANGED = (0x1001); // INIT->READY->MEASURE->CALIBATE->DONE or STOP
+    public static final int RPARAM_CAL_MEASURED_RESULT = (0x1003); // validation, orient, accel standard deviation
+    public static final int RPARAM_CAL_DONE = (0x1002)	; // calibration accel x/y/z
+    public static final int RPARAM_CAL_ACCELEROMETER = (0x1004);	// calibrated accel x/y/z
+
+    public static final int RPARAM_SW_BASE = (0x2000);
+    public static final int RPARAM_SW_VARIO = (0x2001);
+    public static final int RPARAM_SW_UMS = (0x2002);
+    public static final int RPARAM_SW_CALIBRATION = (0x2003);
+
 
     public static final int MAX_DATACOUNT   = 4;
 

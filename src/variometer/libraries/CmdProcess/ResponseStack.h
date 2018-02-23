@@ -36,17 +36,36 @@
 #define RCODE_UPDATE_PARAM		'UP'
 */
 
-// PARAM -> result of command processing
-//       -> id of property
-#define RPARAM_SUCCESS			(0)
-#define RPARAM_OK				(0)
+// PARAM : use in range 0x0000 ~ 0xFFFF, 0xFFFFFFFF(-1) means unused param
+//     -> result of command processing              : 0x0000 ~ 0x0100
+//     -> accelerometer calibration result/status   : 0x1000 ~ 0x1FFF
+//     -> mode switch return                        : 0x2000 ~ 0x2FFF
+//     -> id of property                            : 0x9000 ~ 0xFFFF
+#define RPARAM_SUCCESS				(0)
+#define RPARAM_OK					(0)
 
-#define RPARAM_FAIL				(1)
-#define RPARAM_INVALID_COMMAND	(2)
-#define RPARAM_INVALID_PROPERTY	(3)
-#define RPARAM_NOT_READY		(4)
-#define RPARAM_UNAVAILABLE		(5)
+#define RPARAM_FAIL					(1)
+#define RPARAM_INVALID_COMMAND		(2)
+#define RPARAM_INVALID_PROPERTY		(3)
+#define RPARAM_NOT_READY			(4)
+#define RPARAM_UNAVAILABLE			(5)
+#define RPARAM_NOT_ALLOWED			(6)
+#define RPARAM_INVALID_PARAMETER	(7)
+#define RPARAM_INVALID_DATA			(8)
 
+#define RPARAM_CAL_START			(0x1000)
+#define RPARAM_CAL_MODE_CHANGED		(0x1001)	// INIT->READY->MEASURE->CALIBATE->DONE or STOP
+#define RPARAM_CAL_MEASURED_RESULT	(0x1003)	// validation, orient, accel standard deviation
+#define RPARAM_CAL_DONE				(0x1002)	// calibration accel x/y/z
+#define RPARAM_CAL_ACCELEROMETER 	(0x1004)	// calibrated accel x/y/z
+
+#define RPARAM_SW_BASE				(0x2000)
+#define RPARAM_SW_VARIO				(0x2001)
+#define RPARAM_SW_UMS				(0x2002)
+#define RPARAM_SW_CALIBRATION		(0x2003)
+
+
+#define RPARAM_CAL_STATE		()	// MODE, MEASURE SIDE, ...
 
 enum RDATA_TYPE
 {

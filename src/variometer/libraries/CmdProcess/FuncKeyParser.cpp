@@ -43,32 +43,32 @@ void FuncKeyParser::update()
 		{
 		case 0x4008 : // count: 4, code: LSSS	// mode change : Calibration
 			inputCmd = CMD_MODE_SWITCH;
-			inputParam = PARAM_SW_CALIBRATION;
+			inputParam = PARAM_MS_CALIBRATION;
 			inputTick = millis();
 			//Serial.println("change to calibration mode");
 			break;
 		case 0x3004 : // count: 3, code: LSS	// mode change : UMS
 			inputCmd = CMD_MODE_SWITCH;
-			inputParam = PARAM_SW_UMS;
+			inputParam = PARAM_MS_UMS;
 			inputTick = millis();
 			//Serial.println("change to UMS mode");
 			break;
-		
+
 		case 0x4007 : // count: 4, code: SLLL	// volume : loud
 			inputCmd = CMD_SOUND_LEVEL;
-			inputParam = PARAM_LV_LOUD;
+			inputParam = PARAM_SL_LOUD;
 			inputTick = millis();
 			//Serial.println("change volume to loud level");
 			break;
 		case 0x3003 : // count: 3, code: SLL	// volume : quiet
 			inputCmd = CMD_SOUND_LEVEL;
-			inputParam = PARAM_LV_MEDIUM;
+			inputParam = PARAM_SL_MEDIUM;
 			inputTick = millis();
 			//Serial.println("change volume to quiet level");
 			break;
 		case 0x2001 : // count: 2, code: SL	// volume : mute
 			inputCmd = CMD_SOUND_LEVEL;
-			inputParam = PARAM_LV_MUTE;
+			inputParam = PARAM_SL_MUTE;
 			inputTick = millis();
 			//Serial.println("change volume to mute level");
 			break;

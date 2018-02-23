@@ -76,10 +76,12 @@ public:
 	/* launch accel measure and compute standard deviation */
 	void measure(LEDFlasher * flasher = 0);
 	
+	void prepareMeasure(); // call frequently : it's empty the FIFO and stabilize the accelerometer
 	void startMeasure();
 	int continueMeasure();
 	void finishMeasure();
 
+	void getCalibratedMeasure(float * accel);
 
 	/* return measure orientation */
 	int getMeasureOrientation(void);

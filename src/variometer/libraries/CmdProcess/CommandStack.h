@@ -30,19 +30,22 @@
 #define CMD_SAVE_PROPERTY		'SP'
 #define CMD_QUERY_PROPERTY		'QP'
 #define CMD_UPDATE_PROPERTY		'UP'
+#define CMD_ACCEL_CALIBRATION	'AC'
 
 // mode switch
-#define PARAM_SW_ICALIBRATION	(1)		// interactive
-#define PARAM_SW_CALIBRATION	(2)		// no-interactive
-#define PARAM_SW_UMS			(3)
-#define PARAM_SW_CONFIG			(4)
+#define PARAM_MS_QUERY			(0)	// response with current mode
+#define PARAM_MS_VARIO			(1)
+#define PARAM_MS_UMS			(2)
+#define PARAM_MS_CALIBRATION	(3)
 
 // device status
+/*
 #define PARAM_DS_ALL			(0)
 #define PARAM_DS_IMU			(1)
 #define PARAM_DS_SDCARD			(2)
 #define PARAM_DS_GPS			(3)
 #define PARAM_DS_VOLTAGE		(4)
+*/
 
 // sensor dump
 #define PARAM_DU_NONE			(0)
@@ -53,54 +56,35 @@
 #define PARAM_DU_ALL			(0x0F)
 
 // nmea sentence
+/*
 #define PARAM_NM_UNBLOCK		(0)
 #define PARAM_NM_BLOCK			(1)
+*/
 
-//  tone test
+//  vario tone test
 #define PARAM_TT_STOP			(0)
 #define PARAM_TT_START			(1)
 
 // sound level
-#define PARAM_LV_MUTE			(0)
-#define PARAM_LV_MEDIUM			(1)
-#define PARAM_LV_LOUD			(2)
+#define PARAM_SL_ALL			(0)
+#define PARAM_SL_VARIO			(1)
+#define PARAM_SL_EFFECT			(2)
+
+#define PARAM_SL_MUTE			(0x1000)
+#define PARAM_SL_MEDIUM			(0x1001)
+#define PARAM_SL_LOUD			(0x1002)
+
 
 // device reset
 #define PARAM_RS_NOW			(0)
 #define PARAM_RS_AFTER_SAVE		(1)
 
-/*
-// query paramater
-enum VarioParameters
-{	
-	PARAM_PROFILE_MODEL,
-	PARAM_PROFILE_PILOT,
-	PARAM_PROFILE_GLIDER,
-	PARAM_VARIO_SINK_THRESHOLD_,
-	PARAM_VARIO_CLIMB_THRESHOLD_,
-	PARAM_VARIO_SENSITIVITY_,
-	PARAM_VARIO_BARO_ONLY,
-	PARAM_VARIO_VOLUMN,
-	PARAM_VARIO_TONE_00,
-	PARAM_VARIO_TONE_01,
-	PARAM_VARIO_TONE_02,
-	PARAM_VARIO_TONE_03,
-	PARAM_VARIO_TONE_04,
-	PARAM_VARIO_TONE_05,
-	PARAM_VARIO_TONE_06,
-	PARAM_VARIO_TONE_07,
-	PARAM_VARIO_TONE_08,
-	PARAM_VARIO_TONE_09,
-	PARAM_VARIO_TONE_10,
-	PARAM_VARIO_TONE_11,
-	PARAM_TIME_ZONE,
-	PARAM_KALMAN_SIGMA,
-	PARAM_KALMAN_VARIANCE,
-	PARAM_CALIBRATION_ACCEL,
-	PARAM_CALIBRATION_GYRO,
-	PARAM_COUNT,
-};
-*/
+// accelerometer calibration
+#define PARAM_AC_MEASURE		(1)
+#define PARAM_AC_CALIBRATE		(2)
+#define PARAM_AC_STOP			(3)
+#define PARAM_AC_QUERY_STATUS	(4)
+#define PARAM_AC_RESET			(5)
 
 
 /////////////////////////////////////////////////////////////////////////////

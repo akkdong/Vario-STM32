@@ -29,9 +29,10 @@
 #include <ResponseStack.h>
 #include <SensorReporter.h>
 #include <AccelCalibrator.h>
-#include <UsbMassStorage.h>
 
 #include "ParamVarMap.h"
+#include "Sd2CardEx.h"
+#include "UMS_mal.h"
 
 
 // test-tone delta(inc/dec) calculation
@@ -50,10 +51,11 @@
 
 enum _DeviceMode
 {
-	DEVICE_MODE_VARIO = 0,		// (0)
-	DEVICE_MODE_UMS,			// (1)
-	DEVICE_MODE_CALIBRATION,	// (2)
-	DEVICE_MODE_SHUTDOWN,		// (3)
+	DEVICE_MODE_UNDEF =0,
+	DEVICE_MODE_VARIO,			// (1)
+	DEVICE_MODE_UMS,			// (2)
+	DEVICE_MODE_CALIBRATION,	// (3)
+	DEVICE_MODE_SHUTDOWN,		// (4)
 };
 
 enum _VarioMode
@@ -67,10 +69,12 @@ enum _VarioMode
 enum _CalibrationMode
 {
 	CAL_MODE_INIT = 0,
-	CAL_MODE_MEASURE_DELAY,
+	CAL_MODE_MEASURE_READY,
 	CAL_MODE_MEASURE,
-	CAL_MODE_COMPLETION,
+	CAL_MODE_CALIBATE_READY,
+	CAL_MODE_CALIBATE,
 	CAL_MODE_DONE,
+	CAL_MODE_RESET,
 };
 
 
@@ -105,6 +109,12 @@ void commandSendsorDump(Command * cmd);
 void commandQueryProperty(Command * cmd);
 void commandUpdateProperty(Command * cmd);
 void commandDumpProperties(Command * cmd);
+void commandAccelerometerCalibration(Command * cmd);
+
+void calibration_changeMode(uint8_t mode);
+void calibration_readyMeasure(int beepType);
+void calibration_startMeasure();
+void calibration_doCalibate();
 
 int pushProperties(int start);
 
@@ -117,6 +127,7 @@ uint8_t deviceMode = DEVICE_MODE_VARIO;
 
 uint8_t	varioMode; 		// sub-mode of vario-mode
 uint8_t	calibMode;		// sub-mode of calibration-mode
+uint8_t calInteractive;	// flag for interactive calibration, 0 -> non-interactive(default), others -> interactive
 
 uint32_t deviceTick;	// global tick-count
 uint32_t modeTick;		// mode-specific tick-count
@@ -384,25 +395,33 @@ void board_reset()
 
 void changeDeviceMode(int mode)
 {
-	//
-	if (deviceMode == DEVICE_MODE_VARIO)
+	// post process
+	switch (deviceMode)
 	{
+	case DEVICE_MODE_VARIO :
 		// clean-up something
-		//
 		vario.end();
-		
-		// turn-off GPS & BT
-		keyPowerGPS.disable();
-		keyPowerBT.disable();
+		// close logger file if is logging
+		logger.end(nmeaParser.getDateTime());
+		// turn-off SD & wait a moment
 		#if HW_VERSION == HW_VERSION_V1_REV2
-		//keyPowerIMU.disable();
+		keyPowerSD.disable();
+		delay(100);
 		#endif // HW_VERSION == HW_VERSION_V1_REV2
-		
-		//
-		logger.end(nmeaParser.getDateTime());		
+		break;
+	case DEVICE_MODE_CALIBRATION :
+		// nop
+		break;
+	case DEVICE_MODE_UMS :
+		// turn-off SD & wait a moment
+		#if HW_VERSION == HW_VERSION_V1_REV2
+		keyPowerSD.disable();
+		delay(100);
+		#endif // HW_VERSION == HW_VERSION_V1_REV2
+		break;
 	}
-	
-	//
+
+	// start new mode
 	switch ((deviceMode = mode))
 	{
 	case DEVICE_MODE_VARIO :
@@ -431,6 +450,9 @@ void changeDeviceMode(int mode)
 
 void setup()
 {
+	// init global variables
+	// ...
+	
 	//
 	board_init();
 	
@@ -496,7 +518,7 @@ void setup_vario()
 	//
 	varioMode = VARIO_MODE_INIT;
 	
-	// turn-on GPS & BT
+	// turn-on All : IMU, SD, GPS, BT
 	#if HW_VERSION == HW_VERSION_V1_REV2
 	keyPowerIMU.enable();
 	keyPowerSD.enable();
@@ -703,36 +725,22 @@ void loop_vario()
 //
 //
 
-class Sd2CardEx : public SdSpiCard
-{
-public:
-	Sd2CardEx() {
-		m_spi.setPort(1);
-	}
-	Sd2CardEx(uint8_t spiPort) {
-		m_spi.setPort(spiPort);
-	}
-
-	/** Initialize the SD card.
-	* \param[in] csPin SD chip select pin.
-	* \param[in] settings SPI speed, mode, and bit order.
-	* \return true for success else false.
-	*/
-	bool begin(uint8_t csPin = SS, SPISettings settings = SD_SCK_MHZ(50)) {
-		return SdSpiCard::begin(&m_spi, csPin, settings);
-	}
-	
-private:
-	SdFatSpiDriver m_spi;
-};
-
-Sd2CardEx SdCard(SDCARD_CHANNEL);
-
-uint32_t MAL_massBlockCount[2];
-uint32_t MAL_massBlockSize[2];
 
 void setup_ums()
 {
+	// turn-off GPS & IMU
+	keyPowerGPS.disable();
+	#if HW_VERSION == HW_VERSION_V1_REV2
+	keyPowerIMU.disable();
+	#endif // HW_VERSION == HW_VERSION_V1_REV2
+	// turn-on SD & BT
+	#if HW_VERSION == HW_VERSION_V1_REV2
+	keyPowerSD.enable();
+	#endif // HW_VERSION == HW_VERSION_V1_REV2
+	keyPowerBT.enable();
+	delay(100);
+	
+	
 	//
 	Serial.end();
 	
@@ -744,10 +752,7 @@ void setup_ums()
 	
 	if (numberOfBlocks)
 	{
-		MAL_massBlockCount[0] = numberOfBlocks;
-		MAL_massBlockCount[1] = 0;
-		MAL_massBlockSize[0] = 512;
-		MAL_massBlockSize[1] = 0;
+		usb_mal_init(numberOfBlocks);
 		//SerialDbg.print("cardSize = "); SerialDbg.println(numberOfBlocks * 512);
 
 		//
@@ -795,46 +800,6 @@ void loop_ums()
 	}
 }
 
-
-extern "C" uint16_t usb_mass_mal_init(uint8_t lun)
-{
-	return 0;
-}
-
-extern "C" uint16_t usb_mass_mal_get_status(uint8_t lun)
-{
-	return SdCard.errorCode();
-}
-
-extern "C" uint16_t usb_mass_mal_write_memory(uint8_t lun, uint32_t memoryOffset, uint8_t *writebuff, uint16_t transferLength)
-{
-	uint32_t block = memoryOffset / 512;
-
-	if (lun != 0)
-		return USB_MASS_MAL_FAIL;
-
-	if (SdCard.writeBlock(block, writebuff))
-		return USB_MASS_MAL_SUCCESS;
-
-	return USB_MASS_MAL_FAIL;
-}
-
-extern "C" uint16_t usb_mass_mal_read_memory(uint8_t lun, uint32_t memoryOffset, uint8_t *readbuff, uint16_t transferLength)
-{
-	if (lun != 0)
-		return USB_MASS_MAL_FAIL;
-
-	if (SdCard.readBlock(memoryOffset / 512, readbuff))
-		return USB_MASS_MAL_SUCCESS;
-
-	return USB_MASS_MAL_FAIL;
-}
-
-extern "C" void usb_mass_mal_format()
-{
-}
-	
-
 //
 //
 //
@@ -843,22 +808,112 @@ extern "C" void usb_mass_mal_format()
 #define LOW_BEEP_FREQ 			(100)
 #define BASE_BEEP_DURATION 		(100)
 
-#define MEASURE_DELAY 			(3000)
+#define BEEP_MEASURE_READY		(1)
+#define BEEP_MEASURE_SUCCESS	(2)
+#define BEEP_MEASURE_FAIL		(3)
+
+#define MEASURE_READY_DELAY 	(3000)
+#define CALIBRATE_READY_DELAY	(1000)
+#define CALIBATE_RESET_DELAY	(2000)
+
+void calibration_changeMode(uint8_t mode)
+{
+	// set mode & reset tick
+	calibMode = mode;
+	deviceTick = millis();
+	
+	if (calInteractive)
+		resStackBT.push(CMD_ACCEL_CALIBRATION, RPARAM_CAL_MODE_CHANGED, mode);
+}
+
+void calibration_readyMeasure(int beepType)
+{
+	// ready measure
+	Serial.println("ready measure....");
+	
+	//
+	switch (beepType)
+	{
+	case BEEP_MEASURE_SUCCESS :
+		// HIGH BEEP : BBBB_
+		tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 5, BASE_BEEP_DURATION, 1, KEY_VOLUME);
+		break;
+	case BEEP_MEASURE_FAIL :
+		// LOW BEEP : bbbb_
+		tonePlayer.setBeep(LOW_BEEP_FREQ, BASE_BEEP_DURATION * 5, BASE_BEEP_DURATION, 1, KEY_VOLUME);
+		break;
+	case BEEP_MEASURE_READY :
+	default :
+		// HIGH BEEP : B___B___
+		tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 4, BASE_BEEP_DURATION, 2, Config.volume.effect);
+		break;
+	}
+	// 0___0___ ...
+	ledFlasher.blink(BTYPE_SHORT_ON_LONG_OFF);
+
+	// change mode
+	calibration_changeMode(CAL_MODE_MEASURE_READY);
+}
+
+void calibration_startMeasure()
+{
+	// start measure
+	Serial.println("start measure....");
+	accelCalibrator.startMeasure();
+	
+	// HIGH BEEP : BBB___BBB___BBB___
+	tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 3, Config.volume.effect);
+	// O_O_ ...
+	ledFlasher.blink(BTYPE_SHORT_ON_OFF);
+
+	// change mode
+	calibration_changeMode(CAL_MODE_MEASURE);
+}
+
+void calibration_readyCalibrate()
+{
+	// HIGH BEEP : BBBB_
+	tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 5, BASE_BEEP_DURATION, 1, KEY_VOLUME);
+	
+	// change mode
+	calibration_changeMode(CAL_MODE_CALIBATE_READY);
+}
+
+void calibration_startCalibrate()
+{
+	// play complete melody
+	// HIGH BEEP : BBB_BBB_BBB_
+	tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 4, BASE_BEEP_DURATION * 3, 3, Config.volume.effect);
+	// OOO_OOO_ ...
+	ledFlasher.blink(BTYPE_LONG_ON_OFF);
+	
+	// change mode
+	calibration_changeMode(CAL_MODE_CALIBATE);
+}
 
 void setup_calibration()
 {
-	//
-	calibMode = CAL_MODE_INIT;
+	// turn-off GPS, SD
+	keyPowerGPS.disable();
+	#if HW_VERSION == HW_VERSION_V1_REV2
+	keyPowerSD.disable();
+	#endif // HW_VERSION == HW_VERSION_V1_REV2
+	// turn-on IMU & BT
+	#if HW_VERSION == HW_VERSION_V1_REV2
+	keyPowerIMU.enable();
+	#endif // HW_VERSION == HW_VERSION_V1_REV2
+	keyPowerBT.enable();
+	delay(100);
 	
+	//
+	//calibMode = CAL_MODE_INIT;
+	resStackBT.push(CMD_ACCEL_CALIBRATION, RPARAM_CAL_START);
+
 	//
 	accelCalibrator.init();
-	
-	// ready~
-	tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 4, BASE_BEEP_DURATION, 2, Config.volume.effect);
-	ledFlasher.blink(BTYPE_SHORT_ON_LONG_OFF);	
 
-	calibMode = CAL_MODE_MEASURE_DELAY;
-	deviceTick = millis();
+	//
+	calibration_readyMeasure(BEEP_MEASURE_READY);
 }
 
 void loop_calibration()
@@ -874,19 +929,18 @@ void loop_calibration()
 	// beep(complete)			삑~~~_삑~~~_
 	
 	//
-	if (calibMode == CAL_MODE_MEASURE_DELAY)
+	if (calibMode == CAL_MODE_MEASURE_READY)
 	{
-		if (millis() - deviceTick > MEASURE_DELAY)
+		// empty the FIFO and stabilize the accelerometer
+		accelCalibrator.prepareMeasure();
+
+		// 
+		if (calInteractive == 0 && millis() - deviceTick > MEASURE_READY_DELAY)
 		{
 			// start measure
-			Serial.println("start measure....");
-			accelCalibrator.startMeasure();
-			
-			tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 3, 3, Config.volume.effect);
-			ledFlasher.blink(BTYPE_SHORT_ON_OFF);
-
-			calibMode = CAL_MODE_MEASURE;			
+			calibration_startMeasure();
 		}
+		// else : wait measure trigger
 	}
 	else if (calibMode == CAL_MODE_MEASURE)
 	{
@@ -898,45 +952,92 @@ void loop_calibration()
 		accelCalibrator.finishMeasure();
 		
 		// get orientation
+		boolean measureValid = false;
 		int orient = accelCalibrator.getMeasureOrientation();
 		Serial.print("  orientation = "); Serial.println(orient);
 		
-		if (orient == ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION && accelCalibrator.canCalibrate())
+		if (orient != ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION)
 		{
-			Serial.println("calibrate!!!");
-			// calibrate & save result
-			accelCalibrator.calibrate();
-
-			// play completion melody & confirm
-			tonePlayer.setBeep(HIGH_BEEP_FREQ, BASE_BEEP_DURATION * 4, BASE_BEEP_DURATION, 2, Config.volume.effect);
-			ledFlasher.blink(BTYPE_LONG_ON_OFF);
+			// push measure
+			measureValid = accelCalibrator.pushMeasure();
+			Serial.print("  measurement "); Serial.println(measureValid?"valid":"invalid");
 			
-			calibMode = CAL_MODE_COMPLETION;
-			deviceTick = millis();
+			// report measured data
+			if (calInteractive)
+			{
+				resStackBT.push(CMD_ACCEL_CALIBRATION, 
+								RPARAM_CAL_MEASURED_RESULT, 
+								measureValid, 
+								orient, 
+								accelCalibrator.measuredAccelSD);
+			}
+		}
+		
+		if (! accelCalibrator.canCalibrate())
+		{
+			// next~
+			calibration_readyMeasure(measureValid ? BEEP_MEASURE_SUCCESS : BEEP_MEASURE_FAIL);
 		}
 		else
 		{
-			boolean measureValid = false;
-			
-			if (orient != ACCEL_CALIBRATOR_ORIENTATION_EXCEPTION)
-			{
-				// push measure
-				measureValid = accelCalibrator.pushMeasure();
-				Serial.print("  measurement "); Serial.println(measureValid?"valid":"invalid");
-			}
-
-			// next~
-			Serial.println("wait to next measurement!");
-			tonePlayer.setBeep(measureValid ? HIGH_BEEP_FREQ : LOW_BEEP_FREQ, BASE_BEEP_DURATION * 6, BASE_BEEP_DURATION * 6, 1, Config.volume.effect);	
-			ledFlasher.blink(BTYPE_SHORT_ON_LONG_OFF);
-			
-			calibMode = CAL_MODE_MEASURE_DELAY;
-			deviceTick = millis();			
+			// now we can calibate
+			calibration_readyCalibrate();
 		}
 	}
-	else if (calibMode == CAL_MODE_COMPLETION)
+	else if (calibMode == CAL_MODE_CALIBATE_READY)
 	{
-		if (millis() - deviceTick > MEASURE_DELAY)
+		if (calInteractive == 0 && millis() - deviceTick > CALIBRATE_READY_DELAY)
+		{
+			// start calibrate
+			calibration_startCalibrate();
+		}
+		// else : wait calibrate trigger
+	}
+	else if (calibMode == CAL_MODE_CALIBATE)
+	{
+		// calibrate & save result
+		Serial.println("calibrate!!!");
+		accelCalibrator.calibrate();
+		
+		// report calibrate result
+		if (calInteractive)
+		{
+			resStackBT.push(CMD_ACCEL_CALIBRATION, 
+							RPARAM_CAL_DONE,
+							accelCalibrator.calibration[0],
+							accelCalibrator.calibration[1],
+							accelCalibrator.calibration[2]);
+		}
+
+		// change mode
+		calibration_changeMode((calInteractive == 0) ? CAL_MODE_RESET : CAL_MODE_DONE);
+		
+		// calibrated accelerometer is reported in CAL_MODE_DONE mode.
+		if (calInteractive)
+			accelCalibrator.startMeasure();
+	}
+	else if (calibMode == CAL_MODE_DONE)
+	{
+		if (accelCalibrator.continueMeasure())
+			return; // continue
+
+		//
+		float accel[3];
+		
+		accelCalibrator.finishMeasure();
+		accelCalibrator.getCalibratedMeasure(accel);
+		accelCalibrator.startMeasure();
+		
+		// send calibrated measured accelerometer
+		resStackBT.push(CMD_ACCEL_CALIBRATION,
+						RPARAM_CAL_ACCELEROMETER,
+						accel[0], 
+						accel[1], 
+						accel[2]);
+	}
+	else if (calibMode == CAL_MODE_RESET)
+	{
+		if (millis() - deviceTick > CALIBATE_RESET_DELAY)
 		{
 			Serial.println("calibrate complete!!!");
 			Serial.println("reset now....");
@@ -946,6 +1047,8 @@ void loop_calibration()
 			
 			// jobs done. reset now!
 			board_reset();
+			
+			while(1) {}
 		}				
 	}
 }
@@ -1102,6 +1205,9 @@ void processCommand()
 			Config.dump();
 			break;
 		#endif // CONFIG_DEBUG_DUMP
+		case CMD_ACCEL_CALIBRATION :
+			commandAccelerometerCalibration(&cmd);
+			break;
 			
 		default :
 			resStackBT.push(cmd.code, RPARAM_INVALID_COMMAND);		
@@ -1113,42 +1219,66 @@ void processCommand()
 // CMD_MODE_SWITCH
 void commandModeSwitch(Command * cmd)
 {
-	// change current mode
-	if (deviceMode != cmd->param)
+	// return current device-mode
+	if (cmd->param == PARAM_MS_QUERY)
+	{
+		resStackBT.push(cmd->code, RPARAM_SW_BASE + deviceMode);
+		return;
+	}
+	
+	// change device mode
+	if (deviceMode != cmd->param && deviceMode != DEVICE_MODE_SHUTDOWN)
 	{
 		switch (cmd->param)
 		{
-		case PARAM_SW_ICALIBRATION :
-			// setup
-			//setup_calibration();
-			// loop
-			//main_loop = icalibration_loop();
-			resStackBT.push(cmd->code, RPARAM_NOT_READY);
+		case PARAM_MS_VARIO :
+			changeDeviceMode(DEVICE_MODE_VARIO);
+			
+			if (cmd->from != CMD_FROM_KEY)
+				resStackBT.push(cmd->code, RPARAM_SUCCESS);
 			break;
-		case PARAM_SW_CALIBRATION  :
+		case PARAM_MS_CALIBRATION :
+			calInteractive = (cmd->from == CMD_FROM_KEY ? 0 : 1);
 			changeDeviceMode(DEVICE_MODE_CALIBRATION);
-			resStackBT.push(cmd->code, RPARAM_SUCCESS);
+			
+			if (cmd->from != CMD_FROM_KEY)
+				resStackBT.push(cmd->code, RPARAM_SUCCESS);
 			break;
-		case PARAM_SW_UMS          :
+		case PARAM_MS_UMS :
 			if (/*keyUSB.read() == INPUT_ACTIVE &&*/ logger.isInitialized())
 			{
 				changeDeviceMode(DEVICE_MODE_UMS);			
-				resStackBT.push(cmd->code, RPARAM_SUCCESS);
+				
+				if (cmd->from != CMD_FROM_KEY)
+					resStackBT.push(cmd->code, RPARAM_SUCCESS);
 			}
 			else
 			{
 				// sd-init failed!! : warning beep~~
 				tonePlayer.beep(NOTE_C3, 200, 4, Config.volume.effect);
-				resStackBT.push(cmd->code, RPARAM_FAIL);
+				
+				if (cmd->from != CMD_FROM_KEY)
+					resStackBT.push(cmd->code, RPARAM_FAIL);
 			}
 			break;
+
+		default :
+			if (cmd->from != CMD_FROM_KEY)
+				resStackBT.push(cmd->code, RPARAM_INVALID_COMMAND);
+			break;
 		}
+	}
+	else
+	{
+		if (cmd->from != CMD_FROM_KEY)
+			resStackBT.push(cmd->code, RPARAM_NOT_ALLOWED);
 	}
 }
 
 // CMD_SOUND_LEVEL
 void commandSoundLevel(Command * cmd)
 {
+	/*
 	int volume = -1;
 	
 	switch (cmd->param)
@@ -1172,7 +1302,7 @@ void commandSoundLevel(Command * cmd)
 		Config.updateVarioVolume(tonePlayer.getVolume());
 
 		//
-		tonePlayer.setBeep(460, 800, 400, 3);
+		tonePlayer.setBeep(460, 800, 400, 3, volume);
 		//
 		resStackBT.push(cmd->code, RPARAM_SUCCESS);
 	}
@@ -1180,6 +1310,63 @@ void commandSoundLevel(Command * cmd)
 	{
 		resStackBT.push(cmd->code, RPARAM_FAIL);
 	}
+	*/
+	
+	int volume = -1;
+	
+	switch (cmd->param)
+	{
+	case PARAM_SL_ALL : 
+	case PARAM_SL_VARIO :
+	case PARAM_SL_EFFECT :
+		if (cmd->valLen == 1)
+			volume = cmd->valData[0];
+		break;
+	
+	case PARAM_SL_LOUD 	:
+		volume = MAX_VOLUME;
+		break;
+	case PARAM_SL_MEDIUM :
+		volume = MID_VOLUME;
+		break;
+	case PARAM_SL_MUTE	:
+		volume = MIN_VOLUME;
+		break;
+	}
+
+	if (MIN_VOLUME <= volume && volume <= MAX_VOLUME)
+	{
+		switch (cmd->param)
+		{
+		case PARAM_SL_ALL : 
+		case PARAM_SL_LOUD 	:
+		case PARAM_SL_MEDIUM :
+		case PARAM_SL_MUTE	:
+			Config.volume.vario = volume;
+			Config.volume.effect = volume;
+			break;
+			
+		case PARAM_SL_VARIO :
+			Config.volume.vario = volume;
+			break;
+		case PARAM_SL_EFFECT :
+			Config.volume.effect = volume;
+			break;
+		}
+		
+		// update global configuration
+		Config.writeBlock(BLOCK_ID_VOLUMNE_SETTINGS);
+		// beep~
+		tonePlayer.setBeep(460, 800, 400, 3, volume);
+		// report success
+		if (cmd->from != CMD_FROM_KEY)
+			resStackBT.push(cmd->code, RPARAM_SUCCESS);
+	}
+	else
+	{
+		if (cmd->from != CMD_FROM_KEY)
+			resStackBT.push(cmd->code, RPARAM_INVALID_COMMAND);
+	}	
 }
 
 
@@ -1373,6 +1560,46 @@ void commandDumpProperties(Command * cmd)
 	
 	if (dumpProp < 0)
 		dumpProp = pushProperties(0);
+}
+
+void commandAccelerometerCalibration(Command * cmd)
+{
+	if (deviceMode == DEVICE_MODE_CALIBRATION && calInteractive != 0)
+	{
+		switch (cmd->param)
+		{
+		case PARAM_AC_MEASURE :
+			if (calibMode == CAL_MODE_MEASURE_READY || calibMode == CAL_MODE_CALIBATE_READY || calibMode == CAL_MODE_DONE)
+				calibration_startMeasure();
+			else
+				resStackBT.push(cmd->code, RPARAM_NOT_ALLOWED);
+			break;
+			
+		case PARAM_AC_CALIBRATE :
+			if (calibMode == CAL_MODE_CALIBATE_READY)
+				calibration_startCalibrate();
+			else
+				resStackBT.push(cmd->code, RPARAM_NOT_ALLOWED);
+			break;
+			
+		case PARAM_AC_STOP :
+			// ...
+			break;
+			
+		case PARAM_AC_QUERY_STATUS :
+			// ...
+			break;
+			
+		case PARAM_AC_RESET :
+			// ...
+			break;
+		}
+	}
+	else
+	{
+		resStackBT.push(cmd->code, RPARAM_INVALID_COMMAND);
+		return;
+	}
 }
 
 int pushProperties(int start)
