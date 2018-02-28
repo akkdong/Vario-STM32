@@ -10,7 +10,11 @@
 //////////////////////////////////////////////////////////////////////////
 //
 
+#ifdef DEBUG
+#define ADDRESS_USER_APPLICATION			(0x08003000)
+#else
 #define ADDRESS_USER_APPLICATION			(0x08002000)
+#endif // DEBUG
 
 #define ADDRESS_FLASH						(0x08000000)
 #define ADDRESS_RAM							(0x20000000)
