@@ -33,6 +33,9 @@
 #include "ParamVarMap.h"
 #include "Sd2CardEx.h"
 #include "UMS_mal.h"
+#include <libmaple/bkp.h>
+
+#define RESET_FOR_BOOTLOADER		(0x4501)
 
 
 // test-tone delta(inc/dec) calculation
@@ -363,11 +366,11 @@ void board_init()
 	// output pins
 	#if HW_VERSION == HW_VERSION_V1
 	keyPowerGPS.begin(PIN_GPS_EN, ACTIVE_LOW, OUTPUT_INACTIVE);
-	keyPowerBT.begin(PIN_BT_EN, ACTIVE_LOW, OUTPUT_INACTIVE);
+	keyPowerBT.begin(PIN_BT_EN, ACTIVE_LOW, OUTPUT_ACTIVE);
 	//keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_ACTIVE);
 	#elif HW_VERSION == HW_VERSION_V1_REV2
 	keyPowerGPS.begin(PIN_GPS_EN, ACTIVE_HIGH, OUTPUT_INACTIVE);
-	keyPowerBT.begin(PIN_BT_EN, ACTIVE_HIGH, OUTPUT_INACTIVE);
+	keyPowerBT.begin(PIN_BT_EN, ACTIVE_HIGH, OUTPUT_ACTIVE);
 	//keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_ACTIVE);
 	//keyAccelFSync.begin(PIN_IMU_FSYNC, ACTIVE_HIGH, OUTPUT_INACTIVE);
 	keyPowerIMU.begin(PIN_IMU_EN, ACTIVE_HIGH, OUTPUT_INACTIVE);
@@ -383,6 +386,31 @@ void board_reset()
 	//
 	tonePlayer.setTone(NOTE_C3, Config.volume.effect);
 	delay(2000);
+	
+	// reset!!
+	nvic_sys_reset();
+	while(1);	
+}
+
+void board_reboot()
+{
+	#if 0
+	// Enable clocks for the backup domain registers
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR | RCC_APB1Periph_BKP, ENABLE);
+	// Disable backup register write protection
+	PWR_BackupAccessCmd(ENABLE);
+	// store value in DR10
+	BKP_WriteBackupRegister(BKP_DR10, RESET_FOR_BOOTLOADER);
+	// Re-enable backup register write protection
+	PWR_BackupAccessCmd(DISABLE);
+	#else
+	bkp_init();
+	//	rcc_clk_enable(RCC_PWR);
+	//	rcc_clk_enable(RCC_BKP);
+	bkp_enable_writes();
+	bkp_write(10, RESET_FOR_BOOTLOADER);
+	bkp_disable_writes();
+	#endif
 	
 	// reset!!
 	nvic_sys_reset();
@@ -1152,6 +1180,10 @@ void processCommand()
 		case CMD_RESET 	:
 			// reset!!
 			board_reset();
+			break;
+		case CMD_RUN_BOOTLOADER :
+			// reboot -> goto bootloader
+			board_reboot();
 			break;
 		case CMD_SHUTDOWN:
 			// shutdown!!

@@ -31,6 +31,8 @@
 #define CMD_QUERY_PROPERTY		'QP'
 #define CMD_UPDATE_PROPERTY		'UP'
 #define CMD_ACCEL_CALIBRATION	'AC'
+#define CMD_RUN_BOOTLOADER		'RB'
+
 
 // mode switch
 #define PARAM_MS_QUERY			(0)	// response with current mode

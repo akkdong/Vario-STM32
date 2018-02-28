@@ -1,0 +1,28 @@
+// led.h
+//
+
+#ifndef __LED_H__
+#define __LED_H__
+
+#include "stm32f10x_conf.h"
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//
+
+#define BLINK_INTERVAL_SLOW		(1000)
+#define BLINK_INTERVAL_FAST		(200)
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//
+
+void	led_init();
+
+void	led_on();
+void	led_off();
+
+void	led_toggle();
+
+
+#endif // __LED_H__
