@@ -492,8 +492,8 @@ void CDownloaderDlg::SendResetRequest()
 {
 	if (m_State == _IDENTIFY)
 	{
-		// 0x02 0xAA 0x00 0x55
-		m_Serial.Write("\x02\xAA\x00\x55", 4);
+		// #RB\r\n
+		m_Serial.Write("#RB\r\n", 5);
 
 		Log("send reset request: #%d", m_subState / 4 + 1);
 	}

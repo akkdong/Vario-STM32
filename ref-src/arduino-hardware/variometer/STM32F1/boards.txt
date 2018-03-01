@@ -22,7 +22,7 @@ variometer.upload.usbID=1EAF:0003
 variometer.upload.tool=stm32_iap
 variometer.upload.protocol=serial
 variometer.upload.use_1200bps_touch=false
-variometer.upload.file_type=hex
+variometer.upload.file_type=bin
 variometer.upload.auto_reset=true
 
 variometer.menu.bootloader_version.original = Debug (20K RAM, 116K Flash)
