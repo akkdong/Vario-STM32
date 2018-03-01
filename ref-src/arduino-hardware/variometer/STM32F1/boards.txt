@@ -1,0 +1,107 @@
+# Variometer Boards
+
+menu.device_variant=Variant
+menu.bootloader_version=Bootloader version
+menu.upload_method=Upload method
+menu.cpu_speed=CPU Speed(MHz)
+menu.opt=Optimize
+
+##############################################################
+variometer.name=STM32 Variometer
+variometer.vid.0=0x1EAF
+variometer.pid.0=0x0004
+variometer.build.board=STM32_VARIO
+variometer.build.core=maple
+variometer.build.cpu_flags=-DMCU_STM32F103CB -DSERIAL_USB
+variometer.build.variant=variometer
+variometer.build.error_led_port=GPIOC
+variometer.build.error_led_pin=13
+
+variometer.upload.usbID=1EAF:0003
+
+variometer.upload.tool=stm32_iap
+variometer.upload.protocol=serial
+variometer.upload.use_1200bps_touch=false
+variometer.upload.file_type=hex
+variometer.upload.auto_reset=true
+
+variometer.menu.bootloader_version.original = Debug (20K RAM, 116K Flash)
+variometer.menu.bootloader_version.original.build.vect=VECT_TAB_ADDR=0x8003000
+variometer.menu.bootloader_version.original.build.ldscript=ld/bootloader_debug.ld
+variometer.menu.bootloader_version.original.upload.maximum_size=118784
+variometer.menu.bootloader_version.original.upload.maximum_data_size=20480
+variometer.menu.bootloader_version.original.upload.altID=1
+
+variometer.menu.bootloader_version.bootloader20 = Release (20K RAM,120K Flash)
+variometer.menu.bootloader_version.bootloader20.build.vect=VECT_TAB_ADDR=0x8002000
+variometer.menu.bootloader_version.bootloader20.build.ldscript=ld/bootloader_release.ld
+variometer.menu.bootloader_version.bootloader20.upload.maximum_size=122880
+variometer.menu.bootloader_version.bootloader20.upload.maximum_data_size=20480
+variometer.menu.bootloader_version.bootloader20.upload.altID=2
+
+
+#---------------------------- UPLOAD METHODS ---------------------------
+
+variometer.menu.upload_method.DFUUploadMethod=STM32duino bootloader
+variometer.menu.upload_method.DFUUploadMethod.upload.protocol=maple_dfu
+variometer.menu.upload_method.DFUUploadMethod.upload.tool=maple_upload
+variometer.menu.upload_method.DFUUploadMethod.build.upload_flags=-DSERIAL_USB -DGENERIC_BOOTLOADER
+variometer.menu.upload_method.DFUUploadMethod.build.vect=VECT_TAB_ADDR=0x8002000
+variometer.menu.upload_method.DFUUploadMethod.build.ldscript=ld/bootloader_20.ld
+variometer.menu.upload_method.DFUUploadMethod.upload.usbID=1EAF:0003
+variometer.menu.upload_method.DFUUploadMethod.upload.altID=2
+
+variometer.menu.upload_method.serialMethod=Serial IAP
+variometer.menu.upload_method.serialMethod.upload.protocol=serial
+variometer.menu.upload_method.serialMethod.upload.tool=stm32_iap
+variometer.menu.upload_method.serialMethod.build.upload_flags=-DCONFIG_MAPLE_MINI_NO_DISABLE_DEBUG
+
+variometer.menu.upload_method.STLinkMethod=STLink
+variometer.menu.upload_method.STLinkMethod.upload.protocol=STLink
+variometer.menu.upload_method.STLinkMethod.upload.tool=stlink_upload
+variometer.menu.upload_method.STLinkMethod.build.upload_flags=-DCONFIG_MAPLE_MINI_NO_DISABLE_DEBUG=1 -DSERIAL_USB -DGENERIC_BOOTLOADER
+
+variometer.menu.upload_method.jlinkMethod=JLink
+variometer.menu.upload_method.jlinkMethod.upload.protocol=jlink
+variometer.menu.upload_method.jlinkMethod.upload.tool=jlink_upload
+variometer.menu.upload_method.jlinkMethod.build.upload_flags=-DCONFIG_MAPLE_MINI_NO_DISABLE_DEBUG=1 -DSERIAL_USB -DGENERIC_BOOTLOADER 
+
+
+#-- CPU Clock frequency
+variometer.menu.cpu_speed.speed_72mhz=72Mhz (Normal)
+variometer.menu.cpu_speed.speed_72mhz.build.f_cpu=72000000L
+
+variometer.menu.cpu_speed.speed_48mhz=48Mhz (Slow - with USB)
+variometer.menu.cpu_speed.speed_48mhz.build.f_cpu=48000000L
+
+#-- Optimizations
+variometer.menu.opt.osstd=Smallest (default)
+variometer.menu.opt.osstd.build.flags.optimize=-Os
+variometer.menu.opt.osstd.build.flags.ldspecs=
+variometer.menu.opt.oslto=Smallest Code with LTO
+variometer.menu.opt.oslto.build.flags.optimize=-Os -flto
+variometer.menu.opt.oslto.build.flags.ldspecs=-flto
+variometer.menu.opt.o1std=Fast (-O1)
+variometer.menu.opt.o1std.build.flags.optimize=-O1
+variometer.menu.opt.o1std.build.flags.ldspecs=
+variometer.menu.opt.o1lto=Fast (-O1) with LTO
+variometer.menu.opt.o1lto.build.flags.optimize=-O1 -flto
+variometer.menu.opt.o1lto.build.flags.ldspecs=-flto
+variometer.menu.opt.o2std=Faster (-O2)
+variometer.menu.opt.o2std.build.flags.optimize=-O2
+variometer.menu.opt.o2std.build.flags.ldspecs=
+variometer.menu.opt.o2lto=Faster (-O2) with LTO
+variometer.menu.opt.o2lto.build.flags.optimize=-O2 -flto
+variometer.menu.opt.o2lto.build.flags.ldspecs=-flto
+variometer.menu.opt.o3std=Fastest (-O3)
+variometer.menu.opt.o3std.build.flags.optimize=-O3
+variometer.menu.opt.o3std.build.flags.ldspecs=
+variometer.menu.opt.o3lto=Fastest (-O3) with LTO
+variometer.menu.opt.o3lto.build.flags.optimize=-O3 -flto
+variometer.menu.opt.o3lto.build.flags.ldspecs=-flto
+variometer.menu.opt.ogstd=Debug (-g)
+variometer.menu.opt.ogstd.build.flags.optimize=-Og
+variometer.menu.opt.ogstd.build.flags.ldspecs=
+
+
+################################################################################
