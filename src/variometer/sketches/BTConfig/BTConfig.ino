@@ -78,7 +78,11 @@ void setup()
 	// Initialize Serials
 	Serial.begin();
 	
-	keyPowerBT.begin(PIN_BT_EN, ACTIVE_HIGH, OUTPUT_INACTIVE);
+	#if HW_VERSION == HW_VERSION_V1_REV2
+	keyPowerBT.begin(PIN_BT_EN, ACTIVE_HIGH, OUTPUT_ACTIVE);
+	#else // HW_VERSION_V1
+	keyPowerBT.begin(PIN_BT_EN, ACTIVE_LOW, OUTPUT_ACTIVE);
+	#endif
 	keyPowerBT.enable();
 	delay(1000);
 	
