@@ -312,7 +312,7 @@ FuncKeyParser keyParser(keyFunc, cmdStack, tonePlayer);
 //ResponseStack resStackUSB;
 ResponseStack resStackBT;
 
-int	commandReceiveFlag = 0; // when any new command is occured, set this. 
+volatile int commandReceiveFlag = 0; // when any new command is occured, set this. 
 
 
 //
@@ -1172,6 +1172,11 @@ void processCommand()
 		Command cmd = cmdStack.dequeue();
 		commandReceiveFlag = 1; //
 		
+		//Serial.print("dequeue command: ");
+		//Serial.write((char)(cmd.code >> 8)); Serial.write((char)(cmd.code & 0x00FF));
+		//Serial.print(", "); 
+		//Serial.println(cmd.param);
+		
 		switch(cmd.code)
 		{
 		case CMD_STATUS 	:
@@ -1310,40 +1315,6 @@ void commandModeSwitch(Command * cmd)
 // CMD_SOUND_LEVEL
 void commandSoundLevel(Command * cmd)
 {
-	/*
-	int volume = -1;
-	
-	switch (cmd->param)
-	{
-	case PARAM_LV_LOUD 	:
-		volume = MAX_VOLUME;
-		break;
-	case PARAM_LV_MEDIUM :
-		volume = MID_VOLUME;
-		break;
-	case PARAM_LV_MUTE	:
-		volume = MIN_VOLUME;
-		break;
-	}
-	
-	if (MIN_VOLUME <= volume && volume != tonePlayer.getVolume())
-	{
-		//
-		tonePlayer.setVolume(volume);
-		// save volume
-		Config.updateVarioVolume(tonePlayer.getVolume());
-
-		//
-		tonePlayer.setBeep(460, 800, 400, 3, volume);
-		//
-		resStackBT.push(cmd->code, RPARAM_SUCCESS);
-	}
-	else
-	{
-		resStackBT.push(cmd->code, RPARAM_FAIL);
-	}
-	*/
-	
 	int volume = -1;
 	
 	switch (cmd->param)
@@ -1351,8 +1322,10 @@ void commandSoundLevel(Command * cmd)
 	case PARAM_SL_ALL : 
 	case PARAM_SL_VARIO :
 	case PARAM_SL_EFFECT :
-		if (cmd->valLen == 1)
-			volume = cmd->valData[0];
+		//if (cmd->valLen == 1)
+		//	volume = cmd->valData[0];
+		if (cmd->valLen > 0)
+			volume = atoi((char *)cmd->valData);
 		break;
 	
 	case PARAM_SL_LOUD 	:
