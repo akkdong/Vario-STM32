@@ -159,7 +159,7 @@ int32_t	cparser_getBootCommand(BOOT_CMD * cmd)
 		break;
 
 	case HCODE_ERASE : // Erase
-		if (_cp.payloadLen != 4)
+		if (_cp.payloadLen != 4 && _cp.payloadLen != 8)
 		{
 			cmd->code = 0;
 			break;

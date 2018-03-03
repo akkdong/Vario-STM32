@@ -78,9 +78,9 @@ void bootcmd_sendIdentify(void)
 	csender_finish();
 }
 
-void bootcmd_erasePage(uint32_t address)
+void bootcmd_erasePage(uint32_t start, uint32_t end)
 {
-	uint16_t result = flash_erasePage(address);
+	uint16_t result = flash_erasePage(start, end);
 
 	if (result == ERROR_OK)
 		csender_send_ack();

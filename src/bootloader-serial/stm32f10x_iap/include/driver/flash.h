@@ -46,7 +46,7 @@
 void		flash_init(void);
 void		flash_end(void);
 
-uint16_t	flash_erasePage(uint32_t address);
+uint16_t	flash_erasePage(uint32_t start, uint32_t end);
 uint16_t	flash_eraseAll(void);
 
 uint16_t	flash_write(uint32_t address, void * data, uint32_t size);
