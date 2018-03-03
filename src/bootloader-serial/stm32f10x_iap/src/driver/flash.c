@@ -85,7 +85,7 @@ uint16_t flash_erasePage(uint32_t start, uint32_t end)
 			// erase the FLASH pages
 			FLASH_Status status = FLASH_COMPLETE;
 
-			for (uint32_t addr = start; start <= end && status == FLASH_COMPLETE; start += PAGE_SIZE)
+			for (uint32_t addr = start; addr <= end && status == FLASH_COMPLETE; addr += PAGE_SIZE)
 				status = FLASH_ErasePage(addr);
 
 			result = mapStatusToError(status);
@@ -119,7 +119,7 @@ uint16_t flash_write(uint32_t address, void * data, uint32_t size)
 
 	if (memory_is_valid(address, size))
 	{
-		if ((address % PAGE_SIZE) == 0)
+		//if ((address % PAGE_SIZE) == 0)
 		{
 			FLASH_Status status = FLASH_COMPLETE;
 			uint32_t * srcPtr = (uint32_t *)data;
@@ -133,10 +133,10 @@ uint16_t flash_write(uint32_t address, void * data, uint32_t size)
 
 			result = mapStatusToError(status);
 		}
-		else
-		{
-			result = ERROR_INVALID_PARAMETER;
-		}
+		//else
+		//{
+		//	result = ERROR_INVALID_PARAMETER;
+		//}
 	}
 
 	return result;
