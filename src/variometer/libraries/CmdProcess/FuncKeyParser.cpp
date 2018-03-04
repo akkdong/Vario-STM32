@@ -87,7 +87,11 @@ void FuncKeyParser::update()
 				// enqueue command & play ok melody
 				Stack.enqueue(Command(CMD_FROM_KEY, inputCmd, inputParam));
 				//Serial.println("OK!!");
-				
+				//Serial.print("enqueue command: ");
+				//Serial.write((char)(inputCmd >> 8)); Serial.write((char)(inputCmd & 0x00FF));
+				//Serial.print(", "); 
+				//Serial.println(inputParam);
+		
 				// reset input command
 				inputCmd = 0;
 			}

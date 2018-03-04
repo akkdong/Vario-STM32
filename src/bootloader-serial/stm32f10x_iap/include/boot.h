@@ -31,7 +31,7 @@ void		boot_jumpToUserApplication(void);
 
 void 		bootcmd_sendIdentify(void);
 
-void 		bootcmd_erasePage(uint32_t address);
+void 		bootcmd_erasePage(uint32_t start, uint32_t end);
 void 		bootcmd_eraseAll(void);
 
 void 		bootcmd_writeMemory(uint32_t address, uint8_t * data, uint16_t dataLen);

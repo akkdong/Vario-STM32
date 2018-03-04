@@ -42,6 +42,7 @@
 
 #define ERROR_MEMORY_COLLAPSE	(0xC001)
 #define ERROR_TIMEOUT			(0xC002)
+#define ERROR_INVALID_PARAMETER	(0xC003)
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -59,6 +60,12 @@ typedef struct
 {
 	uint32_t	addr;
 } PAYLOAD_ADDRESS;
+
+typedef struct
+{
+	uint32_t	start;
+	uint32_t	end;
+} PAYLOAD_ERASE;
 
 typedef struct
 {
@@ -87,6 +94,7 @@ typedef struct
 	{
 		PAYLOAD_IDENTIFY	i;
 		PAYLOAD_ADDRESS		a;
+		PAYLOAD_ERASE		e;
 		PAYLOAD_READ_MEM	r;
 		PAYLOAD_WRITE_MEM	w;
 

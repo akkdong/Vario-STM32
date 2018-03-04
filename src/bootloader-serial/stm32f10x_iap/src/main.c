@@ -178,7 +178,10 @@ int main(void)
 				break;
 			case HCODE_ERASE :
 				//trace_printf("BOOT_CMD: Erase 0x%08X\n", cmd.a.addr);
-				bootcmd_erasePage(cmd.a.addr);
+				if (cmd.payloadLen == 4)
+					bootcmd_erasePage(cmd.a.addr, cmd.a.addr);
+				else
+					bootcmd_erasePage(cmd.e.start, cmd.e.end);
 				break;
 			case HCODE_ERASE_ALL :
 				//trace_printf("BOOT_CMD: Erase All\n");

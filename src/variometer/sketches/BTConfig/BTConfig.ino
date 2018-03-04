@@ -78,18 +78,39 @@ void setup()
 	// Initialize Serials
 	Serial.begin();
 	
-	keyPowerBT.begin(PIN_BT_EN, ACTIVE_HIGH, OUTPUT_INACTIVE);
+	#if HW_VERSION == HW_VERSION_V1_REV2
+	keyPowerBT.begin(PIN_BT_EN, ACTIVE_HIGH, OUTPUT_ACTIVE);
+	#else // HW_VERSION_V1
+	keyPowerBT.begin(PIN_BT_EN, ACTIVE_LOW, OUTPUT_ACTIVE);
+	#endif
 	keyPowerBT.enable();
 	delay(1000);
 	
 	// find Baudrate of BT
-	Serial.println("Find buad-rate of BT....");
-	int buadrate = findBaudRate();
-	Serial.print("    -> "); Serial.println(buadrate);
+	Serial.println("Find BT baud-rate....");
+	int baudrate = findBaudRate();
+	Serial.print("    -> "); Serial.println(baudrate);
 	
-	if (buadrate) 
+	if (baudrate) 
 	{
-		Serial1.begin(buadrate);
+		Serial1.begin(baudrate);
+		
+		if (baudrate != BAUDRATE_BT)
+		{
+			Serial.print("Change BT baud-rate to "); Serial.println(BAUDRATE_BT);
+			Serial1.print("AT+BTUART="); Serial.print(BAUDRATE_BT); Serial.print("\r");
+			delay(200);
+			
+			while (Serial1.available())
+				Serial.write(Serial1.read());
+			
+			Serial1.end();
+			Serial1.begin(BAUDRATE_BT);
+		}
+		else
+		{
+			Serial.print("BT communicate with "); Serial.print(baudrate); Serial.println(" bps");
+		}
 	}
 	else
 	{
@@ -100,9 +121,9 @@ void setup()
 
 void loop()
 {
-	if (Serial.available())
+	while (Serial.available())
 		Serial1.write(Serial.read());
 	
-	if (Serial1.available())
+	while (Serial1.available())
 		Serial.write(Serial1.read());
 }

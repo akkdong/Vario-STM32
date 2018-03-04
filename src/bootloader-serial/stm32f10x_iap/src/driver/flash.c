@@ -63,18 +63,37 @@ void flash_end(void)
 }
 
 
-uint16_t flash_erasePage(uint32_t address)
+uint16_t flash_erasePage(uint32_t start, uint32_t end)
 {
 	uint32_t result = ERROR_OUT_OF_MEMORY;
 
-	if (ADDRESS_USER_APPLICATION <= address && address < ADDRESS_USER_APPLICATION + FLASH_IMAGE_SIZE)
-	{
-		// Clear All pending flags
-		FLASH_ClearFlag(FLASH_FLAG_BSY | FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
+	// 0 : 0000 ~ 1023
+	// 1 : 1024 ~ 2047
+	//
+	// 0000 ~ 1024 : 0 ~ 1
+	//
+	// 2047 + 1023 =
 
-		// erase the FLASH pages
-		FLASH_Status status = FLASH_ErasePage(address);
-		result = mapStatusToError(status);
+	if (ADDRESS_USER_APPLICATION <= start && start < ADDRESS_USER_APPLICATION + FLASH_IMAGE_SIZE &&
+		ADDRESS_USER_APPLICATION <= end && end < ADDRESS_USER_APPLICATION + FLASH_IMAGE_SIZE)
+	{
+		if ((start % PAGE_SIZE) == 0 && (end % PAGE_SIZE) == 0 && start <= end)
+		{
+			// Clear All pending flags
+			FLASH_ClearFlag(FLASH_FLAG_BSY | FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
+
+			// erase the FLASH pages
+			FLASH_Status status = FLASH_COMPLETE;
+
+			for (uint32_t addr = start; addr <= end && status == FLASH_COMPLETE; addr += PAGE_SIZE)
+				status = FLASH_ErasePage(addr);
+
+			result = mapStatusToError(status);
+		}
+		else
+		{
+			result = ERROR_INVALID_PARAMETER;
+		}
 	}
 
 	return result;
@@ -100,17 +119,24 @@ uint16_t flash_write(uint32_t address, void * data, uint32_t size)
 
 	if (memory_is_valid(address, size))
 	{
-		FLASH_Status status = FLASH_COMPLETE;
-		uint32_t * srcPtr = (uint32_t *)data;
+		//if ((address % PAGE_SIZE) == 0)
+		{
+			FLASH_Status status = FLASH_COMPLETE;
+			uint32_t * srcPtr = (uint32_t *)data;
 
-		// Clear All pending flags
-		FLASH_ClearFlag(FLASH_FLAG_BSY | FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
+			// Clear All pending flags
+			FLASH_ClearFlag(FLASH_FLAG_BSY | FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
 
-		// program
-		for (uint32_t dstAddr = address; dstAddr < address + size && status == FLASH_COMPLETE; dstAddr += 4)
-			status = FLASH_ProgramWord(dstAddr, *srcPtr++);
+			// program
+			for (uint32_t dstAddr = address; dstAddr < address + size && status == FLASH_COMPLETE; dstAddr += 4)
+				status = FLASH_ProgramWord(dstAddr, *srcPtr++);
 
-		result = mapStatusToError(status);
+			result = mapStatusToError(status);
+		}
+		//else
+		//{
+		//	result = ERROR_INVALID_PARAMETER;
+		//}
 	}
 
 	return result;

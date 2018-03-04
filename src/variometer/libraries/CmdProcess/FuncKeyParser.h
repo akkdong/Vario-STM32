@@ -30,7 +30,7 @@ private:
 	// 
 	uint32_t		inputTick;
 	uint16_t		inputCmd;
-	uint8_t			inputParam;
+	uint16_t		inputParam;
 };
 
 #endif // __FUNCKEYPARSER_H__
