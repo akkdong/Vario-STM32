@@ -98,14 +98,15 @@ void setup()
 		if (baudrate != BAUDRATE_BT)
 		{
 			Serial.print("Change BT baud-rate to "); Serial.println(BAUDRATE_BT);
-			Serial1.print("AT+BTUART="); Serial.print(BAUDRATE_BT); Serial.print("\r");
+			Serial.print("AT+BTUART="); Serial.print(BAUDRATE_BT); Serial.print("\r");
+			Serial1.print("AT+BTUART="); Serial1.print(BAUDRATE_BT); Serial1.print("\r");
 			delay(200);
 			
-			while (Serial1.available())
-				Serial.write(Serial1.read());
-			
-			Serial1.end();
-			Serial1.begin(BAUDRATE_BT);
+			//while (Serial1.available())
+			//	Serial.write(Serial1.read());
+			//
+			//Serial1.end();
+			//Serial1.begin(BAUDRATE_BT);
 		}
 		else
 		{

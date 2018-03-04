@@ -1188,6 +1188,8 @@ void processCommand()
 			break;
 		case CMD_RUN_BOOTLOADER :
 			// reboot -> goto bootloader
+			//if (cmd.from != CMD_FROM_KEY)
+			//	resStackBT.push(cmd.code, RPARAM_SUCCESS);
 			board_reboot();
 			break;
 		case CMD_SHUTDOWN:
