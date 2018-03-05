@@ -10,9 +10,6 @@
     <ClCompile Include="MemoryTestDlg.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Packet.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="ProgramDlg.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -39,9 +36,6 @@
     <ClInclude Include="MemoryTestDlg.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Packet.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="ProgramDlg.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -58,9 +52,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="targetver.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="types.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="UploadDlg.h">
@@ -81,11 +72,11 @@
   <ItemGroup>
     <Filter Include="소스 파일">
       <UniqueIdentifier>{02e6e48a-934b-4181-98bd-d5b5ca36f6a8}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
     <Filter Include="헤더 파일">
       <UniqueIdentifier>{2921aa08-d143-4a52-8754-50fef3a74dbd}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="리소스 파일">
       <UniqueIdentifier>{6ae80f97-8a31-4cc8-9316-264838136b01}</UniqueIdentifier>

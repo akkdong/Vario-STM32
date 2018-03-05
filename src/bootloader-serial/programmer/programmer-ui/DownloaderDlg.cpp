@@ -251,7 +251,9 @@ LRESULT CDownloaderDlg::OnSerialMessage(WPARAM wParam, LPARAM lParam)
 		{
 			if (m_Parser.push(ch))
 			{
-				PACKET * pPacket = new PACKET;
+				//PACKET * pPacket = new PACKET;
+				PACKET packet;
+				PACKET * pPacket = &packet;
 				m_Parser.getPacket(pPacket);
 
 				Log("recieve %02X: %d bytes", pPacket->code, pPacket->payloadLen);
@@ -543,7 +545,7 @@ void CDownloaderDlg::Route(PACKET * pPacket)
 	else
 		this->OnPacketReceived(pPacket);
 
-	delete pPacket;
+	//delete pPacket;
 }
 
 void CDownloaderDlg::OnPacketReceived(PACKET * pPacket)
