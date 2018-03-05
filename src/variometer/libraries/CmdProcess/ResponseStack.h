@@ -9,7 +9,7 @@
 #include <Digit.h>
 
 #define MAX_RESP_STRING			16
-#define MAX_RESPONSE_COUNT		32
+#define MAX_RESPONSE_COUNT		64
 
 #define MAX_FLOAT_PRECISION		4
 

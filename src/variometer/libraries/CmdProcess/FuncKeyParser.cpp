@@ -53,6 +53,12 @@ void FuncKeyParser::update()
 			inputTick = millis();
 			//Serial.println("change to UMS mode");
 			break;
+			
+		case 0x3007 : // count: 3, code: LLL	// goto bootloader
+			inputCmd = CMD_RUN_BOOTLOADER;
+			inputParam = 0;
+			inputTick = millis();
+			break;
 
 		case 0x4007 : // count: 4, code: SLLL	// volume : loud
 			inputCmd = CMD_SOUND_LEVEL;
