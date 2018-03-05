@@ -7,9 +7,17 @@
 
 #include "targetver.h"
 
-#include <stdio.h>
 #include <tchar.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>  
+#include <sys/locking.h> 
+#include <fcntl.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <io.h>
 
+#include <windows.h>
 
-// TODO: 프로그램에 필요한 추가 헤더는 여기에서 참조합니다.
