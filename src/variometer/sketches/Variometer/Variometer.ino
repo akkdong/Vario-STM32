@@ -1188,6 +1188,8 @@ void processCommand()
 			break;
 		case CMD_RUN_BOOTLOADER :
 			// reboot -> goto bootloader
+			//if (cmd.from != CMD_FROM_KEY)
+			//	resStackBT.push(cmd.code, RPARAM_SUCCESS);
 			board_reboot();
 			break;
 		case CMD_SHUTDOWN:
@@ -1195,7 +1197,11 @@ void processCommand()
 			changeDeviceMode(DEVICE_MODE_SHUTDOWN);
 			break;
 		case CMD_FIRMWARE_VERSION :
-			resStackBT.push(cmd.code, RPARAM_UNAVAILABLE);
+			{
+				uint32_t dbg = *(volatile uint32_t *)(0xE0042000);
+				resStackBT.push(cmd.code, 0x3001, dbg, 0x0100);
+				//resStackBT.push(cmd.code, RPARAM_UNAVAILABLE);
+			}
 			break;
 		case CMD_MODE_SWITCH 	:
 			commandModeSwitch(&cmd);
