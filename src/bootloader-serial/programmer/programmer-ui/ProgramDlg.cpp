@@ -6,7 +6,7 @@
 
 #define TIMER_CHECK_RESPONSE		(0x5911)
 
-#define WM_INTERNAL_ERROR			(WM_USER+5)
+#define WM_DEVICE_ERROR				(WM_USER+5)
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -43,7 +43,7 @@ BEGIN_MESSAGE_MAP(CProgramDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BROWSE, OnBrowse)
 	ON_BN_CLICKED(IDC_START, OnStart)
 	ON_COMMAND(IDC_EXECUTE, OnExecute)
-	ON_MESSAGE(WM_INTERNAL_ERROR, OnError)
+	ON_MESSAGE(WM_DEVICE_ERROR, OnError)
 END_MESSAGE_MAP()
 
 
@@ -94,6 +94,18 @@ void CProgramDlg::RequestErase(uint32_t address)
 
 	maker.start(HCODE_ERASE);
 	maker.push_u32(address);
+	maker.finish();
+
+	m_pDlgMain->SendCommand(maker.get_data(), maker.get_size());
+}
+
+void CProgramDlg::RequestErase(uint32_t start, uint32_t end)
+{
+	CommandMaker maker;
+
+	maker.start(HCODE_ERASE);
+	maker.push_u32(start);
+	maker.push_u32(end);
 	maker.finish();
 
 	m_pDlgMain->SendCommand(maker.get_data(), maker.get_size());
@@ -230,13 +242,14 @@ void CProgramDlg::OnStart()
 
 				m_nTotalPage = (m_nProgramEnd - m_nProgramStart) / PAGE_SIZE;
 				m_nActivePage = 0;
-				m_nActiveSubPage = 0;
+				m_nActiveBlock = 0;
 
 				m_nState = _RUN;
 
 				//
 				PostMessage(WM_COMMAND, IDC_EXECUTE);
 				EnableControls();
+				m_pDlgMain->Log("start programming: total %d page(s)", m_nTotalPage);
 			}
 		}
 	}
@@ -260,26 +273,18 @@ void CProgramDlg::OnExecute()
 {
 	if (m_nState == _RUN)
 	{
-		if (m_nActivePage < m_nTotalPage)
-		{
-			RequestErase(m_nProgramStart + m_nActivePage * PAGE_SIZE);
-			SetTimer(TIMER_CHECK_RESPONSE, 2000, NULL);
+		m_pDlgMain->Log("erase from 0x%08X to 0x%08X", m_nProgramStart, m_nProgramStart + (m_nTotalPage - 1) * PAGE_SIZE);
+		RequestErase(m_nProgramStart, m_nProgramStart + (m_nTotalPage - 1) * PAGE_SIZE); // or m_nProgramStart ~ m_nProgramEnd - PAGE_SIZE
+		SetTimer(TIMER_CHECK_RESPONSE, 2000, NULL);
 
-			m_nState = _ERASE;
-		}
-		else
-		{
-			//
-			m_nState = _DONE;
-
-			//
-			PostMessage(WM_COMMAND, IDC_EXECUTE);
-		}
+		m_nState = _ERASE;
 	}
 	else if (m_nState == _ERASE)
 	{
 		//
-		m_nActiveSubPage = 0;
+		m_nActivePage = 0;
+		m_nActiveBlock = 0;
+
 		m_nState = _PROGRAM;
 
 		//
@@ -287,23 +292,40 @@ void CProgramDlg::OnExecute()
 	}
 	else if (m_nState == _PROGRAM)
 	{
-		if (m_nActiveSubPage < PROGRAM_COUNT)
+		if (m_nActivePage < m_nTotalPage)
 		{
-			RequestProgram(m_nProgramStart + m_nActivePage * PAGE_SIZE + m_nActiveSubPage * PROGRAM_SIZE);
-			SetTimer(TIMER_CHECK_RESPONSE, 2000, NULL);
-		}
-		else
-		{
-			if (m_bVerifyProgram)
+			if (m_nActiveBlock < PROGRAM_COUNT)
 			{
-				m_nActiveSubPage = 0;
-				m_nState = _VERIFY;
+				m_pDlgMain->Log("program 0x%08X [#%d]", m_nProgramStart + m_nActivePage * PAGE_SIZE, m_nActiveBlock);
+				RequestProgram(m_nProgramStart + m_nActivePage * PAGE_SIZE + m_nActiveBlock * PROGRAM_SIZE);
+				SetTimer(TIMER_CHECK_RESPONSE, 2000, NULL);
 			}
 			else
 			{
-				m_nActivePage = m_nActivePage + 1;
-				m_nState = _RUN;
+				if (m_bVerifyProgram)
+				{
+					// verify just programmed page from first block 
+					m_nActiveBlock = 0;
+
+					m_nState = _VERIFY;
+				}
+				else
+				{
+					// program next page from first block
+					m_nActivePage = m_nActivePage + 1;
+					m_nActiveBlock = 0;
+
+					m_nState = _PROGRAM;
+				}
+
+				//
+				PostMessage(WM_COMMAND, IDC_EXECUTE);
 			}
+		}
+		else
+		{
+			// OK! we complete all
+			m_nState = _DONE;
 
 			//
 			PostMessage(WM_COMMAND, IDC_EXECUTE);
@@ -311,16 +333,19 @@ void CProgramDlg::OnExecute()
 	}
 	else if (m_nState == _VERIFY)
 	{
-		if (m_nActiveSubPage < PROGRAM_COUNT)
+		if (m_nActiveBlock < PROGRAM_COUNT)
 		{
-			RequestVerify(m_nProgramStart + m_nActivePage * PAGE_SIZE + m_nActiveSubPage * PROGRAM_SIZE);
+			m_pDlgMain->Log("verify 0x%08X [#%d]", m_nProgramStart + m_nActivePage * PAGE_SIZE, m_nActiveBlock);
+			RequestVerify(m_nProgramStart + m_nActivePage * PAGE_SIZE + m_nActiveBlock * PROGRAM_SIZE);
 			SetTimer(TIMER_CHECK_RESPONSE, 2000, NULL);
 		}
 		else
 		{
-			//
+			// program next page from first block
 			m_nActivePage = m_nActivePage + 1;
-			m_nState = _RUN;
+			m_nActiveBlock = 0;
+
+			m_nState = _PROGRAM;
 
 			//
 			PostMessage(WM_COMMAND, IDC_EXECUTE);
@@ -360,7 +385,7 @@ void CProgramDlg::OnPacketReceived(PACKET * pPacket)
 		else if (pPacket->code == DCODE_NACK)
 		{
 			// error handling
-			PostMessage(WM_USER + 5, pPacket->e.error);
+			PostMessage(WM_DEVICE_ERROR, pPacket->e.error);
 		}
 	}
 	else if (m_nState == _PROGRAM)
@@ -368,7 +393,7 @@ void CProgramDlg::OnPacketReceived(PACKET * pPacket)
 		if (pPacket->code == DCODE_ACK)
 		{
 			// program success
-			m_nActiveSubPage += 1;
+			m_nActiveBlock += 1;
 
 			// continue
 			PostMessage(WM_COMMAND, IDC_EXECUTE);
@@ -376,7 +401,7 @@ void CProgramDlg::OnPacketReceived(PACKET * pPacket)
 		else if (pPacket->code == DCODE_NACK)
 		{
 			// error handling
-			PostMessage(WM_INTERNAL_ERROR, pPacket->e.error);
+			PostMessage(WM_DEVICE_ERROR, pPacket->e.error);
 		}
 	}
 	else if (m_nState == _VERIFY)
@@ -384,31 +409,31 @@ void CProgramDlg::OnPacketReceived(PACKET * pPacket)
 		if (pPacket->code == DCODE_DUMP_MEM)
 		{
 			// compare program data with read data
-			uint32_t addr = /*m_nProgramStart +*/ m_nActivePage * PAGE_SIZE + m_nActiveSubPage * PROGRAM_SIZE;
+			uint32_t addr = /*m_nProgramStart +*/ m_nActivePage * PAGE_SIZE + m_nActiveBlock * PROGRAM_SIZE;
 			int i;
 
 			for (i = 0; i < PROGRAM_SIZE; i++)
 				if (m_pFirmware[addr + i] != pPacket->d.data[i])
 					break; // OOPS!!
 
-			if (i >= PROGRAM_SIZE)
+			if (i < PROGRAM_SIZE)
 			{
-				// verfiy success
-				m_nActiveSubPage += 1;
-
-				// continue
-				PostMessage(WM_COMMAND, IDC_EXECUTE);
+				// error handling
+				PostMessage(WM_DEVICE_ERROR, ERROR_MEMORY_COLLAPSE);
 			}
 			else
 			{
-				// error handling
-				PostMessage(WM_INTERNAL_ERROR, ERROR_MEMORY_COLLAPSE);
+				// verfiy success
+				m_nActiveBlock += 1;
+
+				// continue
+				PostMessage(WM_COMMAND, IDC_EXECUTE);
 			}
 		}
 		else if (pPacket->code == DCODE_NACK)
 		{
 			// error handling
-			PostMessage(WM_INTERNAL_ERROR, pPacket->e.error);
+			PostMessage(WM_DEVICE_ERROR, pPacket->e.error);
 		}
 	}
 
@@ -424,7 +449,7 @@ void CProgramDlg::OnTimer(UINT nEventID)
 	if (nEventID == m_nTimerID)
 	{
 		// error handling : timeout
-		PostMessage(WM_INTERNAL_ERROR, ERROR_RESPONSE_TIMEOUT);
+		PostMessage(WM_DEVICE_ERROR, ERROR_RESPONSE_TIMEOUT);
 
 		//
 		KillTimer(m_nTimerID);
@@ -432,7 +457,43 @@ void CProgramDlg::OnTimer(UINT nEventID)
 	}
 }
 
+LPCTSTR CProgramDlg::GetErrorString(uint16_t error)
+{
+	switch (error)
+	{
+	case ERROR_OK				: // (0)
+		return "OK";
+	case ERROR_GENERIC			: // (0x8000)
+		return "GENERIC";
+	case ERROR_OUT_OF_MEMORY	: // (0x8001)
+		return "Out of Memory";
+	case ERROR_FLASH_BUSY		: // (0x8002)
+		return "Flash Busy";
+	case ERROR_FLASH_ERROR_PG	: // (0x8003)
+		return "Flash Proggram Error";
+	case ERROR_FLASH_ERROR_WRP	: // (0x8004)
+		return "Flash Write Protect Error";
+	case ERROR_FLASH_TIMEOUT	: // (0x8005)
+		return "Flash Timeout";
+	case ERROR_MEMORY_COLLAPSE	: // (0xC001)
+		return "Flash Memory Collapse";
+	case ERROR_RESPONSE_TIMEOUT	: // (0xC002)
+		return "Response Timeout";
+	}
+
+	return "Unknown";
+}
+
 LRESULT CProgramDlg::OnError(WPARAM wParam, LPARAM lParam)
 {
+	//
+	CString str;
+	str.Format(_T("Programming Error(%04X) : %s"), wParam, GetErrorString(wParam));
+	AfxMessageBox(str, MB_ICONSTOP | MB_OK);
+
+	// 
+	m_nState = _READY;
+	EnableControls();
+
 	return 0;
 }

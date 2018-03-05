@@ -2,7 +2,7 @@
 #include "resource.h"
 #include "MemoryTestDlg.h"
 #include "DownloaderDlg.h"
-
+#include "flash.h"
 
 ////////////////////////////////////////////////////////////////////////////////////
 //
@@ -10,7 +10,7 @@
 CMemoryTestDlg::CMemoryTestDlg(CDownloaderDlg * pParent)
 	: CDialogEx(IDD_MEMORY_TEST, pParent)
 	, m_pDlgMain(pParent)
-	, m_nAddress(0x08003000)
+	, m_nAddress(ADDRESS_USER_APPLICATION)
 	, m_nReadSize(0x0400)
 	, m_nTimerID(0)
 {

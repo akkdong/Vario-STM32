@@ -40,6 +40,7 @@
 
 #define ERROR_MEMORY_COLLAPSE	(0xC001)
 #define ERROR_RESPONSE_TIMEOUT	(0xC002)
+#define ERROR_INVALID_PARAM		(0xC003)
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -76,29 +77,29 @@ private:
 
 #pragma pack(push, 1)
 
-typedef struct
+typedef struct _PAYLOAD_IDENTIFY
 {
 	uint16_t	devId;
 	uint16_t	fwVer;
 } PAYLOAD_IDENTIFY;
 
-typedef struct
+typedef struct _PAYLOAD_ADDRESS
 {
 	uint32_t	addr;
 } PAYLOAD_ADDRESS;
 
-typedef struct
+typedef struct _PAYLOAD_ERROR
 {
 	uint16_t	error;
 } PAYLOAD_ERROR;
 
-typedef struct
+typedef struct _PAYLOAD_READMEM
 {
 	uint32_t	addr;
 	uint16_t	size;
 } PAYLOAD_READMEM;
 
-typedef struct
+typedef struct _PAYLOAD_DUMPMEM
 {
 	uint32_t	addr;
 	uint8_t		data[MAX_DATA_SIZE];
@@ -106,7 +107,7 @@ typedef struct
 
 #pragma pack(pop)
 
-typedef struct
+typedef struct _PACKET
 {
 	//
 	uint8_t			code;

@@ -43,6 +43,7 @@ protected:
 
 private:
 	void				RequestErase(uint32_t address);
+	void				RequestErase(uint32_t start, uint32_t end);
 	void				RequestProgram(uint32_t address);
 	void				RequestVerify(uint32_t address);
 	void				RequestRun();
@@ -52,6 +53,8 @@ private:
 
 	void				EnableControls();
 	void				Cleanup();
+
+	LPCTSTR				GetErrorString(uint16_t error);
 
 protected:
 	//
@@ -77,7 +80,7 @@ protected:
 
 	uint32_t			m_nTotalPage;		// program size / PAGE_SIZE
 	uint32_t			m_nActivePage;		// 0 ~ m_nTotalPage
-	uint32_t			m_nActiveSubPage;	// 0 ~ (PAGE_SIZE / PROGRAM_SIZE)
+	uint32_t			m_nActiveBlock;		// 0 ~ (PAGE_SIZE / PROGRAM_SIZE)
 
 
 

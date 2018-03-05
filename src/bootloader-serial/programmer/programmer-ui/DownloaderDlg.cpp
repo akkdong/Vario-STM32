@@ -117,6 +117,9 @@ void CDownloaderDlg::DoDataExchange(CDataExchange* pDX)
 
 
 BEGIN_MESSAGE_MAP(CDownloaderDlg, CDialogEx)
+	ON_WM_SYSCOMMAND()
+	ON_WM_PAINT()
+	ON_WM_QUERYDRAGICON()
 	ON_WM_TIMER()
 	ON_REGISTERED_MESSAGE(CSerialWnd::mg_nDefaultComMsg, OnSerialMessage)
 	ON_BN_CLICKED(IDC_CONNECT, OnConnect)
@@ -125,13 +128,29 @@ BEGIN_MESSAGE_MAP(CDownloaderDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_MEMORY, OnMemoryTest)
 	ON_BN_CLICKED(IDC_TEST, OnTest)
 	ON_BN_CLICKED(IDC_TEST2, OnTest2)
-	ON_COMMAND(IDC_IDENTIFY, OnIdentify)
+//	ON_COMMAND(IDC_IDENTIFY, OnIdentify)
 END_MESSAGE_MAP()
 
 
 BOOL CDownloaderDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
+
+	//
+	CMenu* pSysMenu = GetSystemMenu(FALSE);
+	if (pSysMenu != NULL)
+	{
+		BOOL bNameValid;
+		CString strAboutMenu;
+		bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
+		ASSERT(bNameValid);
+		if (!strAboutMenu.IsEmpty())
+		{
+			pSysMenu->AppendMenu(MF_SEPARATOR);
+			pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
+		}
+	}
+
 
 	//
 	SetIcon(m_hIcon, TRUE);
@@ -207,18 +226,12 @@ void CDownloaderDlg::OnTimer(UINT nIDEvent)
 {
 	if (nIDEvent == m_nTimerID)
 	{
-		if ((m_subState % 4) == 0)
-			SendResetRequest();
-		//else if ((m_subState % 4) == 1)
-		//	skip(wait)
-		else if ((m_subState % 4) == 2)
+		if (m_subState < 5)
+		{
 			SendIdentify();
-		//else if ((m_subState % 4) == 3)
-		//	skip(wait)
-
-		m_subState += 1;
-
-		if (m_subState > 4 * 5)
+			m_subState += 1;
+		}
+		else 
 		{
 			// no reponse!!
 			::MessageBeep(-1);
@@ -251,12 +264,10 @@ LRESULT CDownloaderDlg::OnSerialMessage(WPARAM wParam, LPARAM lParam)
 		{
 			if (m_Parser.push(ch))
 			{
-				//PACKET * pPacket = new PACKET;
-				PACKET packet;
-				PACKET * pPacket = &packet;
+				PACKET * pPacket = new PACKET;
 				m_Parser.getPacket(pPacket);
 
-				Log("recieve %02X: %d bytes", pPacket->code, pPacket->payloadLen);
+				Log("recieve 0x%02X: %d bytes", pPacket->code, pPacket->payloadLen);
 				Route(pPacket);
 			}
 		}
@@ -286,13 +297,37 @@ void CDownloaderDlg::OnConnect()
 		{
 			//
 			m_nPortNum = dlg.m_sPortNum;
+			m_strPortName = dlg.m_sPortName;
 			m_nBaudRate = dlg.m_sBaudRate;
 			m_nDataBits = dlg.m_sDataBits;
 			m_nParity = dlg.m_sParity;
 			m_nStopBits = dlg.m_sStopBits;
+			m_nHandshake = dlg.m_sFlowControl;
 
 			//
-			OpenSerial(dlg.m_sPortName, dlg.m_sBaudRate, dlg.m_sDataBits, dlg.m_sParity, dlg.m_sStopBits, dlg.m_sFlowControl);
+			LRESULT lResult;
+
+			if ((lResult = OpenSerial(dlg.m_sPortName, dlg.m_sBaudRate, dlg.m_sDataBits, dlg.m_sParity, dlg.m_sStopBits, dlg.m_sFlowControl)) == ERROR_SUCCESS)
+			{
+				Log("connected...");
+
+				//
+				m_State = _IDENTIFY;
+				m_subState = 0;
+
+				//  send reboot request to user application
+				SendRebootRequest();
+
+				// set timer to identify device
+				//   on timer -> reopen serial and then send identify command to bootloader every 500ms 
+				m_nTimerID = SetTimer(TIMER_IDENTIFY, 1000, NULL);
+			}
+			else
+			{
+				Log("connection failed: %X", lResult);
+
+				ShowLastError(_T("Serial connection"), lResult);
+			}
 		}
 	}
 	else
@@ -394,7 +429,24 @@ BOOL CDownloaderDlg::UpdateData(BOOL bSaveAndValidate)
 	return bRet;
 }
 
-void CDownloaderDlg::OpenSerial(LPCTSTR lpszDevice, CSerial::EBaudrate nBaudRate, CSerial::EDataBits nDataBits, CSerial::EParity nParity, CSerial::EStopBits nStopBits, CSerial::EHandshake nHandshake)
+LRESULT CDownloaderDlg::OpenSerial(LPCTSTR lpszDevice, CSerial::EBaudrate nBaudRate, CSerial::EDataBits nDataBits, CSerial::EParity nParity, CSerial::EStopBits nStopBits, CSerial::EHandshake nHandshake)
+{
+	CWaitCursor wait;
+	LONG lResult;
+
+	if ((lResult = m_Serial.Open(lpszDevice, m_hWnd)) == ERROR_SUCCESS)
+	{
+		//
+		m_Serial.Setup(nBaudRate, nDataBits, nParity, nStopBits);
+		m_Serial.SetupHandshaking(nHandshake);
+		m_Serial.SetupReadTimeouts(CSerial::EReadTimeoutNonblocking);
+	}
+
+	return lResult;
+}
+
+/*
+int CDownloaderDlg::OpenSerial(LPCTSTR lpszDevice, CSerial::EBaudrate nBaudRate, CSerial::EDataBits nDataBits, CSerial::EParity nParity, CSerial::EStopBits nStopBits, CSerial::EHandshake nHandshake)
 {
 	CWaitCursor wait;
 	LONG lResult;
@@ -406,7 +458,7 @@ void CDownloaderDlg::OpenSerial(LPCTSTR lpszDevice, CSerial::EBaudrate nBaudRate
 		m_Serial.SetupHandshaking(nHandshake);
 		m_Serial.SetupReadTimeouts(CSerial::EReadTimeoutNonblocking);
 
-		Log("connected...");
+		Log("serial connected...");
 
 		//
 		m_State = _IDENTIFY;
@@ -415,14 +467,16 @@ void CDownloaderDlg::OpenSerial(LPCTSTR lpszDevice, CSerial::EBaudrate nBaudRate
 		// set timer to identify device
 		//   on timer -> first send reset request to user application
 		//               and send identify command to bootloader after 500ms 
+		Log("start device identify");
 		m_nTimerID = SetTimer(TIMER_IDENTIFY, 500, NULL);
 	}
 	else
 	{
-		ShowLastError(_T("Serial connection"), lResult);
 		Log("connection failed: %X", lResult);
+		ShowLastError(_T("Serial connection"), lResult);
 	}
 }
+*/
 
 void CDownloaderDlg::CloseSerial()
 {
@@ -490,14 +544,15 @@ void CDownloaderDlg::OnMemoryTest()
 	}
 }
 
-void CDownloaderDlg::SendResetRequest()
+void CDownloaderDlg::SendRebootRequest()
 {
 	if (m_State == _IDENTIFY)
 	{
 		// #RB\r\n
 		m_Serial.Write("#RB\r\n", 5);
 
-		Log("send reset request: #%d", m_subState / 4 + 1);
+		//Log("send reboot request: #%d", m_subState / 4 + 1);
+		Log("send reboot request");
 	}
 }
 
@@ -510,19 +565,18 @@ void CDownloaderDlg::SendIdentify()
 		maker.start(HCODE_IDENTIFY);
 		maker.finish();
 
+		Log("send identify command: #%d", m_subState + 1);
 		m_Serial.Write(maker.get_data(), maker.get_size());
-
-		Log("send identify command: #%d", m_subState / 4 + 1);
 	}
 }
 
 void CDownloaderDlg::OnIdentify()
 {
 	// send reset request to user application
-	SendResetRequest();
-	Sleep(500);
+	//SendResetRequest();
+	//Sleep(500);
 	// send identify to bootloader
-	SendIdentify();
+	//SendIdentify();
 }
 
 void CDownloaderDlg::Log(LPCTSTR format, ...)
@@ -534,8 +588,8 @@ void CDownloaderDlg::Log(LPCTSTR format, ...)
 	vsprintf_s(buf, format, va);
 	va_end(va);
 
-	m_wndReport.InsertString(0, buf);
-	m_wndReport.SetCurSel(0);
+	m_wndReport.AddString(buf);
+	m_wndReport.SetCurSel(m_wndReport.GetCount() - 1);
 }
 
 void CDownloaderDlg::Route(PACKET * pPacket)
@@ -545,7 +599,7 @@ void CDownloaderDlg::Route(PACKET * pPacket)
 	else
 		this->OnPacketReceived(pPacket);
 
-	//delete pPacket;
+	delete pPacket;
 }
 
 void CDownloaderDlg::OnPacketReceived(PACKET * pPacket)
@@ -604,7 +658,7 @@ void CDownloaderDlg::SendCommand(uint8_t * pData, uint16_t nDataLen)
 	//
 	m_Serial.Write(pData, nDataLen);
 	//
-	Log("send %02X: %d byte(s)", pData[1], nDataLen);
+	Log("send 0x%02X: %d byte(s)", pData[1], nDataLen);
 }
 
 void CDownloaderDlg::OnTest()

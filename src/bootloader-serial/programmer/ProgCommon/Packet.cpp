@@ -213,5 +213,5 @@ int32_t PacketParser::getPacket(PACKET * packet)
 	//
 	this->state = _SOF;
 
-	return packet != 0 ? 0 : -1;
+	return packet->code != 0 ? 0 : -1;
 }

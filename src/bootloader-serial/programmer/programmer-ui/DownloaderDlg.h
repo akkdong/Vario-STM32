@@ -44,13 +44,13 @@ protected:
 	void				SendCommand(uint8_t * pData, uint16_t nDataLen);
 
 private:
-	void				OpenSerial(LPCTSTR lpszDevice, CSerial::EBaudrate, CSerial::EDataBits, CSerial::EParity, CSerial::EStopBits, CSerial::EHandshake);
+	LRESULT				OpenSerial(LPCTSTR lpszDevice, CSerial::EBaudrate, CSerial::EDataBits, CSerial::EParity, CSerial::EStopBits, CSerial::EHandshake);
 	void				CloseSerial();
 
 	BOOL				UpdateData(BOOL bSaveAndValidate);
 	void				UpdateTitle();
 
-	void				SendResetRequest();
+	void				SendRebootRequest();
 	void				SendIdentify();
 
 	void				Log(LPCTSTR format, ...);
@@ -79,10 +79,12 @@ protected:
 
 	// Serial Settings
 	int					m_nPortNum;
+	CString				m_strPortName;
 	CSerial::EBaudrate	m_nBaudRate;
 	CSerial::EDataBits	m_nDataBits;
 	CSerial::EParity	m_nParity;
 	CSerial::EStopBits	m_nStopBits;
+	CSerial::EHandshake	m_nHandshake;
 
 	//
 	CString				m_strDevID;
