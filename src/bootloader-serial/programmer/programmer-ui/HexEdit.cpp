@@ -135,6 +135,40 @@ ULONG CHexEdit::GetSelection()
 	return HasSelection() ? MAKELRESULT(m_nSelStart, m_nSelEnd) : 0;
 }
 
+int CHexEdit::AddData(int nLength, BYTE* pBuffer)
+{
+	ASSERT(nLength >= 0);
+
+	// Test for length limit
+	if ((m_nLength + nLength) > m_nLimit)
+		nLength = max(0, (m_nLimit - m_nLength));
+
+	if (nLength > 0)
+	{
+		BYTE* pTemp = (BYTE*)realloc(m_pBuffer, m_nLength + nLength);
+		if (pTemp == NULL)
+		{
+			AfxMessageBox(szNoMem);
+			ClearAll();
+			// Invalidate entire window
+			Update();
+			nLength = 0;
+		}
+		else
+		{
+			m_pBuffer = pTemp;
+			// Move bytes up to make room for new data
+			memmove(m_pBuffer + m_nLength, pBuffer, nLength);
+			m_nLength += nLength;
+		}
+	}
+
+	// Repaint entire window
+	Update();
+
+	return m_nLength;
+}
+
 // Inserts the specified number of bytes at the current position.
 // Inserted bytes are not initialized and their content is
 // undefined. The return value is the number of bytes inserted
@@ -1359,6 +1393,8 @@ void CHexEdit::OnContextMenu(CWnd* pWnd, CPoint point)
 	// Windows won't set focus to our control automatically
 	if (GetFocus() != this)
 		SetFocus();
+
+#if 0
 	// Create popup menu
 	CMenu PopupMenu;
 	if (PopupMenu.LoadMenu(IDR_HEXCTRLMENU))
@@ -1381,6 +1417,7 @@ void CHexEdit::OnContextMenu(CWnd* pWnd, CPoint point)
 		}
 		pPopupMenu->TrackPopupMenu(TPM_LEFTALIGN|TPM_RIGHTBUTTON, point.x, point.y, pWnd);
 	}
+#endif
 }
 
 

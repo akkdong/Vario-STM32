@@ -49,11 +49,13 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\build\_Output\Debug\</OutDir>
     <IntDir>..\build\_Intermediate\Debug\programmer-ui\</IntDir>
+    <TargetName>VarioProg</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\build\_Output\Release\</OutDir>
     <IntDir>..\build\_Intermediate\Release\programmer-ui\</IntDir>
+    <TargetName>VarioProg</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -114,9 +116,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="DownloaderDlg.h" />
+    <ClInclude Include="MemoryDumpDlg.h" />
     <ClInclude Include="programmer-ui.h" />
     <ClInclude Include="HexEdit.h" />
-    <ClInclude Include="MemoryTestDlg.h" />
     <ClInclude Include="ProgramDlg.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SerialPortSelectDlg.h" />
@@ -126,9 +128,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DownloaderDlg.cpp" />
+    <ClCompile Include="MemoryDumpDlg.cpp" />
     <ClCompile Include="programmer-ui.cpp" />
     <ClCompile Include="HexEdit.cpp" />
-    <ClCompile Include="MemoryTestDlg.cpp" />
     <ClCompile Include="ProgramDlg.cpp" />
     <ClCompile Include="SerialPortSelectDlg.cpp" />
     <ClCompile Include="stdafx.cpp">

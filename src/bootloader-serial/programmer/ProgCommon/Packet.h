@@ -46,10 +46,10 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 //
 
-class CommandMaker
+class BPacketMaker
 {
 public:
-	CommandMaker();
+	BPacketMaker();
 
 public:
 	int			push_u8(uint8_t data);
@@ -107,7 +107,7 @@ typedef struct _PAYLOAD_DUMPMEM
 
 #pragma pack(pop)
 
-typedef struct _PACKET
+typedef struct _BootloaderPacket
 {
 	//
 	uint8_t			code;
@@ -126,15 +126,15 @@ typedef struct _PACKET
 		uint8_t				data[MAX_PAYLOAD_SIZE];
 	};
 
-} PACKET;
+} BPacket;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //
 
-class PacketParser
+class BPacketParser
 {
 public:
-	PacketParser();
+	BPacketParser();
 
 	enum STATE
 	{
@@ -148,7 +148,7 @@ public:
 	};
 
 public:
-	int32_t		getPacket(PACKET * packet);
+	int32_t		getPacket(BPacket * packet);
 
 	int32_t		push(uint8_t c);
 
@@ -167,12 +167,12 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// PacketListener
+// BPacketListener
 
-class PacketListener
+class BPacketListener
 {
 public:
-	virtual void OnPacketReceived(PACKET * pPacket) = 0;
+	virtual void OnPacketReceived(BPacket * pPacket) = 0;
 };
 
 

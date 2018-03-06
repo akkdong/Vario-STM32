@@ -44,9 +44,9 @@ private:
 	void			RequestRead(uint32_t address, uint16_t size);
 	void			RequestErase(uint32_t start, uint32_t end);
 
-	int				WaitPacket(PACKET * pPacket, UINT nTimeout);
+	int				WaitPacket(BPacket * pPacket, UINT nTimeout);
 
 private:
 	CSerial			mSerial;
-	PacketParser	mParser;
+	BPacketParser	mParser;
 };

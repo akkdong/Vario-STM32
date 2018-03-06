@@ -35,9 +35,9 @@ int Programmer::ConnectAndIdentify(int portNum, CSerial::EBaudrate baudRate, CSe
 {
 	//
 	char port[32];
-	PACKET packet;
+	BPacket packet;
 
-	Print("> Open serial port: ");
+	Print("> Open serial port COM%d: ", portNum);
 	wsprintf(port, "\\\\.\\COM%d", portNum);
 	if (mSerial.Open(port) != ERROR_SUCCESS)
 	{
@@ -76,14 +76,13 @@ int Programmer::ConnectAndIdentify(int portNum, CSerial::EBaudrate baudRate, CSe
 		{
 			if (packet.code == DCODE_IDENTIFY && packet.i.fwVer == 0x0100) // packet.i.devId == 0x0414)
 			{
-				Print("OK!\n\n");
-				break;
+				Print("OK!\n\n");				
+				return 0;;
 			}
 
 			Print("Invalid response!\n");
 			Print("    -> devId(%04X), fwVer(%04X)\n\n", packet.i.devId, packet.i.fwVer);
-
-			return -1;
+			break;
 		}
 		else
 		{
@@ -91,7 +90,7 @@ int Programmer::ConnectAndIdentify(int portNum, CSerial::EBaudrate baudRate, CSe
 		}
 	}
 
-	return 0;
+	return -1;
 }
 
 int Programmer::Program(ImageFile * pFile, uint32_t address, BOOL verify)
@@ -147,7 +146,7 @@ int Programmer::WriteToMemory(ImageFile * pFile, uint32_t address, BOOL verify)
 		uint32_t prog_size = remain < PROGRAM_SIZE ? remain : PROGRAM_SIZE;
 		uint32_t actual_size = (prog_size + sizeof(uint32_t) - 1) / sizeof(uint32_t) * sizeof(uint32_t);
 		uint8_t data[PROGRAM_SIZE];
-		PACKET packet;
+		BPacket packet;
 
 		memset(data, 0xFF, sizeof(data));
 		pFile->Read(data, &prog_size);
@@ -168,6 +167,8 @@ int Programmer::WriteToMemory(ImageFile * pFile, uint32_t address, BOOL verify)
 				Print("  ERR! Write failed!\n");
 				Print("  ERR!   -> error: %04X\n", packet.e.error);
 				Print("  ERR!\n");
+
+				return -1;
 			}
 			else
 			{
@@ -188,6 +189,8 @@ int Programmer::WriteToMemory(ImageFile * pFile, uint32_t address, BOOL verify)
 			Print("  ERR!\n");
 			Print("  ERR! Write timeout.\n");
 			Print("  ERR!\n");
+
+			return -1;
 		}
 
 		remain -= prog_size;
@@ -213,7 +216,7 @@ int Programmer::VerifyMemory(ImageFile * pFile, uint32_t address)
 		uint32_t prog_size = remain < PROGRAM_SIZE ? remain : PROGRAM_SIZE;
 		uint32_t actual_size = (prog_size + sizeof(uint32_t) - 1) / sizeof(uint32_t) * sizeof(uint32_t);
 		uint8_t data[PROGRAM_SIZE];
-		PACKET packet;
+		BPacket packet;
 
 		memset(data, 0xFF, sizeof(data));
 		pFile->Read(data, &prog_size);
@@ -286,7 +289,7 @@ int Programmer::ReadFromMemory(ImageFile * pFile, uint32_t address, uint32_t len
 {
 	uint32_t addr = address;
 	uint32_t remain = length;
-	PACKET packet;
+	BPacket packet;
 
 	Print("> Read memory at 0x%08X ", address);
 	while (remain > 0)
@@ -349,7 +352,7 @@ int Programmer::EraseMemory(uint32_t address, uint32_t length)
 {
 	uint32_t addr_s = address / PAGE_SIZE * PAGE_SIZE;
 	uint32_t addr_e = (address + length) / PAGE_SIZE * PAGE_SIZE;
-	PACKET packet;
+	BPacket packet;
 
 	Print("> Erase memory from 0x%08X to 0x%08X ...", addr_s, addr_e);
 	RequestErase(addr_s, addr_e);
@@ -406,7 +409,7 @@ void Programmer::SendRebootCommand()
 
 void Programmer::SendIdentify()
 {
-	CommandMaker maker;
+	BPacketMaker maker;
 
 	maker.start(HCODE_IDENTIFY);
 	maker.finish();
@@ -416,7 +419,7 @@ void Programmer::SendIdentify()
 
 void Programmer::RequestWrite(uint32_t address, uint8_t * data, uint16_t dataLen)
 {
-	CommandMaker maker;
+	BPacketMaker maker;
 
 	maker.start(HCODE_WRITE);
 	maker.push_u32(address);
@@ -428,7 +431,7 @@ void Programmer::RequestWrite(uint32_t address, uint8_t * data, uint16_t dataLen
 
 void Programmer::RequestRead(uint32_t address, uint16_t size)
 {
-	CommandMaker maker;
+	BPacketMaker maker;
 
 	maker.start(HCODE_READ);
 	maker.push_u32(address);
@@ -440,7 +443,7 @@ void Programmer::RequestRead(uint32_t address, uint16_t size)
 
 void Programmer::RequestErase(uint32_t start, uint32_t end)
 {
-	CommandMaker maker;
+	BPacketMaker maker;
 
 	maker.start(HCODE_ERASE);
 	maker.push_u32(start);
@@ -450,7 +453,7 @@ void Programmer::RequestErase(uint32_t start, uint32_t end)
 	mSerial.Write(maker.get_data(), maker.get_size());
 }
 
-int Programmer::WaitPacket(PACKET * pPacket, UINT nTimeout)
+int Programmer::WaitPacket(BPacket * pPacket, UINT nTimeout)
 {
 	UCHAR ch;
 	DWORD dwRead, dwTick = GetTickCount();
@@ -472,7 +475,7 @@ int Programmer::WaitPacket(PACKET * pPacket, UINT nTimeout)
 
 void Programmer::RunUserApplication()
 {
-	CommandMaker maker;
+	BPacketMaker maker;
 
 	maker.start(HCODE_START);
 	maker.finish();

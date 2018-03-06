@@ -13,7 +13,7 @@ class CDownloaderDlg;
 ////////////////////////////////////////////////////////////////////////////////////
 //
 
-class CProgramDlg : public CDialogEx, protected PacketListener
+class CProgramDlg : public CDialogEx, protected BPacketListener
 {
 public:
 	CProgramDlg(CDownloaderDlg * pParent);
@@ -37,7 +37,7 @@ public:
 
 protected:
 	virtual void		DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
-	virtual void		OnPacketReceived(PACKET * pPacket);
+	virtual void		OnPacketReceived(BPacket * pPacket);
 
 	BOOL				UpdateData(BOOL bSaveAndValidate = TRUE);
 

@@ -9,11 +9,11 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 //
 
-CommandMaker::CommandMaker()
+BPacketMaker::BPacketMaker()
 {
 }
 
-int CommandMaker::push_u8(uint8_t data)
+int BPacketMaker::push_u8(uint8_t data)
 {
 	dataBuf[dataLen++] = data;
 	checkSum ^= data;
@@ -21,7 +21,7 @@ int CommandMaker::push_u8(uint8_t data)
 	return dataLen;
 }
 
-int CommandMaker::push_u16(uint16_t data)
+int BPacketMaker::push_u16(uint16_t data)
 {
 	dataBuf[dataLen++] = (data & 0x00FF);
 	checkSum ^= (data & 0x00FF);
@@ -32,7 +32,7 @@ int CommandMaker::push_u16(uint16_t data)
 	return dataLen;
 }
 
-int CommandMaker::push_u32(uint32_t data)
+int BPacketMaker::push_u32(uint32_t data)
 {
 	dataBuf[dataLen++] = (data & 0x00FF);
 	checkSum ^= (data & 0x00FF);
@@ -49,7 +49,7 @@ int CommandMaker::push_u32(uint32_t data)
 	return dataLen;
 }
 
-int CommandMaker::push_mem(uint8_t * data, uint16_t len)
+int BPacketMaker::push_mem(uint8_t * data, uint16_t len)
 {
 	for (int i = 0; i < len; i++)
 	{
@@ -60,7 +60,7 @@ int CommandMaker::push_mem(uint8_t * data, uint16_t len)
 	return dataLen;
 }
 
-void CommandMaker::start(uint8_t code)
+void BPacketMaker::start(uint8_t code)
 {
 	checkSum = 0x00;
 	dataLen = 0;
@@ -70,7 +70,7 @@ void CommandMaker::start(uint8_t code)
 	push_u16(0x0000);
 }
 
-int CommandMaker::finish()
+int BPacketMaker::finish()
 {
 	//
 	uint16_t payload = dataLen - (1 + 1 + 2);
@@ -95,12 +95,12 @@ int CommandMaker::finish()
 /////////////////////////////////////////////////////////////////////////////////////////
 //
 
-PacketParser::PacketParser()
+BPacketParser::BPacketParser()
 {
 	state = _SOF;
 }
 
-int32_t PacketParser::push(uint8_t ch)
+int32_t BPacketParser::push(uint8_t ch)
 {
 	//
 	switch (state)
@@ -164,13 +164,13 @@ int32_t PacketParser::push(uint8_t ch)
 	return state == _DONE ? 1 : 0;
 }
 
-int32_t PacketParser::getPacket(PACKET * packet)
+int32_t BPacketParser::getPacket(BPacket * packet)
 {
 	//
 	if (state != _DONE)
 		return -1;
 
-	memset(packet, 0, sizeof(PACKET));
+	memset(packet, 0, sizeof(BPacket));
 
 	//
 	packet->code = code;

@@ -47,6 +47,7 @@ public:
 	void SetReadOnly(BOOL bReadOnly) { m_bReadOnly = bReadOnly; }
 	ULONG GetSelection();
 	void SetSelection(int nSelStart = 0, int nSelEnd = 0);
+	int AddData(int nLength, BYTE* pBuffer);
 	int InsertData(int nCount);
 	int DeleteData(int nCount);
 	int GetPosition() { return m_nPosition; }
