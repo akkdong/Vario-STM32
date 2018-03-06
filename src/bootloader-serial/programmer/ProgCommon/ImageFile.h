@@ -28,6 +28,8 @@ public:
 	virtual ParserError		Read(void * data, unsigned int * len) = 0;
 	// write a block of data
 	virtual ParserError		Write(void * data, unsigned int len) = 0;
+	// rewind
+	virtual void			Rewind() = 0;
 
 	/*
 	static inline const char* parser_errstr(ParserError err) {

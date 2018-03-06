@@ -20,6 +20,8 @@ public:
 	virtual ParserError		Read(void * data, unsigned int * len);
 	virtual ParserError		Write(void * data, unsigned int len);
 
+	virtual void			Rewind();
+
 private:
 	int				m_fd;
 	char			m_bWrite;

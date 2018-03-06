@@ -5,3 +5,5 @@ set driverLetter=%~dp0
 set driverLetter=%driverLetter:~0,2%
 %driverLetter%
 cd %~dp0
+
+iap_stm32 %1 %2 %3 %4 %5 %6 %7 %8 %9

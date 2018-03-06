@@ -2,10 +2,29 @@
 //
 
 #include "stdafx.h"
+#include "Programmer.h"
 #include "HexFile.h"
 #include "BinFile.h"
-#include "Serial.h"
-#include "Packet.h"
+
+
+////////////////////////////////////////////////////////////////////////////////////
+//
+
+int Print(LPCTSTR format, ...)
+{
+	TCHAR buf[2048];
+	va_list	va;
+
+	va_start(va, format);
+	vsprintf_s(buf, format, va);
+	va_end(va);
+
+	int ret = fprintf(stdout, buf);
+	fflush(stdout);
+
+	return ret;
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -14,8 +33,8 @@
 enum Operation
 {
 	_OP_UNDEF = 0,
-	_OP_READ,
 	_OP_WRITE,
+	_OP_DUMP,
 	_OP_ERASE
 };
 
@@ -39,7 +58,7 @@ FileType			_filetype = _FILE_BIN;
 Operation			_operation = _OP_UNDEF;
 BOOL				_verify = TRUE;
 
-uint32_t			_address = 0x08003000;
+uint32_t			_address = ADDRESS_USER_APPLICATION;
 uint32_t			_length = 0x400;
 
 
@@ -48,15 +67,15 @@ uint32_t			_length = 0x400;
 
 void show_help(const char * name)
 {
-	printf("Usage: %s [-b rate] [-m mode] [-s address[:length]] [-v 0|1] -f filename -p portnum r|w|e\n", name);
-	printf("   -b rate           serial baud rate (default 57600)\n");
-	printf("   -m mode           serial port mode (default 8n1)\n");
-	printf("   -s address:length start address and optionally length for read/write/erase\n");
-	printf("                     address & length must be hexa-decimal\n");
-	printf("   -v 0|1            verify writes (default true)\n");
-	printf("   -f filename       filename for read or write\n");
-	printf("   -p portnum        serial port number\n");
-	printf("   r|w|e             operation: read or write or erase\n");
+	Print("Usage: %s [-b rate] [-m mode] [-s address[:length]] [-v 0|1] -f filename -p portnum (w)rite|(d)ump|(e)rase\n", name);
+	Print("   -b rate           serial baud rate (default 57600)\n");
+	Print("   -m mode           serial port mode (default 8n1)\n");
+	Print("   -s address:length start address and optionally length for read/write/erase\n");
+	Print("                     address & length must be hexa-decimal\n");
+	Print("   -v 1|0            verify writes (default true), it accepts yes/no or true/false\n");
+	Print("   -f filename       filename for read or write\n");
+	Print("   -p portnum        serial port number\n");
+	Print("   w|d|e             operation: write(program) or dump or erase\n");
 }
 
 int parse_buadrate(const char * str)
@@ -109,9 +128,9 @@ int parse_start_address(const char * str)
 
 int parse_verify(const char * str)
 {
-	if (strcmp(str, "0"))
+	if (_stricmp(str, "0") == 0 || _stricmp(str, "no") == 0 || _stricmp(str, "false") == 0)
 		_verify = FALSE;
-	else if (strcmp(str, "1"))
+	else if (_stricmp(str, "1") == 0 || _stricmp(str, "yes") == 0 || _stricmp(str, "true") == 0)
 		_verify = TRUE;
 	else
 		return -1;
@@ -151,19 +170,27 @@ int parse_portnum(const char * str)
 	return -1;
 }
 
+int parse_portname(const char * str)
+{
+	if (_strnicmp(str, "COM", 3) == 0)
+		return parse_portnum(&str[3]);
+
+	return -1;
+}
+
 int parse_opts(int argc, char * argv[])
 {
 	for (int i = 1; i < argc; i++)
 	{
-		if (_stricmp(argv[i], "r") == 0)
-		{
-			_operation = _OP_READ;
-		}
-		else if (_stricmp(argv[i], "w") == 0)
+		if (_stricmp(argv[i], "w") == 0 || _stricmp(argv[i], "write") == 0 || _stricmp(argv[i], "program") == 0)
 		{
 			_operation = _OP_WRITE;
 		}
-		else if (_stricmp(argv[i], "e") == 0)
+		else if (_stricmp(argv[i], "d") == 0 || _stricmp(argv[i], "dump") == 0)
+		{
+			_operation = _OP_DUMP;
+		}
+		else if (_stricmp(argv[i], "e") == 0 || _stricmp(argv[i], "erase") == 0)
 		{
 			_operation = _OP_ERASE;
 		}
@@ -195,6 +222,10 @@ int parse_opts(int argc, char * argv[])
 				if (parse_portnum(argv[i + 1]) < 0)
 					return -1;
 				break;
+			case 'P':
+				if (parse_portname(argv[i + 1]) < 0)
+					return -1;
+				break;
 			}
 
 			i += 1;
@@ -213,235 +244,13 @@ int check_opts()
 	if (_operation == _OP_UNDEF)
 		return -1;
 
-	if (_portnum == 0)
+	if (_portnum <= 0)
 		return -1;
 
 	if (_filename[0] == NULL && _operation != _OP_ERASE)
 		return -1;
 
 	return 0;
-}
-
-
-#include "Flash.h"
-
-////////////////////////////////////////////////////////////////////////////////////
-//
-
-class Programmer
-{
-public:
-	Programmer();
-
-public:
-	int				ConnectAndIdentify(int portNum,
-									CSerial::EBaudrate baudRate = CSerial::EBaud57600,
-									CSerial::EDataBits dataBits = CSerial::EData8, 
-									CSerial::EParity parity = CSerial::EParNone, 
-									CSerial::EStopBits stopBits = CSerial::EStop1, 
-									CSerial::EHandshake handshake = CSerial::EHandshakeOff);
-	void			Disconnect();
-
-	int				WriteToMemory(ImageFile * pFile, uint32_t address);
-	int				ReadFromMemory(ImageFile * pFile, uint32_t address, uint32_t length);
-	int				EraseMemory(uint32_t address, uint32_t length);
-
-private:
-	void			SendRebootCommand();
-	void			SendIdentify();
-	void			RequestMemory(uint32_t address, uint16_t size);
-
-	int				WaitPacket(PACKET * pPacket, UINT nTimeout);
-
-private:
-	CSerial			mSerial;
-	PacketParser	mParser;
-};
-
-Programmer::Programmer()
-{
-}
-
-int Programmer::ConnectAndIdentify(int portNum, CSerial::EBaudrate baudRate, CSerial::EDataBits dataBits, CSerial::EParity parity, CSerial::EStopBits stopBits, CSerial::EHandshake handshake)
-{
-	//
-	char port[32];
-	PACKET packet;
-
-	printf("> open serial port: ");
-	wsprintf(port, "\\\\.\\COM%d", portNum);
-	if (mSerial.Open(port) != ERROR_SUCCESS)
-	{
-		printf("FAIL\n\n");
-		printf("  ERR!\n");
-		printf("  ERR! serial(COM%d) open failed!\n", portNum);
-		printf("  ERR!\n");
-
-		return -1;
-	}
-	else
-	{
-		printf("OK\n\n");
-	}
-
-	//
-	mSerial.Setup(_baudrate, _databits, _parity, _stopbits);
-	mSerial.SetupHandshaking(_handshake);
-	mSerial.SetupReadTimeouts(CSerial::EReadTimeoutNonblocking);
-
-	printf("> request reboot & identify device\n");
-	for (int i = 0; i < 5; i++)
-	{
-		printf("  #%d send identify: ", i + 1);
-
-		// send reboot command
-		SendRebootCommand();
-		// wait a moment
-		Sleep(i == 0 ? 400 : 200);
-		// send identify
-		SendIdentify();
-
-		//
-		if (WaitPacket(&packet, 800) == 0)
-		{
-			if (packet.code == DCODE_IDENTIFY && packet.i.devId == 0x0414)
-			{
-				printf("OK!\n\n");
-				break;
-			}
-
-			printf("invalid response!\n\n");
-			return -1;
-		}
-		else
-		{
-			printf("no response!\n");
-		}
-	}
-
-	return 0;
-}
-
-int Programmer::WriteToMemory(ImageFile * pFile, uint32_t address)
-{
-	return -1;
-}
-
-int Programmer::ReadFromMemory(ImageFile * pFile, uint32_t address, uint32_t length)
-{
-	uint32_t addr = address;
-	uint32_t remain = length;
-	PACKET packet;
-
-	printf("> read memory at 0x%08X ", address);
-	while (remain > 0)
-	{
-		uint32_t size = remain < PROGRAM_SIZE ? remain : PROGRAM_SIZE;
-		RequestMemory(addr, size);
-
-		//
-		if (WaitPacket(&packet, 2000) == 0)
-		{
-			if (packet.code == DCODE_DUMP_MEM)
-			{
-				pFile->Write(&packet.d.data[0], size);
-
-				remain = remain - size;
-				printf(".");
-			}
-			/*
-			else if (packet.code == DCODE_NACK)
-			{
-				printf("\n\n");
-				printf("  ERR!\n");
-				printf("  ERR! read failed at 0x%08X\n", addr);
-				printf("  ERR!   -> code: %04X\n", packet.e.error);
-				printf("  ERR!\n");
-
-				return -1;
-			}
-			*/
-			else
-			{
-				printf("\n\n");
-				printf("  ERR!\n");
-				printf("  ERR! read failed at 0x%08X\n", addr);
-				printf("  ERR!   -> code: %04X\n", packet.e.error);
-				printf("  ERR!\n");
-
-				return -1;
-			}
-		}
-		else
-		{
-			printf("\n\n");
-			printf("  ERR!\n");
-			printf("  ERR! read timeout.\n");
-			printf("  ERR!\n");
-
-			return -1;
-		}
-	}
-
-	printf("\n  done!\n");
-	return 0;
-}
-
-int Programmer::EraseMemory(uint32_t address, uint32_t length)
-{
-	return -1;
-}
-
-void Programmer::Disconnect()
-{
-	mSerial.Close();
-}
-
-void Programmer::SendRebootCommand()
-{
-	mSerial.Write("\x02\xAA\x00\x55", 4);
-}
-
-void Programmer::SendIdentify()
-{
-	CommandMaker maker;
-
-	maker.start(HCODE_IDENTIFY);
-	maker.finish();
-
-	mSerial.Write(maker.get_data(), maker.get_size());
-}
-
-void Programmer::RequestMemory(uint32_t address, uint16_t size)
-{
-	CommandMaker maker;
-
-	maker.start(HCODE_READ);
-	maker.push_u32(address);
-	maker.push_u16(size);
-	maker.finish();
-
-	mSerial.Write(maker.get_data(), maker.get_size());
-}
-
-int Programmer::WaitPacket(PACKET * pPacket, UINT nTimeout)
-{
-	UCHAR ch;
-	DWORD dwRead, dwTick = GetTickCount();
-
-	while (GetTickCount() - dwTick < nTimeout)
-	{
-		while (mSerial.Read(&ch, sizeof(ch), &dwRead) == ERROR_SUCCESS && dwRead > 0)
-		{
-			if (mParser.push(ch))
-			{
-				mParser.getPacket(pPacket);
-				return 0;
-			}
-		}
-	}
-
-	return -1; // timeout
 }
 
 
@@ -455,51 +264,53 @@ int main(int argc, char * argv[])
 	if (parse_opts(argc, argv) < 0)
 	{
 		show_help("iap_stm32");
-		return 1;
+		return -1;
 	}
 
 	if (check_opts() < 0)
 	{
 		show_help("iap_stm32");
-		return 1;
+		return -1;
 	}
 
 	//
 	ImageFile * pFile = NULL;
 
-	if (_operation == _OP_READ || _operation == _OP_WRITE)
+	if (_operation == _OP_DUMP || _operation == _OP_WRITE)
 	{
 		if (_filetype == _FILE_HEX)
 			pFile = new HexFile;
 		else
 			pFile = new BinFile;
 
-		// _OP_WRITE -> read from file, _OP_READ -> write to file
+		// _OP_WRITE -> read from file, _OP_DUMP -> write to file
 		if (pFile->Open(_filename, _operation == _OP_WRITE ? 0 : 1) != ImageFile::PARSER_ERR_OK)
 		{
-			printf("file open failed : %s\n", _filename);
-			return 1;
+			Print("File open failed : %s\n", _filename);
+			return -1;
 		}
 	}
 
 	// 
 	Programmer prog;
+	int ret = -1;
 
 	if (prog.ConnectAndIdentify(_portnum, _baudrate, _databits, _parity, _stopbits, _handshake) == 0)
 	{
 		if (_operation == _OP_WRITE)
 		{
-			prog.WriteToMemory(pFile, _address);
+			ret = prog.Program(pFile, _address, _verify);
 		}
-		else if (_operation == _OP_READ)
+		else if (_operation == _OP_DUMP)
 		{
-			prog.ReadFromMemory(pFile, _address, _length);
+			ret = prog.Dump(pFile, _address, _length);
 		}
 		else if (_operation == _OP_ERASE)
 		{
-			prog.EraseMemory(_address, _length);
+			ret = prog.Erase(_address, _length);
 		}
 
+		prog.RunUserApplication();
 		prog.Disconnect();
 	}
 
@@ -507,125 +318,6 @@ int main(int argc, char * argv[])
 	if (pFile)
 		delete pFile;
 
-
-#if 0
-	//
-	char port[32];
-
-	wsprintf(port, "\\\\.\\COM%d", _portnum);
-	if (_serial.Open(port) == ERROR_SUCCESS)
-	{
-		_serial.Setup(_baudrate, _databits, _parity, _stopbits);
-		_serial.SetupHandshaking(_handshake);
-		_serial.SetupReadTimeouts(CSerial::EReadTimeoutNonblocking);
-
-		_serial.Write("\x02\xAA\x00\x55", 4);
-		Sleep(500);
-
-		CommandMaker maker;
-
-		maker.start(HCODE_IDENTIFY);
-		maker.finish();
-
-		_serial.Write(maker.get_data(), maker.get_size());
-
-		char szData[16];
-		DWORD dwRead;
-		DWORD dwTick = GetTickCount();
-		while (GetTickCount() - dwTick < 5000)
-		{
-			while (_serial.Read(&szData[0], sizeof(szData), &dwRead) == ERROR_SUCCESS && dwRead > 0)
-			{
-				for (DWORD i = 0; i < dwRead; i++)
-					printf("%02X ", (unsigned char)szData[i]);
-			}
-		}
-		_serial.Close();
-	}
-#endif
-
-
-#if 0
-	//
-	HexFile hexFile;
-
-	hexFile.Open("D:\\Work\\NosQuest\\eclipse-workspace\\SampleApp\\Debug\\SampleApp.hex", 0);
-
-	if (1)
-	{
-		char sz[1024];
-		uint8_t buf[1024];
-		uint32_t offset = 0;
-
-
-
-		while (1)
-		{
-			unsigned int len = sizeof(buf);
-			memset(buf, 0xFF, sizeof(buf));
-
-			if (hexFile.Read(buf, &len) != BinFile::PARSER_ERR_OK || len == 0)
-				break;
-
-			for (uint32_t i = 0; i < len; i += 16)
-			{
-				uint8_t * data = &buf[i];
-
-				sprintf_s(sz, sizeof(sz), "%08X   %02X %02X %02X %02X %02X %02X %02X %02X - %02X %02X %02X %02X %02X %02X %02X %02X",
-					offset,
-					data[0x00], data[0x01], data[0x02], data[0x03], data[0x04], data[0x05], data[0x06], data[0x07],
-					data[0x08], data[0x09], data[0x0A], data[0x0B], data[0x0C], data[0x0D], data[0x0E], data[0x0F]);
-				printf("    %s\n", sz);
-
-				offset += 16;
-			}
-		}
-	}
-
-
-	hexFile.Close();
-
-	//
-	BinFile binFile;
-
-	binFile.Open("D:\\Work\\NosQuest\\eclipse-workspace\\SampleApp\\Debug\\SampleApp.bin", 0);
-	printf("open: D:\\Work\\NosQuest\\eclipse-workspace\\SampleApp\\Debug\\SampleApp.bin\n");
-	printf("  size -> %d\n", binFile.getSize());
-
-	{
-		char sz[1024];
-		uint8_t buf[1024];
-		uint32_t offset = 0;
-
-		while (1)
-		{
-			unsigned int len = sizeof(buf);
-			memset(buf, 0xFF, sizeof(buf));
-			
-			if (binFile.Read(buf, &len) != BinFile::PARSER_ERR_OK || len == 0)
-			{
-				//printf("r = %d, len = %d\n", r, len);
-				break;
-			}
-
-			for (uint32_t i = 0; i < len; i += 16)
-			{
-				uint8_t * data = &buf[i];
-
-				sprintf_s(sz, sizeof(sz), "%08X   %02X %02X %02X %02X %02X %02X %02X %02X - %02X %02X %02X %02X %02X %02X %02X %02X",
-					offset,
-					data[0x00], data[0x01], data[0x02], data[0x03], data[0x04], data[0x05], data[0x06], data[0x07],
-					data[0x08], data[0x09], data[0x0A], data[0x0B], data[0x0C], data[0x0D], data[0x0E], data[0x0F]);
-				printf("    %s\n", sz);
-
-				offset += 16;
-			}
-		}
-	}
-
-	binFile.Close();
-#endif
-
-    return 0;
+    return ret;
 }
 

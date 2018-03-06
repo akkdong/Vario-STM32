@@ -208,3 +208,8 @@ ImageFile::ParserError HexFile::Write(void * data, unsigned int len)
 {
 	return PARSER_ERR_RDONLY;
 }
+
+void HexFile::Rewind()
+{
+	m_nOffset = 0;
+}

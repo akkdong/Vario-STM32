@@ -3,7 +3,7 @@
 //////////////////////////////////////////////////////////////////////////
 //
 
-#define STM32F10X_HD
+#define STM32F10X_MD
 
 #ifdef DEBUG
 #define ADDRESS_USER_APPLICATION			(0x08003000)
