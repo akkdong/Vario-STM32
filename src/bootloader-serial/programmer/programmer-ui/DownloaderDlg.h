@@ -4,7 +4,6 @@
 #pragma once
 
 #include "SerialWnd.h"
-//#include "Device.h"
 #include "Packet.h"
 
 #include <list>
@@ -66,7 +65,9 @@ public:
 
 protected:
 	virtual void		DoDataExchange(CDataExchange* pDX);
-	virtual void		OnPacketReceived(BPacket * pPacket);
+
+	virtual void		OnBPacketReceived(BPacket * pPacket);
+	virtual void		OnVResponseReceived(VResponse * pResponse);
 
 	void				SendCommand(uint8_t * pData, uint16_t nDataLen);
 
@@ -114,6 +115,7 @@ protected:
 	BPacketParser		m_Parser;
 	BPacketListener *	m_pPacketListener;
 
+	VLineBuffer			m_LineBuf;
 
 	// Serial Settings
 	CString				m_strPortName;

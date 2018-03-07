@@ -50,7 +50,7 @@ void CUploadDlg::OnCancel()
 	CDialogEx::OnCancel();
 }
 
-void CUploadDlg::OnPacketReceived(BPacket * pPacket)
+void CUploadDlg::OnBPacketReceived(BPacket * pPacket)
 {
 //	if (pPacket->code == DCODE_DUMP_MEM)
 //		m_wndHexEdit.SetData(pPacket->payloadLen - 4, pPacket->d.data);

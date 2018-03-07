@@ -151,6 +151,7 @@ public:
 	int32_t		getPacket(BPacket * packet);
 
 	int32_t		push(uint8_t c);
+	void		reset();
 
 private:
 	STATE		state;
@@ -172,7 +173,150 @@ private:
 class BPacketListener
 {
 public:
-	virtual void OnPacketReceived(BPacket * pPacket) = 0;
+	virtual void OnBPacketReceived(BPacket * pPacket) = 0;
+};
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// Variometer stubs
+
+enum VCMD_TYPE
+{
+	VCMD_INVALID			= 0,
+	VCMD_STATUS				= 'ST',
+	VCMD_RESET				= 'RS',
+	VCMD_SHUTDOWN			= 'SD',
+	VCMD_FIRMWARE_VERSION	= 'FV',
+	VCMD_MODE_SWITCH		= 'MS',
+	VCMD_SOUND_LEVEL		= 'SL',
+	VCMD_TONE_TEST			= 'TT',
+	VCMD_DUMP_SENSOR		= 'DS',
+	VCMD_DUMP_PROPERTY		= 'DP',
+	VCMD_DUMP_CONFIG		= 'DC',
+	VCMD_BLOCK_GPS_NMEA		= 'BG',
+	VCMD_BLOCK_VARIO_NMEA	= 'BV',
+	VCMD_FACTORY_RESET		= 'FR',
+	VCMD_RESTORE_PROPERTY	= 'RP',
+	VCMD_SAVE_PROPERTY		= 'SP',
+	VCMD_QUERY_PROPERTY		= 'QP',
+	VCMD_UPDATE_PROPERTY	= 'UP',
+	VCMD_ACCEL_CALIBRATION	= 'AC',
+	VCMD_RUN_BOOTLOADER		= 'RB',
+
+};
+
+
+//=======================================================================================
+//
+
+class VCommandMaker
+{
+public:
+	VCommandMaker();
+
+public:
+	void			start(uint16_t code);
+	int				finish();
+
+	int				push_number(long long n);
+	int				push_float(double d);
+
+	uint8_t *		get_data() { return &dataBuf[0]; }
+	uint16_t		get_size() { return dataLen; }
+
+private:
+	int				push_uchar(unsigned char c);
+
+private:
+	uint8_t			dataBuf[1024];
+	uint16_t		dataLen;
+};
+
+
+//=======================================================================================
+//
+
+class VResponse
+{
+protected:
+	VResponse();
+public:
+	VResponse(const VResponse & r);
+
+	enum DATA_TYPE
+	{
+		_NONE,
+		_NUMBER,
+		_FLOAT,
+		_STRING
+	};
+
+public:
+	//
+	int					toString(char * buf, int bufLen);
+
+	VCMD_TYPE			getCode() { return code;  }
+	DATA_TYPE			getDataType() { return dataType; }
+	int					getDataCount() { return dataCount; }
+	int64_t				getNumber(int index = 0);
+	double				getFloat(int index = 0);
+	int					getString(char * buf, int bufLen);
+
+	VResponse &			operator = (const VResponse & r);
+
+	//
+	static VResponse 	parse(const char * data, int dataLen);
+
+protected:
+	static DATA_TYPE	verifyType(const char * str);
+	static VCMD_TYPE	getCode(const char * str);
+
+protected:
+	VCMD_TYPE			code;
+	uint32_t			param;
+
+	DATA_TYPE			dataType;
+	int					dataCount;
+
+	union _DATA
+	{
+		int64_t		n[4];
+		double		d[4];
+		char		s[64];
+	} data;
+};
+
+
+//=======================================================================================
+//
+
+class VLineBuffer
+{
+public:
+	VLineBuffer();
+
+	enum STATE
+	{
+		_SOF,
+		_BODY,
+		_TERMINATE,
+		_DONE
+	};
+
+public:
+	int				push(char c); // return > 0 : ready a line
+	void			reset();
+
+	char *			getLine()		{ return &data[0]; }
+	int				getLineLength() { return dataLen; } // except new-line characters
+
+private:
+	STATE			state;
+
+	char			data[2048];
+	int				dataLen;
 };
 
 

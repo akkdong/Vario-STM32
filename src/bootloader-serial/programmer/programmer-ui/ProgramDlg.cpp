@@ -392,7 +392,7 @@ void CProgramDlg::OnExecute()
 	}
 }
 
-void CProgramDlg::OnPacketReceived(BPacket * pPacket)
+void CProgramDlg::OnBPacketReceived(BPacket * pPacket)
 {
 	// reset timer
 	if (m_nTimerID)

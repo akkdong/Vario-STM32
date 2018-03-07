@@ -25,7 +25,7 @@ public:
 
 protected:
 	virtual void		DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
-	virtual void		OnPacketReceived(BPacket * pPacket);
+	virtual void		OnBPacketReceived(BPacket * pPacket);
 
 	BOOL				UpdateData(BOOL bSaveAndValidate = TRUE);
 

@@ -434,7 +434,20 @@ LRESULT CDownloaderDlg::OnSerialMessage(WPARAM wParam, LPARAM lParam)
 			if (m_State == _CHECK_DEVICE || m_State == _IDENTIFY_DEVICE)
 			{
 				// parser incomming device response
-				// ...
+				if (m_LineBuf.push(ch))
+				{
+					VResponse r = VResponse::parse(m_LineBuf.getLine(), m_LineBuf.getLineLength());
+
+					if (r.getCode() != VCMD_INVALID)
+					{
+						CString str;
+						r.toString(str.GetBuffer(512), 512);
+						str.ReleaseBuffer();
+
+						Log(_VERBO, "  recv %4d bytes %s", str.GetLength(), GetDigest((void *)(LPCTSTR)str, str.GetLength()));
+						OnVResponseReceived(&r);
+					}
+				}
 			}
 			else if (m_State == _IDENTIFY_BOOTLOADER || m_State == _RUN)
 			{
@@ -497,6 +510,8 @@ void CDownloaderDlg::Connect(BOOL bDeviceCheck)
 				m_State = _CHECK_DEVICE;
 				m_SubState = 0;
 
+				m_LineBuf.reset();
+
 				// query device firmware version
 				SendFirmwareVersion();
 
@@ -507,6 +522,8 @@ void CDownloaderDlg::Connect(BOOL bDeviceCheck)
 				//
 				m_State = _IDENTIFY_DEVICE;
 				m_SubState = 0;
+
+				m_Parser.reset();
 
 				// query device firmware version
 				SendFirmwareVersion();
@@ -908,12 +925,12 @@ void CDownloaderDlg::Log(LogLevel level, LPCTSTR format, ...)
 void CDownloaderDlg::Route(BPacket * pPacket)
 {
 	if (m_pPacketListener)
-		m_pPacketListener->OnPacketReceived(pPacket);
+		m_pPacketListener->OnBPacketReceived(pPacket);
 	else
-		this->OnPacketReceived(pPacket);
+		this->OnBPacketReceived(pPacket);
 }
 
-void CDownloaderDlg::OnPacketReceived(BPacket * pPacket)
+void CDownloaderDlg::OnBPacketReceived(BPacket * pPacket)
 {
 	TRACE("> CODE : %02X\n", pPacket->code);
 	switch (pPacket->code)
@@ -961,6 +978,44 @@ void CDownloaderDlg::OnPacketReceived(BPacket * pPacket)
 			}
 		}
 		break;
+	}
+}
+
+void CDownloaderDlg::OnVResponseReceived(VResponse * pResponse)
+{
+	//
+	if (m_State == _CHECK_DEVICE || m_State == _IDENTIFY_DEVICE)
+	{
+		if (pResponse->getCode() == VCMD_FIRMWARE_VERSION)
+		{
+			//
+			KillTimer(m_nTimerID);
+			m_nTimerID = 0;
+
+			//
+			m_nFWVer = pResponse->getNumber(1);
+			UpdateData(FALSE);
+
+			//
+			Log(_INFO, "Device firmware version: 0x%04X", m_nFWVer);
+
+
+			if (m_State == _IDENTIFY_DEVICE)
+			{
+				//
+				SendRebootRequest();
+
+				//
+				m_State = _IDENTIFY_BOOTLOADER;
+				m_SubState = 0;
+				m_nTimerID = SetTimer(TIMER_IDENTIFY, 500, NULL);
+			}
+			else
+			{
+				//
+				Disconnect();
+			}
+		}
 	}
 }
 

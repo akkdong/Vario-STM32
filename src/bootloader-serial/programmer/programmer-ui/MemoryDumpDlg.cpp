@@ -78,7 +78,7 @@ void CMemoryDumpDlg::OnCancel()
 		CDialogEx::OnCancel();
 }
 
-void CMemoryDumpDlg::OnPacketReceived(BPacket * pPacket)
+void CMemoryDumpDlg::OnBPacketReceived(BPacket * pPacket)
 {
 	if (pPacket->code == DCODE_DUMP_MEM)
 	{
