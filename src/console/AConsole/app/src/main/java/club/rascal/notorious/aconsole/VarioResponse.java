@@ -147,32 +147,26 @@ public class VarioResponse {
     public static int verifyType(String str) {
         int type = DTYPE_NONE;
 
-        for (int i = 0; i < str.length(); i++) {
+        for (int i = 0; i < str.length() && type != DTYPE_STRING; i++) {
             int c = str.charAt(i);
 
-            if (c >= '0' && c <= '9') {
-                if (type == DTYPE_NONE)
-                    type = DTYPE_NUMBER;
-            }
-            else if (c == '.') {
-                if (type == DTYPE_NUMBER) {
-                    type = DTYPE_FLOAT;
-                }
-                else {
-                    type = DTYPE_STRING;
+            switch (type)  {
+                case DTYPE_NONE		:
+                    if (('0' <= c && c <= '9') || c == '-')
+                        type = DTYPE_NUMBER;
+                    else
+                        type = DTYPE_STRING;
                     break;
-                }
-            }
-            else if (c == '-') {
-                if (i > 0) {
-                    type = DTYPE_STRING;
+                case DTYPE_NUMBER	:
+                    if (c == '.')
+                        type = DTYPE_FLOAT;
+                    else if (c < '0' || '9' < c)
+                        type = DTYPE_STRING;
                     break;
-                }
-                // else ignore -> sign character must be first
-            }
-            else {
-                type = DTYPE_STRING;
-                break;
+                case DTYPE_FLOAT		:
+                    if (c < '0' || '9' < c)
+                        type = DTYPE_STRING;
+                    break;
             }
         }
 
@@ -199,12 +193,22 @@ public class VarioResponse {
                 int dataType = verifyType(tokens[2]);
 
                 for (int i = 1; i < dataCount; i++) {
-                    if (dataType != verifyType(tokens[2+i])) {
-                        dataType = DTYPE_STRING;
-                        dataCount = 1;
-                        break;
-                    }
+                    int type = verifyType(tokens[2+i]);
+
+                    // n+n->n, n+f->f, f+s->s
+                    if (dataType < type )
+                        dataType = type;
                 }
+
+                /*
+                for (int i = 0; i < dataCount; i++) {
+                    switch (dataType) {
+                        case DTYPE_NUMBER :
+                            res.mDataL
+                        case DTYPE_FLOAT :
+                        case DTYPE_STRING :
+                    }
+                 */
 
                 res.mDataCount = dataCount; // we treat first value only -> ignore others
                 res.mDataType = dataType;
@@ -227,6 +231,7 @@ public class VarioResponse {
                             sb.append(tokens[2+i]);
                         }
                         res.mDataS = sb.toString();
+                        res.mDataCount = 1;
                         break;
                 }
             }

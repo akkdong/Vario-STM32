@@ -440,11 +440,12 @@ LRESULT CDownloaderDlg::OnSerialMessage(WPARAM wParam, LPARAM lParam)
 
 					if (r.getCode() != VCMD_INVALID)
 					{
-						CString str;
-						r.toString(str.GetBuffer(512), 512);
-						str.ReleaseBuffer();
-
-						Log(_VERBO, "  recv %4d bytes %s", str.GetLength(), GetDigest((void *)(LPCTSTR)str, str.GetLength()));
+						//CString str;
+						//r.toString(str.GetBuffer(512), 512);
+						//str.ReleaseBuffer();
+						//
+						//Log(_VERBO, "  recv %4d bytes %s", str.GetLength(), GetDigest((void *)(LPCTSTR)str, str.GetLength()));
+						Log(_VERBO, "  recv [%4d bytes] %s", m_LineBuf.getLineLength(), GetDigest(m_LineBuf.getLine(), m_LineBuf.getLineLength()));
 						OnVResponseReceived(&r);
 					}
 				}
@@ -456,7 +457,7 @@ LRESULT CDownloaderDlg::OnSerialMessage(WPARAM wParam, LPARAM lParam)
 					BPacket * pPacket = new BPacket;
 					m_Parser.getPacket(pPacket);
 
-					Log(_VERBO, "  recv %4d bytes %s", pPacket->payloadLen + 5, GetDigest(pPacket));
+					Log(_VERBO, "  recv [%4d bytes] %s", pPacket->payloadLen + 5, GetDigest(pPacket));
 					Route(pPacket);
 
 					delete pPacket;
@@ -1021,7 +1022,7 @@ void CDownloaderDlg::OnVResponseReceived(VResponse * pResponse)
 
 void CDownloaderDlg::SendCommand(uint8_t * pData, uint16_t nDataLen)
 {
-	Log(_VERBO, "  send %4d bytes %s", nDataLen, GetDigest(pData, nDataLen));
+	Log(_VERBO, "  send [%4d bytes] %s", nDataLen, GetDigest(pData, nDataLen));
 
 	m_Serial.Write(pData, nDataLen);
 }
