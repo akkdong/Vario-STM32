@@ -437,9 +437,13 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			//mTime = strToNum(startPos);
 			break;
 		case 1 : // Latitude (DDMM.mmm)
+			// save latitude
+			mLatitude = strToFloat(startPos);
+			
 			// update IGC sentence if it's unlocked
 			if (! IS_SET(IGC_LOCKED))
 			{
+				#if 0
 				for(int i = 0, j = 0; i < IGC_SIZE_LATITUDE; i++, j++)
 				{
 					if ('0' <= mBuffer[startPos+j] && mBuffer[startPos+j] <= '9')
@@ -449,28 +453,36 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 					else
 						break;
 				}
+				#else
+				FixedLenDigit digit;
+			
+				digit.begin(floatToCoordi(mLatitude), IGC_SIZE_LATITUDE);
+				for (int i = 0; i < IGC_SIZE_LATITUDE /*digit.available()*/; i++)
+					mIGCSentence[IGC_OFFSET_LATITUDE+i] = digit.read();
+				#endif
 			}
-
-			// save latitude
-			mLatitude = strToFloat(startPos);
 			break;
 		case 2 : // Latitude (N or S)
-			// update IGC sentence if it's unlocked
-			if (! IS_SET(IGC_LOCKED))
-			{
-				if (mBuffer[startPos] != 'N' && mBuffer[startPos] != 'S')
-						break;
-				mIGCSentence[IGC_OFFSET_LATITUDE_] = mBuffer[startPos];
-			}
-			
 			// save latitude
 			if (mBuffer[startPos] != 'N')
 				mLatitude = -mLatitude; // south latitude is negative
-			break;
-		case 3 : // Longitude (DDDMM.mmm)
+			
 			// update IGC sentence if it's unlocked
 			if (! IS_SET(IGC_LOCKED))
 			{
+				//if (mBuffer[startPos] != 'N' && mBuffer[startPos] != 'S')
+				//		break;
+				mIGCSentence[IGC_OFFSET_LATITUDE_] = mBuffer[startPos];
+			}
+			break;
+		case 3 : // Longitude (DDDMM.mmmm)
+			// save longitude
+			mLongitude = strToFloat(startPos);
+			
+			// update IGC sentence if it's unlocked
+			if (! IS_SET(IGC_LOCKED))
+			{
+				#if 0
 				for(int i = 0, j = 0; i < IGC_SIZE_LONGITUDE; i++, j++)
 				{
 					if ('0' <= mBuffer[startPos+j] && mBuffer[startPos+j] <= '9')
@@ -480,23 +492,27 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 					else
 						break;
 				}
-			}
+				#else
+				FixedLenDigit digit;
 			
-			// save longitude
-			mLongitude = strToFloat(startPos);
+				digit.begin(floatToCoordi(mLongitude), IGC_SIZE_LONGITUDE);
+				for (int i = 0; i < IGC_SIZE_LONGITUDE /*digit.available()*/; i++)
+					mIGCSentence[IGC_OFFSET_LONGITUDE+i] = digit.read();
+				#endif
+			}			
 			break;
 		case 4 : // Longitude (E or W)
-			// update IGC sentence if it's unlocked
-			if (! IS_SET(IGC_LOCKED))
-			{
-				if (mBuffer[startPos] != 'W' && mBuffer[startPos] != 'E')
-						break;
-				mIGCSentence[IGC_OFFSET_LONGITUDE_] = mBuffer[startPos];
-			}
-			
 			// save longitude
 			if (mBuffer[startPos] != 'E')
 				mLongitude = -mLongitude; // west longitude is negative
+			
+			// update IGC sentence if it's unlocked
+			if (! IS_SET(IGC_LOCKED))
+			{
+				//if (mBuffer[startPos] != 'W' && mBuffer[startPos] != 'E')
+				//		break;
+				mIGCSentence[IGC_OFFSET_LONGITUDE_] = mBuffer[startPos];
+			}
 			break;
 		case 5 : // GPS Fix Quality (0 = Invalid, 1 = GPS fix, 2 = DGPS fix)
 			if (mBuffer[startPos] == '1' || mBuffer[startPos] == '2')
@@ -608,4 +624,13 @@ long NmeaParserEx::strToNum(int startPos)
 	}
 	
 	return value * sign;
+}
+
+long NmeaParserEx::floatToCoordi(float value)
+{
+	// DDDMM.mmmm -> DDDMMmmm (with round up)
+	long coordi = (long)value;
+	float temp = (value - coordi) * 1000.0f + 0.5f;
+	
+	return coordi * 1000 + (long)temp;
 }
