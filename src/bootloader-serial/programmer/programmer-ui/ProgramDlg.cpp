@@ -22,10 +22,10 @@ CProgramDlg::CProgramDlg(CDownloaderDlg * pParent)
 	, m_nState(_READY)
 	, m_pFirmware(NULL)
 {
-	m_bVerifyProgram = AfxGetApp()->GetProfileIntA(_T("ProgramSettings"), _T("Verify"), 1);
-	m_bRunAfterProgram = AfxGetApp()->GetProfileIntA(_T("ProgramSettings"), _T("Run"), 0);
+	m_bVerifyProgram = AfxGetApp()->GetProfileInt(_T("ProgramSettings"), _T("Verify"), 1);
+	m_bRunAfterProgram = AfxGetApp()->GetProfileInt(_T("ProgramSettings"), _T("Run"), 0);
 
-	m_strFilePath = AfxGetApp()->GetProfileStringA(_T("ProgramSettings"), _T("Path"), _T(""));
+	m_strFilePath = AfxGetApp()->GetProfileString(_T("ProgramSettings"), _T("Path"), _T(""));
 }
 
 CProgramDlg::~CProgramDlg()
@@ -67,7 +67,7 @@ void CProgramDlg::OnCancel()
 {
 	if (m_nState != _READY)
 	{
-		UINT nID = AfxMessageBox("Do you wants to stop programming & close this dialog", MB_ICONSTOP);
+		UINT nID = AfxMessageBox(_T("Do you wants to stop programming & close this dialog"), MB_ICONSTOP);
 
 		if (nID != IDOK)
 			return;
@@ -147,7 +147,7 @@ void CProgramDlg::RequestRun()
 	maker.start(HCODE_START);
 	maker.finish();
 
-	m_pDlgMain->Log(CDownloaderDlg::_INFO, "Jump to user application!");
+	m_pDlgMain->Log(CDownloaderDlg::_INFO, _T("Jump to user application!"));
 	m_pDlgMain->SendCommand(maker.get_data(), maker.get_size());
 }
 
@@ -162,7 +162,7 @@ void CProgramDlg::OnBrowse()
 	{
 		UpdateData(TRUE);
 		m_strFilePath = dlg.GetPathName();
-		AfxGetApp()->WriteProfileStringA(_T("ProgramSettings"), _T("Path"), m_strFilePath);
+		AfxGetApp()->WriteProfileString(_T("ProgramSettings"), _T("Path"), m_strFilePath);
 		UpdateData(FALSE);
 	}
 }
@@ -192,7 +192,8 @@ BOOL CProgramDlg::LoadFile(LPCTSTR lpszFile)
 	else
 		pImageFile = new BinFile;
 
-	if (pImageFile->Open(strFile, 0) == ImageFile::PARSER_ERR_OK)
+	USES_CONVERSION;
+	if (pImageFile->Open(T2A(strFile), 0) == ImageFile::PARSER_ERR_OK)
 	{
 		m_nFileSize = (uint32_t)pImageFile->getSize();
 		m_nProgramSize = (m_nFileSize + PAGE_SIZE - 1) / PAGE_SIZE * PAGE_SIZE;
@@ -218,7 +219,7 @@ void CProgramDlg::EnableControls()
 	GetDlgItem(IDC_VERIFY_PROGRAM)->EnableWindow(m_nState == _READY ? TRUE : FALSE);
 	GetDlgItem(IDC_RUN_PROGRAM)->EnableWindow(m_nState == _READY ? TRUE : FALSE);
 
-	GetDlgItem(IDC_START)->SetWindowTextA(m_nState == _READY ? "Start" : "Stop");
+	GetDlgItem(IDC_START)->SetWindowText(m_nState == _READY ? _T("Start") : _T("Stop"));
 }
 
 void CProgramDlg::Cleanup()
@@ -238,14 +239,14 @@ void CProgramDlg::OnStart()
 
 		AfxGetApp()->WriteProfileInt(_T("ProgramSettings"), _T("Verify"), m_bVerifyProgram);
 		AfxGetApp()->WriteProfileInt(_T("ProgramSettings"), _T("Run"), m_bRunAfterProgram);
-		AfxGetApp()->WriteProfileStringA(_T("ProgramSettings"), _T("Path"), m_strFilePath);
+		AfxGetApp()->WriteProfileString(_T("ProgramSettings"), _T("Path"), m_strFilePath);
 
 		m_strFilePath.TrimLeft();
 		m_strFilePath.TrimRight();
 
 		if (m_strFilePath.IsEmpty() || !FileExist(m_strFilePath))
 		{
-			AfxMessageBox("Enter firmware file path", MB_ICONSTOP);
+			AfxMessageBox(_T("Enter firmware file path"), MB_ICONSTOP);
 			GotoDlgCtrl(GetDlgItem(IDC_FILE_PATH));
 		}
 		else
@@ -267,7 +268,7 @@ void CProgramDlg::OnStart()
 				//
 				PostMessage(WM_COMMAND, IDC_EXECUTE);
 				EnableControls();
-				m_pDlgMain->Log(CDownloaderDlg::_INFO, "Start programming: total %d page(s)", m_nTotalPage);
+				m_pDlgMain->Log(CDownloaderDlg::_INFO, _T("Start programming: total %d page(s)"), m_nTotalPage);
 			}
 		}
 	}
@@ -291,7 +292,7 @@ void CProgramDlg::OnExecute()
 {
 	if (m_nState == _RUN)
 	{
-		m_pDlgMain->Log(CDownloaderDlg::_INFO, "Erase from 0x%08X to 0x%08X", m_nProgramStart, m_nProgramStart + (m_nTotalPage - 1) * PAGE_SIZE);
+		m_pDlgMain->Log(CDownloaderDlg::_INFO, _T("Erase from 0x%08X to 0x%08X"), m_nProgramStart, m_nProgramStart + (m_nTotalPage - 1) * PAGE_SIZE);
 		RequestErase(m_nProgramStart, m_nProgramStart + (m_nTotalPage - 1) * PAGE_SIZE); // or m_nProgramStart ~ m_nProgramEnd - PAGE_SIZE
 		SetTimer(TIMER_CHECK_RESPONSE, 2000, NULL);
 
@@ -314,7 +315,7 @@ void CProgramDlg::OnExecute()
 		{
 			if (m_nActiveBlock < PROGRAM_COUNT)
 			{
-				m_pDlgMain->Log(CDownloaderDlg::_INFO, "Program 0x%08X [%3d/%3d]",
+				m_pDlgMain->Log(CDownloaderDlg::_INFO, _T("Program 0x%08X [%3d/%3d]"),
 							m_nProgramStart + m_nActivePage * PAGE_SIZE, 
 							m_nActivePage * (PAGE_SIZE / PROGRAM_SIZE) + (m_nActiveBlock + 1),
 							m_nTotalPage * (PAGE_SIZE / PROGRAM_SIZE));
@@ -355,7 +356,7 @@ void CProgramDlg::OnExecute()
 		{
 			if (m_nActiveBlock < PROGRAM_COUNT)
 			{
-				m_pDlgMain->Log(CDownloaderDlg::_INFO, "Verify 0x%08X [%3d/%3d]",
+				m_pDlgMain->Log(CDownloaderDlg::_INFO, _T("Verify 0x%08X [%3d/%3d]"),
 					m_nProgramStart + m_nActivePage * PAGE_SIZE,
 					m_nActivePage * (PAGE_SIZE / PROGRAM_SIZE) + (m_nActiveBlock + 1),
 					m_nTotalPage * (PAGE_SIZE / PROGRAM_SIZE));
@@ -381,12 +382,12 @@ void CProgramDlg::OnExecute()
 	}
 	else if (m_nState == _DONE)
 	{
-		m_pDlgMain->Log(CDownloaderDlg::_INFO, "Complete programming!");
+		m_pDlgMain->Log(CDownloaderDlg::_INFO, _T("Complete programming!"));
 
 		if (m_bRunAfterProgram)
 			RequestRun();
 		else
-			AfxMessageBox("Done!!", MB_ICONINFORMATION);
+			AfxMessageBox(_T("Complete programming!"), MB_ICONINFORMATION);
 
 		CDialogEx::EndDialog(m_bRunAfterProgram ? IDYES : IDOK);
 	}
@@ -488,28 +489,28 @@ LPCTSTR CProgramDlg::GetErrorString(uint16_t error)
 	switch (error)
 	{
 	case ERROR_OK				: // (0)
-		return "OK";
+		return _T("OK");
 	case ERROR_GENERIC			: // (0x8000)
-		return "Generic";
+		return _T("Generic");
 	case ERROR_OUT_OF_MEMORY	: // (0x8001)
-		return "Out of Memory";
+		return _T("Out of Memory");
 	case ERROR_FLASH_BUSY		: // (0x8002)
-		return "Flash Busy";
+		return _T("Flash Busy");
 	case ERROR_FLASH_ERROR_PG	: // (0x8003)
-		return "Flash Proggram Error";
+		return _T("Flash Proggram Error");
 	case ERROR_FLASH_ERROR_WRP	: // (0x8004)
-		return "Flash Write Protect Error";
+		return _T("Flash Write Protect Error");
 	case ERROR_FLASH_TIMEOUT	: // (0x8005)
-		return "Flash Timeout";
+		return _T("Flash Timeout");
 	case ERROR_MEMORY_COLLAPSE	: // (0xC001)
-		return "Flash Memory Collapse";
+		return _T("Flash Memory Collapse");
 	case ERROR_RESPONSE_TIMEOUT	: // (0xC002)
-		return "Response Timeout";
+		return _T("Response Timeout");
 	case ERROR_INVALID_PARAM	: // (0xC003)
-		return "Invalid Parameter";
+		return _T("Invalid Parameter");
 	}
 
-	return "Unknown";
+	return _T("Unknown ERROR");
 }
 
 LRESULT CProgramDlg::OnError(WPARAM wParam, LPARAM lParam)
