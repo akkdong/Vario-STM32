@@ -204,14 +204,14 @@ CDownloaderDlg::CDownloaderDlg(CWnd* pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
-	m_sPortNum = AfxGetApp()->GetProfileIntA(_T("SerialSettings"), _T("PortNum"), 1);
-	m_sBaudRate = (CSerial::EBaudrate)AfxGetApp()->GetProfileIntA(_T("SerialSettings"), _T("BaudRate"), CSerial::EBaud57600);
-	m_sDataBits = (CSerial::EDataBits)AfxGetApp()->GetProfileIntA(_T("SerialSettings"), _T("DataBits"), CSerial::EData8);
-	m_sParity = (CSerial::EParity)AfxGetApp()->GetProfileIntA(_T("SerialSettings"), _T("Parity"), CSerial::EParNone);
-	m_sStopBits = (CSerial::EStopBits)AfxGetApp()->GetProfileIntA(_T("SerialSettings"), _T("StopBits"), CSerial::EStop1);
-	m_sHandshake = (CSerial::EHandshake)AfxGetApp()->GetProfileIntA(_T("SerialSettings"), _T("Handshake"), CSerial::EHandshakeOff);
+	m_sPortNum = AfxGetApp()->GetProfileInt(_T("SerialSettings"), _T("PortNum"), 1);
+	m_sBaudRate = (CSerial::EBaudrate)AfxGetApp()->GetProfileInt(_T("SerialSettings"), _T("BaudRate"), CSerial::EBaud57600);
+	m_sDataBits = (CSerial::EDataBits)AfxGetApp()->GetProfileInt(_T("SerialSettings"), _T("DataBits"), CSerial::EData8);
+	m_sParity = (CSerial::EParity)AfxGetApp()->GetProfileInt(_T("SerialSettings"), _T("Parity"), CSerial::EParNone);
+	m_sStopBits = (CSerial::EStopBits)AfxGetApp()->GetProfileInt(_T("SerialSettings"), _T("StopBits"), CSerial::EStop1);
+	m_sHandshake = (CSerial::EHandshake)AfxGetApp()->GetProfileInt(_T("SerialSettings"), _T("Handshake"), CSerial::EHandshakeOff);
 
-	m_bVerbo = AfxGetApp()->GetProfileIntA(_T("LogSettings"), _T("Verbo"), 0);
+	m_bVerbo = AfxGetApp()->GetProfileInt(_T("LogSettings"), _T("Verbo"), 0);
 
 }
 
@@ -377,7 +377,7 @@ void CDownloaderDlg::OnTimer(UINT nIDEvent)
 
 		// no reponse!!
 		::MessageBeep(-1);
-		Log(_INFO, "Device not reponse!");
+		Log(_INFO, _T("Device not reponse!"));
 
 		Disconnect();
 	}
@@ -388,7 +388,7 @@ void CDownloaderDlg::OnTimer(UINT nIDEvent)
 
 		// no reponse!!
 		::MessageBeep(-1);
-		Log(_INFO, "Device not reponse!");
+		Log(_INFO, _T("Device not reponse!"));
 
 		// continue
 		SendRebootRequest();
@@ -412,7 +412,7 @@ void CDownloaderDlg::OnTimer(UINT nIDEvent)
 
 			// no reponse!!
 			::MessageBeep(-1);
-			Log(_INFO, "Bootloader not reponse!!");
+			Log(_INFO, _T("Bootloader not reponse!!"));
 
 			Disconnect();
 		}
@@ -445,7 +445,7 @@ LRESULT CDownloaderDlg::OnSerialMessage(WPARAM wParam, LPARAM lParam)
 						//str.ReleaseBuffer();
 						//
 						//Log(_VERBO, "  recv %4d bytes %s", str.GetLength(), GetDigest((void *)(LPCTSTR)str, str.GetLength()));
-						Log(_VERBO, "  recv [%4d bytes] %s", m_LineBuf.getLineLength(), GetDigest(m_LineBuf.getLine(), m_LineBuf.getLineLength()));
+						Log(_VERBO, _T("  recv [%4d bytes] %s"), m_LineBuf.getLineLength(), GetDigest(m_LineBuf.getLine(), m_LineBuf.getLineLength()));
 						OnVResponseReceived(&r);
 					}
 				}
@@ -457,7 +457,7 @@ LRESULT CDownloaderDlg::OnSerialMessage(WPARAM wParam, LPARAM lParam)
 					BPacket * pPacket = new BPacket;
 					m_Parser.getPacket(pPacket);
 
-					Log(_VERBO, "  recv [%4d bytes] %s", pPacket->payloadLen + 5, GetDigest(pPacket));
+					Log(_VERBO, _T("  recv [%4d bytes] %s"), pPacket->payloadLen + 5, GetDigest(pPacket));
 					Route(pPacket);
 
 					delete pPacket;
@@ -467,7 +467,7 @@ LRESULT CDownloaderDlg::OnSerialMessage(WPARAM wParam, LPARAM lParam)
 	}
 	else if (eEvent & CSerial::EEventSend)
 	{
-		TRACE("Last character on output was sent");
+		TRACE(_T("Last character on output was sent"));
 	}
 
 	return 0L;
@@ -503,7 +503,7 @@ void CDownloaderDlg::Connect(BOOL bDeviceCheck)
 
 		if ((lResult = OpenSerial(m_strPortName, m_sBaudRate, m_sDataBits, m_sParity, m_sStopBits, m_sHandshake)) == ERROR_SUCCESS)
 		{
-			Log(_INFO, "Open serial port(COM%d)", m_sPortNum);
+			Log(_INFO, _T("Open serial port(COM%d)"), m_sPortNum);
 
 			if (bDeviceCheck)
 			{
@@ -537,7 +537,7 @@ void CDownloaderDlg::Connect(BOOL bDeviceCheck)
 		}
 		else
 		{
-			Log(_INFO, "Serial port open failed: %X", lResult);
+			Log(_INFO, _T("Serial port open failed: %X"), lResult);
 
 			ShowLastError(_T("Serial port open"), lResult);
 		}
@@ -570,17 +570,17 @@ void CDownloaderDlg::UpdateTitle()
 	if (m_State != _READY)
 	{
 		int b = 0, d = 0;
-		char p = ' ';
-		char * s = "";
+		TCHAR p = _T(' ');
+		TCHAR * s = _T("");
 
 		switch (m_sBaudRate)
 		{
-		case CSerial::EBaud9600: b = 9600;		break;
-		case CSerial::EBaud14400: b = 14400;	break;
-		case CSerial::EBaud19200: b = 19200;	break;
-		case CSerial::EBaud38400: b = 38400;	break;
-		case CSerial::EBaud56000: b = 56000;	break;
-		case CSerial::EBaud57600: b = 57600;	break;
+		case CSerial::EBaud9600:	b = 9600;	break;
+		case CSerial::EBaud14400:	b = 14400;	break;
+		case CSerial::EBaud19200:	b = 19200;	break;
+		case CSerial::EBaud38400:	b = 38400;	break;
+		case CSerial::EBaud56000:	b = 56000;	break;
+		case CSerial::EBaud57600:	b = 57600;	break;
 		case CSerial::EBaud115200: b = 115200;	break;
 		}
 
@@ -594,29 +594,29 @@ void CDownloaderDlg::UpdateTitle()
 
 		switch (m_sParity)
 		{
-		case CSerial::EParNone: p = 'N'; break;
-		case CSerial::EParOdd: p = 'O'; break;
-		case CSerial::EParEven: p = 'E'; break;
-		case CSerial::EParMark: p = 'M'; break;
-		case CSerial::EParSpace: p = 'S'; break;
+		case CSerial::EParNone:		p = _T('N'); break;
+		case CSerial::EParOdd:		p = _T('O'); break;
+		case CSerial::EParEven:		p = _T('E'); break;
+		case CSerial::EParMark:		p = _T('M'); break;
+		case CSerial::EParSpace:	p = _T('S'); break;
 		}
 
 		switch (m_sStopBits)
 		{
-		case CSerial::EStop1: s = "1";	break;
-		case CSerial::EStop1_5: s = "1.5"; break;
-		case CSerial::EStop2: s = "2";	break;
+		case CSerial::EStop1:	s = _T("1");	break;
+		case CSerial::EStop1_5: s = _T("1.5");	break;
+		case CSerial::EStop2:	s = _T("2");	break;
 		}
 
 		strTitle.Format(_T("STM32F1 Programmer - COM%d:%d,%d,%c,%s"), m_sPortNum, b, d, p, s);
 	}
 	else
 	{
-		strTitle.Format("STM32F1 Programmer - Unconnected!");
+		strTitle.Format(_T("STM32F1 Programmer - Unconnected!"));
 	}
 
 	//
-	GetDlgItem(IDC_CONNECT)->SetWindowTextA((m_State != _READY ? _T("Disconnect") : _T("Connect")));
+	GetDlgItem(IDC_CONNECT)->SetWindowText((m_State != _READY ? _T("Disconnect") : _T("Connect")));
 	//
 	SetWindowText(strTitle);
 }
@@ -699,9 +699,9 @@ BOOL CDownloaderDlg::UpdateData(BOOL bSaveAndValidate)
 		}
 
 		//
-		m_strDevID.Format("%04X", m_nDevID);
-		m_strBootVer.Format("%04X", m_nBootVer);
-		m_strFWVer.Format("%04X", m_nFWVer);
+		m_strDevID.Format(_T("%04X"), m_nDevID);
+		m_strBootVer.Format(_T("%04X"), m_nBootVer);
+		m_strFWVer.Format(_T("%04X"), m_nFWVer);
 
 		//
 		UpdateTitle();
@@ -807,7 +807,7 @@ void CDownloaderDlg::CloseSerial()
 		m_nTimerID = 0;
 	}
 
-	Log(_INFO, "Close serial port!");
+	Log(_INFO, _T("Close serial port!"));
 }
 
 void CDownloaderDlg::OnDownload()
@@ -867,7 +867,7 @@ void CDownloaderDlg::SendFirmwareVersion()
 	//	return;
 
 	//
-	Log(_INFO, "Query device firmware version.");
+	Log(_INFO, _T("Query device firmware version."));
 	this->SendCommand((uint8_t *)"#FV\r\n", 5);
 }
 
@@ -877,7 +877,7 @@ void CDownloaderDlg::SendRebootRequest()
 	//	return;
 
 	// "#RB\r\n"
-	Log(_INFO, "Request device reboot to enter bootloader mode");
+	Log(_INFO, _T("Request device reboot to enter bootloader mode"));
 	this->SendCommand((uint8_t *)"#RB\r\n", 5);
 }
 
@@ -893,7 +893,7 @@ void CDownloaderDlg::SendIdentify()
 	maker.finish();
 
 	//
-	Log(_INFO, "Send bootloader identify command: #%d", m_SubState);
+	Log(_INFO, _T("Send bootloader identify command: #%d"), m_SubState);
 	this->SendCommand(maker.get_data(), maker.get_size());
 }
 
@@ -915,7 +915,7 @@ void CDownloaderDlg::Log(LogLevel level, LPCTSTR format, ...)
 		va_list	va;
 
 		va_start(va, format);
-		vsprintf_s(buf, format, va);
+		_vstprintf_s(buf, format, va);
 		va_end(va);
 
 		m_wndHistory.InsertItem(m_wndHistory.GetItemCount(), buf);
@@ -933,12 +933,12 @@ void CDownloaderDlg::Route(BPacket * pPacket)
 
 void CDownloaderDlg::OnBPacketReceived(BPacket * pPacket)
 {
-	TRACE("> CODE : %02X\n", pPacket->code);
+	TRACE(_T("> CODE : %02X\n"), pPacket->code);
 	switch (pPacket->code)
 	{
 	case DCODE_IDENTIFY:
-		TRACE("    Dev-ID: %04X\n", pPacket->i.devId);
-		TRACE("    F/W ver: %04X\n", pPacket->i.fwVer);
+		TRACE(_T("    Dev-ID: %04X\n"), pPacket->i.devId);
+		TRACE(_T("    F/W ver: %04X\n"), pPacket->i.fwVer);
 
 		if (m_State == _IDENTIFY_BOOTLOADER)
 		{
@@ -950,32 +950,32 @@ void CDownloaderDlg::OnBPacketReceived(BPacket * pPacket)
 			KillTimer(m_nTimerID);
 			UpdateData(FALSE);
 
-			Log(_INFO, "Device identified!");
+			Log(_INFO, _T("Device identified!"));
 		}
 		break;
 	case DCODE_ACK:
 		break;
 	case DCODE_NACK:
-		TRACE("    REASON: %04X", pPacket->e.error);
+		TRACE(_T("    REASON: %04X"), pPacket->e.error);
 		break;
 	case DCODE_DUMP_MEM:
 		//uint32_t addr = ((uint32_t)res.data[3] << 24) + ((uint32_t)res.data[2] << 16) + ((uint32_t)res.data[1] << 8) + ((uint32_t)res.data[0]);
-		//TRACE("> ADDR : %08X\n", addr);
-		TRACE("    ADDR: %08X\n", pPacket->d.addr);
+		//TRACE(_T("> ADDR : %08X\n"), addr);
+		TRACE(_T("    ADDR: %08X\n"), pPacket->d.addr);
 
 		{
-			char sz[3 * 16 + 256];
+			TCHAR sz[3 * 16 + 256];
 
 			for (int n = 4; n < pPacket->payloadLen; n += 16)
 			{
 				uint8_t * data = &pPacket->data[n];
 				int i = 0;
 
-				sprintf_s(sz, sizeof(sz), "%08X   %02X %02X %02X %02X %02X %02X %02X %02X - %02X %02X %02X %02X %02X %02X %02X %02X\n",
+				_stprintf_s(sz, sizeof(sz), _T("%08X   %02X %02X %02X %02X %02X %02X %02X %02X - %02X %02X %02X %02X %02X %02X %02X %02X\n"),
 					n - 4,
 					data[0x00], data[0x01], data[0x02], data[0x03], data[0x04], data[0x05], data[0x06], data[0x07],
 					data[0x08], data[0x09], data[0x0A], data[0x0B], data[0x0C], data[0x0D], data[0x0E], data[0x0F]);
-				TRACE("    %s", sz);
+				TRACE(_T("    %s"), sz);
 			}
 		}
 		break;
@@ -994,11 +994,11 @@ void CDownloaderDlg::OnVResponseReceived(VResponse * pResponse)
 			m_nTimerID = 0;
 
 			//
-			m_nFWVer = pResponse->getNumber(1);
+			m_nFWVer = (uint16_t)pResponse->getNumber(1);
 			UpdateData(FALSE);
 
 			//
-			Log(_INFO, "Device firmware version: 0x%04X", m_nFWVer);
+			Log(_INFO, _T("Device firmware version: 0x%04X"), m_nFWVer);
 
 
 			if (m_State == _IDENTIFY_DEVICE)
@@ -1022,7 +1022,7 @@ void CDownloaderDlg::OnVResponseReceived(VResponse * pResponse)
 
 void CDownloaderDlg::SendCommand(uint8_t * pData, uint16_t nDataLen)
 {
-	Log(_VERBO, "  send [%4d bytes] %s", nDataLen, GetDigest(pData, nDataLen));
+	Log(_VERBO, _T("  send [%4d bytes] %s"), nDataLen, GetDigest(pData, nDataLen));
 
 	m_Serial.Write(pData, nDataLen);
 }
@@ -1043,7 +1043,7 @@ CString CDownloaderDlg::GetDigest(BPacket * pPacket)
 	uint8_t * data = (uint8_t *)&pPacket->data[0];
 	int len = (pPacket->payloadLen < 6 ? pPacket->payloadLen : 6);
 	for (int i = 0; i < len; i++)
-		ptr += wsprintf(ptr, "%02X ", data[i]);
+		ptr += wsprintf(ptr, _T("%02X "), data[i]);
 	if (len < pPacket->payloadLen)
 		ptr += wsprintf(ptr, _T("... "));
 	wsprintf(ptr, _T("}"));
@@ -1063,7 +1063,7 @@ CString CDownloaderDlg::GetDigest(void * pData, uint16_t nDataLen)
 
 	ptr += wsprintf(ptr, _T("{ "));
 	for (int i = 0; i < len; i++)
-		ptr += wsprintf(ptr, "%02X ", data[i]);
+		ptr += wsprintf(ptr, _T("%02X "), data[i]);
 	if (len < nDataLen)
 		ptr += wsprintf(ptr, _T("... "));
 	wsprintf(ptr, _T("}"));

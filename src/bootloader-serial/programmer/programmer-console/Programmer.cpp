@@ -8,7 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////////////
 //
 
-extern int Print(LPCTSTR format, ...);
+extern int Print(LPCSTR format, ...);
 
 
 
@@ -34,11 +34,11 @@ Programmer::Programmer()
 int Programmer::ConnectAndIdentify(int portNum, CSerial::EBaudrate baudRate, CSerial::EDataBits dataBits, CSerial::EParity parity, CSerial::EStopBits stopBits, CSerial::EHandshake handshake)
 {
 	//
-	char port[32];
+	TCHAR port[32];
 	BPacket packet;
 
 	Print("> Open serial port COM%d: ", portNum);
-	wsprintf(port, "\\\\.\\COM%d", portNum);
+	_stprintf_s(port, _T("\\\\.\\COM%d"), portNum);
 	if (mSerial.Open(port) != ERROR_SUCCESS)
 	{
 		Print("FAIL\n\n");

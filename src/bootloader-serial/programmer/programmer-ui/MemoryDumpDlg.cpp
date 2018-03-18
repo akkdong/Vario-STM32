@@ -13,8 +13,8 @@ CMemoryDumpDlg::CMemoryDumpDlg(CDownloaderDlg * pParent)
 	, m_nAddrRead((uint32_t)-1)
 	, m_nTimerID(0)
 {
-	m_nAddress = AfxGetApp()->GetProfileIntA(_T("DumpSettings"), _T("Address"), ADDRESS_USER_APPLICATION);
-	m_nReadSize = AfxGetApp()->GetProfileIntA(_T("DumpSettings"), _T("Size"), 0x1000);
+	m_nAddress = AfxGetApp()->GetProfileInt(_T("DumpSettings"), _T("Address"), ADDRESS_USER_APPLICATION);
+	m_nReadSize = AfxGetApp()->GetProfileInt(_T("DumpSettings"), _T("Size"), 0x1000);
 }
 
 
@@ -93,10 +93,10 @@ void CMemoryDumpDlg::OnBPacketReceived(BPacket * pPacket)
 	}
 	else //if (pPacket->code == DCODE_NACK)
 	{
-		m_pDlgMain->Log(CDownloaderDlg::_INFO, "Read memory read failed! : error code(0x%04X)", pPacket->e.error);
+		m_pDlgMain->Log(CDownloaderDlg::_INFO, _T("Read memory read failed! : error code(0x%04X)"), pPacket->e.error);
 
 		CString str;
-		str.Format("Read memory failed! : error code(0x%04X)", pPacket->e.error);
+		str.Format(_T("Read memory failed! : error code(0x%04X)"), pPacket->e.error);
 		AfxMessageBox(str, MB_ICONSTOP);
 
 		//
@@ -135,7 +135,7 @@ void CMemoryDumpDlg::RequestMemory()
 		uint32_t size = min((m_nAddress + m_nReadSize) - m_nAddrRead, PROGRAM_SIZE);
 		RequestMemory(m_nAddrRead, size);
 
-		m_pDlgMain->Log(CDownloaderDlg::_INFO, "Read memory at 0x%08X-[0x%04X]", m_nAddrRead, size);
+		m_pDlgMain->Log(CDownloaderDlg::_INFO, _T("Read memory at 0x%08X-[0x%04X]"), m_nAddrRead, size);
 	}
 	else
 	{
@@ -143,8 +143,8 @@ void CMemoryDumpDlg::RequestMemory()
 		EnableControls(TRUE);
 		m_nAddrRead = (uint32_t)-1;
 
-		m_pDlgMain->Log(CDownloaderDlg::_INFO, "Read Complete!");
-		AfxMessageBox("Read Complete!", MB_ICONINFORMATION);
+		m_pDlgMain->Log(CDownloaderDlg::_INFO, _T("Read Complete!"));
+		AfxMessageBox(_T("Read Complete!"), MB_ICONINFORMATION);
 	}
 }
 
@@ -167,7 +167,7 @@ void CMemoryDumpDlg::OnKillFocusAddress()
 	TCHAR * end = NULL;
 
 	//
-	m_wndAddress.GetWindowTextA(str);
+	m_wndAddress.GetWindowText(str);
 
 	//
 	if (_tcsncmp(str, _T("0x"), 2) == 0)
@@ -201,7 +201,7 @@ void CMemoryDumpDlg::OnKillFocusSize()
 	TCHAR * end = NULL;
 
 	//
-	m_wndSize.GetWindowTextA(str);
+	m_wndSize.GetWindowText(str);
 
 	//
 	if (_tcsncmp(str, _T("0x"), 2) == 0)
@@ -238,7 +238,7 @@ void CMemoryDumpDlg::OnSave()
 {
 	if (m_wndHexEdit.GetDataLength() > 0)
 	{
-		CFileDialog dlg(FALSE, "bin", NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, "Binary files (*.bin)|*.bin|All files (*.*)|*.*||");
+		CFileDialog dlg(FALSE, _T("bin"), NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, _T("Binary files (*.bin)|*.bin|All files (*.*)|*.*||"));
 
 		if (dlg.DoModal() == IDOK)
 		{
@@ -256,18 +256,18 @@ void CMemoryDumpDlg::OnSave()
 					file.Close();
 
 					CString str;
-					str.Format("Save image to file: %s", dlg.GetPathName());
+					str.Format(_T("Save image to file: %s"), dlg.GetPathName());
 					AfxMessageBox(str, MB_ICONINFORMATION);
 				}
 				else
 				{
-					AfxMessageBox("Memory allocation failed!", MB_ICONSTOP);
+					AfxMessageBox(_T("Memory allocation failed!"), MB_ICONSTOP);
 				}
 			}
 			else
 			{
 				CString str;
-				str.Format("File open failed: %s", dlg.GetPathName());
+				str.Format(_T("File open failed: %s"), dlg.GetPathName());
 				AfxMessageBox(str, MB_ICONSTOP);
 			}
 		}

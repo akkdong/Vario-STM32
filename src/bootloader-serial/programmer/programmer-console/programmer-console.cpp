@@ -10,9 +10,9 @@
 ////////////////////////////////////////////////////////////////////////////////////
 //
 
-int Print(LPCTSTR format, ...)
+int Print(LPCSTR format, ...)
 {
-	TCHAR buf[2048];
+	CHAR buf[2048];
 	va_list	va;
 
 	va_start(va, format);
