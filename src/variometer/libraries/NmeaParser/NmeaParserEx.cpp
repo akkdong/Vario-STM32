@@ -305,7 +305,7 @@ int NmeaParserEx::readIGC()
 		
 		int ch = mIGCSentence[mIGCNext++];
 
-		// if it reachs end of sentence, state & buffer must be cleared.
+		// if it reaches end of sentence, state & buffer must be cleared.
 		// however, if it's parsing state, let the parser clear it.
 		if (mIGCNext == MAX_IGC_SENTENCE && ! IS_SET(PARSE_GGA)) // end of sentence
 		{
