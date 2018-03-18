@@ -11,7 +11,7 @@ class CDownloaderDlg;
 ////////////////////////////////////////////////////////////////////////////////////
 //
 
-class CUploadDlg : public CDialogEx, protected PacketListener
+class CUploadDlg : public CDialogEx, protected BPacketListener
 {
 public:
 	CUploadDlg(CDownloaderDlg * pParent);
@@ -24,7 +24,7 @@ public:
 
 protected:
 	virtual void		DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
-	virtual void		OnPacketReceived(PACKET * pPacket);
+	virtual void		OnBPacketReceived(BPacket * pPacket);
 
 	BOOL				UpdateData(BOOL bSaveAndValidate = TRUE);
 

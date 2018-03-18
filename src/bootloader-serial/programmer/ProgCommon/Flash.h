@@ -3,7 +3,7 @@
 //////////////////////////////////////////////////////////////////////////
 //
 
-#define STM32F10X_HD
+#define STM32F10X_MD
 
 #ifdef DEBUG
 #define ADDRESS_USER_APPLICATION			(0x08003000)
@@ -32,5 +32,5 @@
 // Compute the FLASH upload image size
 #define FLASH_IMAGE_SIZE					(uint32_t) (FLASH_SIZE - (ADDRESS_USER_APPLICATION - ADDRESS_FLASH))
 
-#define PROGRAM_SIZE						(0x400)	// 256 bytes
+#define PROGRAM_SIZE						(0x400)	// 1024 bytes
 #define PROGRAM_COUNT						(PAGE_SIZE / PROGRAM_SIZE)

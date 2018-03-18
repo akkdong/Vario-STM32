@@ -130,7 +130,7 @@ tools.stm32_iap.path.linux={runtime.hardware.path}/tools/linux
 tools.stm32_iap.path.linux64={runtime.hardware.path}/tools/linux64
 tools.stm32_iap.upload.params.verbose=-d
 tools.stm32_iap.upload.params.quiet=n
-tools.stm32_iap.upload.pattern="{path}/{cmd}" {serial.port.file} {upload.altID} {upload.usbID} "{build.path}/{build.project_name}.bin"
+tools.stm32_iap.upload.pattern="{path}/{cmd}" -f "{build.path}/{build.project_name}.bin" -P {serial.port.file} write
 
 
 

@@ -119,3 +119,8 @@ ImageFile::ParserError BinFile::Write(void * data, unsigned int len)
 
 	return PARSER_ERR_OK;
 }
+
+void BinFile::Rewind()
+{
+	_lseek(m_fd, 0, SEEK_SET);
+}

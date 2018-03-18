@@ -6,10 +6,10 @@
 ////////////////////////////////////////////////////////////////////////////////////
 //
 
-class HexFile : public ImageFile
+class BinFile : public ImageFile
 {
 public:
-	HexFile();
+	BinFile();
 
 public:
 	virtual ParserError		Open(const char * filename, const char write);
@@ -20,8 +20,11 @@ public:
 	virtual ParserError		Read(void * data, unsigned int * len);
 	virtual ParserError		Write(void * data, unsigned int len);
 
+	virtual void			Rewind();
+
 private:
-	size_t			m_nDataLen, m_nOffset;
-	uint8_t *		m_pData;
-	uint32_t		m_nBase;
+	int				m_fd;
+	char			m_bWrite;
+	struct stat		m_stat;
 };
+

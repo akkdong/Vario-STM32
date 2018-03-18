@@ -51,6 +51,8 @@ private:
 	float				strToFloat(int startPos);
 	long				strToNum(int startPos);
 	
+	long				floatToCoordi(float value);
+	
 private:
 	//
 	Stream &			mStream;

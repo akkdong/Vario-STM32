@@ -25,7 +25,10 @@ uint16_t boot_readResetReason(void)
 
 	// Enable clocks for the backup domain registers
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR | RCC_APB1Periph_BKP, ENABLE);
+	//RCC_APB1PeriphResetCmd(RCC_APB1RSTR_BKPRST, ENABLE);
+	//RCC_APB1PeriphResetCmd(RCC_APB1RSTR_BKPRST, DISABLE);
 	// Disable backup register write protection
+
 	PWR_BackupAccessCmd(ENABLE);
 	// store value in DR10
 	value = BKP_ReadBackupRegister(BKP_DR10);
@@ -39,6 +42,9 @@ void boot_writeResetReason(uint16_t reason)
 {
 	// Enable clocks for the backup domain registers
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR | RCC_APB1Periph_BKP, ENABLE);
+	//RCC_APB1PeriphResetCmd(RCC_APB1RSTR_BKPRST, ENABLE);
+	//RCC_APB1PeriphResetCmd(RCC_APB1RSTR_BKPRST, DISABLE);
+
 	// Disable backup register write protection
 	PWR_BackupAccessCmd(ENABLE);
 	// store value in DR10

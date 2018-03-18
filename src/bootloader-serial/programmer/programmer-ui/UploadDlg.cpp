@@ -50,7 +50,7 @@ void CUploadDlg::OnCancel()
 	CDialogEx::OnCancel();
 }
 
-void CUploadDlg::OnPacketReceived(PACKET * pPacket)
+void CUploadDlg::OnBPacketReceived(BPacket * pPacket)
 {
 //	if (pPacket->code == DCODE_DUMP_MEM)
 //		m_wndHexEdit.SetData(pPacket->payloadLen - 4, pPacket->d.data);
@@ -80,7 +80,7 @@ BOOL CUploadDlg::UpdateData(BOOL bSaveAndValidate)
 
 void CUploadDlg::RequestMemory(uint32_t address, uint16_t size)
 {
-	CommandMaker maker;
+	BPacketMaker maker;
 
 	maker.start(HCODE_READ);
 	maker.push_u32(address);
