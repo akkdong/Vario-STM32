@@ -658,7 +658,8 @@ void loop_vario()
 		
 		// update vario sentence periodically
 		if (varioNmea.checkInterval())
-			varioNmea.begin(altitude/*vario.getCalibratedAltitude()*/, vario.getVelocity(), vario.getTemperature(), batVolt.getVoltage());
+//			varioNmea.begin(altitude, vario.getVelocity(), vario.getTemperature(), batVolt.getVoltage());
+			varioNmea.begin(altitude, vario.getVelocity(), vario.getTemperature(), vario.getPressure(), batVolt.getVoltage());
 		
 		//
 		vario.flush();
