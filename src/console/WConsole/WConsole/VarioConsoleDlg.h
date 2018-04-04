@@ -6,6 +6,7 @@
 #include "afxcmn.h"
 #include "SerialWnd.h"
 #include "VarioSettings.h"
+#include "MatrixStatic.h"
 #include <list>
 
 #define MAX_SERIAL_BUFFER			(1024)
@@ -63,11 +64,20 @@ protected:
 	CSerial::EParity	m_nParity;
 	CSerial::EStopBits	m_nStopBits;
 
+	//
+	CMatrixStatic		m_wndLatitude;
+	CMatrixStatic		m_wndLongitude;
+
+	CString				m_strLatitude;
+	CString				m_strLongitude;
+
+
 protected:
 	// 생성된 메시지 맵 함수
 	virtual BOOL		OnInitDialog();
 	virtual void		OnOK();
 	virtual void		OnCancel();
+
 	afx_msg void		OnPaint();
 	afx_msg HCURSOR		OnQueryDragIcon();
 	afx_msg void		OnTimer(UINT nIDEvent);

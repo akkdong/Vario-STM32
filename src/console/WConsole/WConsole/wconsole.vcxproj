@@ -199,6 +199,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MatrixStatic.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SerialEnum.h" />
     <ClInclude Include="SerialPortSelectDlg.h" />
@@ -210,6 +211,7 @@
     <ClInclude Include="wconsole.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="MatrixStatic.cpp" />
     <ClCompile Include="SerialEnum.cpp" />
     <ClCompile Include="SerialPortSelectDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -230,6 +232,9 @@
     <None Include="res\wconsole.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="res\matrixset_blue_large.bmp" />
+    <Image Include="res\matrixset_blue_small.bmp" />
+    <Image Include="res\matrixset_blue_tiny.bmp" />
     <Image Include="res\wconsole.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
