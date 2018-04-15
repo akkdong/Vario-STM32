@@ -30,6 +30,11 @@ void LxNavSentence::begin(float height, float vel, float temp, float bat)
   tagPos = 0;	
 }
 
+void LxNavSentence::begin(float height, float vel, float temp, float prs, float bat)
+{
+	begin(height, vel, temp, bat);
+}
+
 int	LxNavSentence::available()
 {
 	if( tagPos < LXNAV_SENTENCE_TAG_SIZE )
