@@ -504,7 +504,7 @@ void setup()
 	changeDeviceMode(DEVICE_MODE_VARIO);
 	
 	//
-	iwdg_init_ms(2 * 1000); // about 2.5s  : 40KHz /256 = 160Hz --> 2000 / 5 / 160 = 2.5
+	//iwdg_init_ms(2 * 1000); // about 2.5s  : 40KHz /256 = 160Hz --> 2000 / 5 / 160 = 2.5
 }
 
 
@@ -543,7 +543,7 @@ void loop()
 		dumpProp = pushProperties(dumpProp);	
 	
 	//
-	iwdg_feed();
+	//iwdg_feed();
 }
 
 

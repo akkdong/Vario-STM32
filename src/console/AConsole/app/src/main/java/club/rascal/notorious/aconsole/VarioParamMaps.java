@@ -78,7 +78,7 @@ public class VarioParamMaps {
         new VarioParamMapData(VarioParam.TONETABLE_11_PERIOD, R.string.pref_key_tone_11_period, VarioParamMapData.TYPE_INTEGER,"150"),
         new VarioParamMapData(VarioParam.TONETABLE_11_DUTY, R.string.pref_key_tone_11_duty, VarioParamMapData.TYPE_INTEGER,	"50"),
         // VolumeSettings
-        new VarioParamMapData(VarioParam.VOLUME_VARIO, R.string.pref_key_volume_vario, VarioParamMapData.TYPE_INTEGER, "100"),
+        new VarioParamMapData(VarioParam.VOLUME_VARIO, R.string.pref_key_volume_vario, VarioParamMapData.TYPE_INTEGER, "80"),
         new VarioParamMapData(VarioParam.VOLUME_EFFECT, R.string.pref_key_volume_effect, VarioParamMapData.TYPE_INTEGER, "5"),
         // ThresholdSettings
         new VarioParamMapData(VarioParam.THRESHOLD_LOW_BATTERY, R.string.pref_key_threshold_low_battery, VarioParamMapData.TYPE_FLOAT, "2.8"),

@@ -289,10 +289,14 @@ LRESULT CVarioConsoleDlg::OnSerialMessage(WPARAM wParam, LPARAM lParam)
 void CVarioConsoleDlg::OnEditToneTable()
 {
 	//
-	if (!m_bConnected)
-		return;
+	//if (!m_bConnected)
+	//	return;
 
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	Beep(1200, 500);
+	Sleep(500);
+	Beep(1200, 500);
+	Sleep(500);
+	Beep(1200, 500);
 }
 
 void CVarioConsoleDlg::OnCalibration()
