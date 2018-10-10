@@ -107,7 +107,7 @@ void GlobalConfig::reset()
 	
 	
 	//
-	volume.vario = VARIOMETER_BEEP_VOLUME; // 0 ~ 100
+	volume.vario = VARIOMETER_BEEP_VOLUME; // 0 ~ 80
 	volume.effect = VARIOMETER_EFFECT_VOLUME;
 	
 	//

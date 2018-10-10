@@ -80,7 +80,7 @@ CVarioConsoleDlg::CVarioConsoleDlg(CWnd* pParent /*=NULL*/)
 	, m_nDataBits(CSerial::EData8)
 	, m_nParity(CSerial::EParNone)
 	, m_nStopBits(CSerial::EStop1)
-	, m_strLatitude(_T("37.452329  E"))
+	, m_strLatitude(_T("37.452329 E"))
 	, m_strLongitude(_T("126.360923 N"))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
@@ -124,10 +124,10 @@ BOOL CVarioConsoleDlg::OnInitDialog()
 
 	//
 	m_wndLatitude.SetNumberOfLines(1);
-	m_wndLatitude.SetXCharsPerLine(12); // 37.234234 E
+	m_wndLatitude.SetXCharsPerLine(11); // 37.234234 E
 	m_wndLatitude.SetSize(CMatrixStatic::SMALL);
 	m_wndLatitude.SetDisplayColors(RGB(0, 0, 0), RGB(255, 60, 0), RGB(103, 30, 0));
-	m_wndLatitude.AdjustClientXToSize(12);
+	m_wndLatitude.AdjustClientXToSize(11);
 	m_wndLatitude.AdjustClientYToSize(1);
 
 	m_wndLongitude.SetNumberOfLines(1);
@@ -289,10 +289,14 @@ LRESULT CVarioConsoleDlg::OnSerialMessage(WPARAM wParam, LPARAM lParam)
 void CVarioConsoleDlg::OnEditToneTable()
 {
 	//
-	if (!m_bConnected)
-		return;
+	//if (!m_bConnected)
+	//	return;
 
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	Beep(1200, 500);
+	Sleep(500);
+	Beep(1200, 500);
+	Sleep(500);
+	Beep(1200, 500);
 }
 
 void CVarioConsoleDlg::OnCalibration()

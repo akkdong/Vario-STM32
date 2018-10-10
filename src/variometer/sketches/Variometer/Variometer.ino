@@ -33,7 +33,11 @@
 #include "ParamVarMap.h"
 #include "Sd2CardEx.h"
 #include "UMS_mal.h"
+
 #include <libmaple/bkp.h>
+#include <libmaple/iwdg.h>
+
+#define iwdg_init_ms(N)	iwdg_init(IWDG_PRE_256, ((N) / 5))
 
 #define RESET_FOR_BOOTLOADER		(0x4501)
 
@@ -498,6 +502,9 @@ void setup()
 		
 	//
 	changeDeviceMode(DEVICE_MODE_VARIO);
+	
+	//
+	//iwdg_init_ms(2 * 1000); // about 2.5s  : 40KHz /256 = 160Hz --> 2000 / 5 / 160 = 2.5
 }
 
 
@@ -534,6 +541,9 @@ void loop()
 	//
 	if (dumpProp >= 0)
 		dumpProp = pushProperties(dumpProp);	
+	
+	//
+	//iwdg_feed();
 }
 
 

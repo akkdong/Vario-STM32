@@ -24,7 +24,7 @@
 #define GAP_BETWEEN_TONE		(1)		// 1ms
 
 #define MIN_VOLUME				(0)
-#define MAX_VOLUME				(100)
+#define MAX_VOLUME				(80)
 #define MID_VOLUME				(5)
 #define KEY_VOLUME				(5)
 

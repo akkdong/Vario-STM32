@@ -319,7 +319,7 @@ public class VarioPreference extends AppCompatPreferenceActivity implements Vari
         mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.VARIO_SENTENCE, getLongPreference(pref, R.string.pref_key_vario_sentence, "0")));
         mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.VARIO_BAROONLY, pref.getBoolean(getString(R.string.pref_key_vario_baro_only), true) ? 1 : 0));
         // Volume Settings
-        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.VOLUME_VARIO, getLongPreference(pref, R.string.pref_key_volume_vario, "100")));
+        mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.VOLUME_VARIO, getLongPreference(pref, R.string.pref_key_volume_vario, "80")));
         mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.VOLUME_EFFECT, getLongPreference(pref, R.string.pref_key_volume_effect, "5")));
         // Threshold Settings
         mCommands.add(new VarioCommand(VarioCommand.CMD_UPDATE_PROPERTY, VarioParam.THRESHOLD_LOW_BATTERY, getDoublePreference(pref, R.string.pref_key_threshold_low_battery, "2.8")));

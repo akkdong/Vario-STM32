@@ -101,7 +101,7 @@
 
     <PreferenceCategory android:title="@string/pref_category_volume_threshold">
         <ListPreference
-            android:defaultValue="100"
+            android:defaultValue="80"
             android:entries="@array/pref_volume_titles"
             android:entryValues="@array/pref_volume_values"
             android:key="@string/pref_key_volume_vario"
