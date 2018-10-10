@@ -1254,6 +1254,7 @@ void processCommand()
 			Config.reset();
 			Config.writeAll();
 			resStackBT.push(cmd.code, RPARAM_SUCCESS);
+			break;
 		#if CONFIG_DEBUG_DUMP
 		case CMD_DUMP_CONFIG :
 			Config.dump();
