@@ -221,7 +221,7 @@ public class MainActivity extends AppCompatActivity implements VarioAgent.VarioL
             VarioData vario = (VarioData)data;
 
             TextView viewPressure = (TextView)findViewById(R.id.valuePressure);
-            viewPressure.setText(String.format("%.2f ㎩", vario.mPressure));
+            viewPressure.setText(String.format("%.2f h㎩", vario.mPressure));
 
             TextView viewAltitude = (TextView)findViewById(R.id.valueBaroAltitude);
             viewAltitude.setText(String.format("%.0f m", vario.mAltitude));
