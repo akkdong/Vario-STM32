@@ -12,8 +12,8 @@
 #define LK8_SENTENCE_TEMP_POS 				13
 #define LK8_SENTENCE_BAT_POS 				15
 #define LK8_SENTENCE_PARITY_POS 			18
-#define LK8_SENTENCE_PRESSURE_PRECISION 	2
-#define LK8_SENTENCE_ALTI_PRECISION 		1
+#define LK8_SENTENCE_PRESSURE_PRECISION 	0
+#define LK8_SENTENCE_ALTI_PRECISION 		0
 #define LK8_SENTENCE_VARIO_PRECISION 		0
 
 #define LK8_BASE_SEA_PRESSURE 				1013.25
@@ -46,7 +46,7 @@ void LK8Sentence::begin(float height, float vel, float temp, float prs, float ba
 	temperature = temp;
 	voltage = bat;
 	
-	valueDigit.begin(prs, LK8_SENTENCE_PRESSURE_PRECISION);
+	valueDigit.begin(prs * 100.0, LK8_SENTENCE_PRESSURE_PRECISION);
 	
 	parity = '$';
 	tagPos = 0;

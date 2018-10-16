@@ -54,7 +54,15 @@
 
 #define TT_UPDATE_DELTA		(VARIOMETER_MAX_VELOCITY / (TT_HALF_PERIOD / (1000.0 / TT_UPDATE_FREQ)))
 
+//
+//
+//
 
+#define TONE_VELOCITY_DAMPING		(0.4)
+
+//
+//
+//
 
 enum _DeviceMode
 {
@@ -301,6 +309,9 @@ ToneGenerator toneGen;
 TonePlayer tonePlayer(toneGen);
 
 VarioBeeper varioBeeper(tonePlayer);
+
+//
+float beepVelocity;
 
 
 //
@@ -603,6 +614,7 @@ void setup_vario()
 	
 	//
 	deviceTick = millis();
+	beepVelocity = 0.0;
 }
 
 void loop_vario()
@@ -614,6 +626,7 @@ void loop_vario()
 	{
 		//
 		float velocity = vario.getVelocity();
+		beepVelocity = beepVelocity + (velocity - beepVelocity) * TONE_VELOCITY_DAMPING; 	// beepVelocity * (1 -TONE_VELOCITY_DAMPING) + velocity  * TONE_VELOCITY_DAMPING
 		
 		if (toneTestFlag)
 		{
@@ -633,13 +646,13 @@ void loop_vario()
 		}
 		else
 		{
-			varioBeeper.setVelocity(velocity);
+			varioBeeper.setVelocity(beepVelocity);
 			//Serial.println(velocity);
 		}
 
 		//
 		{
-			if (velocity < STABLE_SINKING_THRESHOLD || STABLE_CLIMBING_THRESHOLD < velocity)
+			if (beepVelocity < STABLE_SINKING_THRESHOLD || STABLE_CLIMBING_THRESHOLD < beepVelocity)
 				deviceTick = millis(); // reset tick because it's not quiet.
 			
 			if (commandReceiveFlag)

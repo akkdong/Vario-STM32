@@ -15,7 +15,7 @@ public class VarioParser {
 
         if (tokens.length == 7) {
             // #1 : pressure
-            data.mPressure = Double.parseDouble(tokens[1]); // / 100;
+            data.mPressure = Double.parseDouble(tokens[1]) / 100;
             // #2 : altitude
             data.mAltitude = Double.parseDouble(tokens[2]);
             // #3 : vario
