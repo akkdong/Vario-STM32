@@ -19,8 +19,10 @@ public:
 	CommandParser(uint8_t src, Stream & strm, CommandStack & stack);
 
 public:
+	static int		readLine(Stream & strm, char * buf, int len, int timeout = 1000);
+
 	void			update();
-	
+
 private:
 	uint32_t		toNum(const char * str);
 

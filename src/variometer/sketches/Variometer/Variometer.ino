@@ -126,6 +126,9 @@ void commandUpdateProperty(Command * cmd);
 void commandDumpProperties(Command * cmd);
 void commandAccelerometerCalibration(Command * cmd);
 
+void commandQueryBluetooth(Command * cmd);
+void commandUpdateBluetooth(Command * cmd);
+
 void calibration_changeMode(uint8_t mode);
 void calibration_readyMeasure(int beepType);
 void calibration_startMeasure();
@@ -324,7 +327,7 @@ CommandParser cmdParser1(CMD_FROM_USB, Serial, cmdStack); // USB serial parser
 CommandParser cmdParser2(CMD_FROM_BT, SerialEx1, cmdStack); // BT serial parser
 FuncKeyParser keyParser(keyFunc, cmdStack, tonePlayer);
 
-//ResponseStack resStackUSB;
+ResponseStack resStackUSB;
 ResponseStack resStackBT;
 
 volatile int commandReceiveFlag = 0; // when any new command is occured, set this. 
@@ -552,6 +555,10 @@ void loop()
 	//
 	if (dumpProp >= 0)
 		dumpProp = pushProperties(dumpProp);	
+
+	//
+	while (resStackUSB.available())
+		Serial.write(resStackUSB.read());	
 	
 	//
 	//iwdg_feed();
@@ -766,10 +773,6 @@ void loop_vario()
 				logger.write(nmeaParser.readIGC());
 		}
 	}
-
-	//
-	//while (resStackUSB.available())
-	//	Serial.write(resStackUSB.read());	
 }
 
 
@@ -1276,6 +1279,13 @@ void processCommand()
 		case CMD_ACCEL_CALIBRATION :
 			commandAccelerometerCalibration(&cmd);
 			break;
+
+		case CMD_BLUETOOTH_QUERY :
+			commandQueryBluetooth(&cmd);
+			break;
+		case CMD_BLUETOOTH_UPDATE :
+			commandUpdateBluetooth(&cmd);
+			break;
 			
 		default :
 			resStackBT.push(cmd.code, RPARAM_INVALID_COMMAND);		
@@ -1637,6 +1647,105 @@ void commandAccelerometerCalibration(Command * cmd)
 		return;
 	}
 }
+
+int getBluetoothResponse(char * buf, int len)
+{
+	if (CommandParser::readLine(SerialEx1, buf, len) == 0)
+		return CommandParser::readLine(SerialEx1, buf, len);
+
+	return -1;
+}
+
+void commandQueryBluetooth(Command * cmd)
+{
+	// process command from usb-serial only
+	if (cmd->from != CMD_FROM_USB)
+		return;
+
+	//
+	char data[16];
+
+	switch (cmd->param)
+	{
+	case PARAM_BT_BAUDRATE :
+		SerialEx1.print("AT+BTUART?\r");
+		if (getBluetoothResponse(data, sizeof(data)) > 0)
+			resStackUSB.push(cmd->code, RPARAM_BT_BAUDRATE, data);
+		else
+			resStackUSB.push(cmd->code, RPARAM_FAIL);
+		break;
+	case PARAM_BT_NAME :
+		SerialEx1.print("AT+BTNAME?\r");
+		if (getBluetoothResponse(data, sizeof(data)) > 0)
+			resStackUSB.push(cmd->code, RPARAM_BT_NAME, data);
+		else
+			resStackUSB.push(cmd->code, RPARAM_FAIL);
+		break;
+	case PARAM_BT_KEY :
+		SerialEx1.print("AT+BTKEY?\r");
+		if (getBluetoothResponse(data, sizeof(data)) > 0)
+			resStackUSB.push(cmd->code, RPARAM_BT_KEY, data);
+		else
+			resStackUSB.push(cmd->code, RPARAM_FAIL);
+		break;
+
+	default :
+		resStackUSB.push(cmd->code, RPARAM_INVALID_PROPERTY);
+		break;
+	}
+}
+
+void commandUpdateBluetooth(Command * cmd)
+{
+	// process command from usb-serial only
+	if (cmd->from != CMD_FROM_USB)
+		return;
+
+	//
+	char data[16];
+
+	switch (cmd->param)
+	{
+	/*
+	case PARAM_BT_BAUDRATE :
+		SerialEx1.print("AT+BTUART="); SerialEx1.print(cmd->valData); SerialEx1.print("\r");
+		if (getBluetoothResponse(data, sizeof(data)) > 0)
+			resStackUSB.push(cmd->code, RPARAM_BT_BAUDRATE, data);
+		else
+			resStackUSB.push(cmd->code, RPARAM_FAIL);
+		break;
+	*/
+	case PARAM_BT_NAME :
+		SerialEx1.print("AT+BTNAME="); SerialEx1.print((char *)cmd->valData); SerialEx1.print("\r");
+		if (getBluetoothResponse(data, sizeof(data)) > 0)
+		{
+			SerialEx1.print("ATZ\r");
+			resStackUSB.push(cmd->code, RPARAM_BT_NAME, data);
+		}
+		else
+		{
+			resStackUSB.push(cmd->code, RPARAM_FAIL);
+		}
+		break;
+	case PARAM_BT_KEY :
+		SerialEx1.print("AT+BTKEY="); SerialEx1.print((char *)cmd->valData); SerialEx1.print("\r");
+		if (getBluetoothResponse(data, sizeof(data)) > 0)
+		{
+			SerialEx1.print("ATZ\r");
+			resStackUSB.push(cmd->code, RPARAM_BT_KEY, data);
+		}
+		else
+		{
+			resStackUSB.push(cmd->code, RPARAM_FAIL);
+		}
+		break;
+
+	default :
+		resStackUSB.push(cmd->code, RPARAM_INVALID_PROPERTY);
+		break;
+	}		
+}
+
 
 int pushProperties(int start)
 {

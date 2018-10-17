@@ -14,6 +14,30 @@ CommandParser::CommandParser(uint8_t src, Stream & strm, CommandStack & stack) :
 {
 }
 
+int CommandParser::readLine(Stream & strm, char * buf, int len, int timeout)
+{
+	uint32_t tick = millis();
+	int index = 0;
+
+	while ((millis() - tick) < timeout && index < len - 1)
+	{
+		if (strm.available())
+		{
+			int c = strm.read();
+
+			if (c == '\r')
+				continue;
+			if (c == '\n')
+				return index;
+
+			buf[index++] = c;
+			buf[index] = 0;
+		}
+	}
+
+	return -1;
+}
+
 void CommandParser::update()
 {
 	while (Strm.available())

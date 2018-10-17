@@ -64,8 +64,12 @@
 #define RPARAM_SW_UMS				(0x2002)
 #define RPARAM_SW_CALIBRATION		(0x2003)
 
+#define RPARAM_BT_BAUDRATE			(0x3001)
+#define RPARAM_BT_NAME				(0x3002)
+#define RPARAM_BT_KEY				(0x3003)
 
-#define RPARAM_CAL_STATE		()	// MODE, MEASURE SIDE, ...
+#define RPARAM_CAL_STATE			()	// MODE, MEASURE SIDE, ...
+
 
 enum RDATA_TYPE
 {
