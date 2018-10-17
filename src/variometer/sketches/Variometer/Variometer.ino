@@ -626,7 +626,7 @@ void loop_vario()
 	{
 		//
 		float velocity = vario.getVelocity();
-		beepVelocity = beepVelocity + (velocity - beepVelocity) * TONE_VELOCITY_DAMPING; 	// beepVelocity * (1 -TONE_VELOCITY_DAMPING) + velocity  * TONE_VELOCITY_DAMPING
+		beepVelocity = beepVelocity + (velocity - beepVelocity) * Config.vario.dampingFactor; 	// beepVelocity * (1 - DAMPING_FACTOR) + velocity * DAMPING_FACTOR
 		
 		if (toneTestFlag)
 		{

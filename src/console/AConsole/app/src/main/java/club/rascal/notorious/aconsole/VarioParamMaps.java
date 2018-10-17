@@ -28,6 +28,7 @@ public class VarioParamMaps {
         new VarioParamMapData(VarioParam.VARIO_SENSITIVITY, R.string.pref_key_vario_sensitivity, VarioParamMapData.TYPE_FLOAT, "0.1"),
         new VarioParamMapData(VarioParam.VARIO_SENTENCE, R.string.pref_key_vario_sentence, VarioParamMapData.TYPE_INTEGER, "0"),
         new VarioParamMapData(VarioParam.VARIO_BAROONLY, R.string.pref_key_vario_baro_only, VarioParamMapData.TYPE_BOOLEAN, "1"),
+        new VarioParamMapData(VarioParam.VARIO_DAMPING_FACTOR, R.string.pref_key_vario_damping_factor, VarioParamMapData.TYPE_FLOAT, "0.5"),
         // ToneTables
         new VarioParamMapData(VarioParam.TONETABLE_00_VELOCITY, R.string.pref_key_tone_00_velocity, VarioParamMapData.TYPE_FLOAT,"-10.0"),
         new VarioParamMapData(VarioParam.TONETABLE_00_FREQ, R.string.pref_key_tone_00_freq, VarioParamMapData.TYPE_FLOAT,	"200"),
