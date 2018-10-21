@@ -97,10 +97,12 @@ void GlobalConfig::reset()
 	//
 	vario.sinkThreshold = VARIOMETER_SINKING_THRESHOLD; // -3.0
 	vario.climbThreshold = VARIOMETER_CLIMBING_THRESHOLD; // 0.2
-	vario.sensitivity = VARIOMETER_SENSITIVITY; // 0.1
+	vario.sensitivity = VARIOMETER_SENSITIVITY; // 0.3
 	
 	vario.sentence = VARIOMETER_DEFAULT_NMEA_SENTENCE;
 	vario.baroOnly = true;
+
+	vario.dampingFactor	= VARIOMETER_DEFAULT_DAMPING_FACTOR; // 0.5
 
 	// vario_tone_table 
 	memcpy(&toneTable[0], &defaultTone[0], sizeof(defaultTone));
@@ -232,6 +234,7 @@ void GlobalConfig::dump()
 	Serial.print("Vario.sensitivity = "); Serial.println(vario.sensitivity);
 	Serial.print("Vario.sentence = "); Serial.println(vario.sentence);
 	Serial.print("Vario.baroOnly = "); Serial.println(vario.baroOnly);
+	Serial.print("Vario.dampingFactor = "); Serial.println(vario.dampingFactor);
 	
 	Serial.print("Volume.vario = "); Serial.println(volume.vario);
 	Serial.print("Volume.effect = "); Serial.println(volume.effect);

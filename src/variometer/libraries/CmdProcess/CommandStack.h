@@ -32,6 +32,8 @@
 #define CMD_UPDATE_PROPERTY		'UP'
 #define CMD_ACCEL_CALIBRATION	'AC'
 #define CMD_RUN_BOOTLOADER		'RB'
+#define CMD_BLUETOOTH_QUERY		'BQ'
+#define CMD_BLUETOOTH_UPDATE	'BU'
 
 
 // mode switch
@@ -87,6 +89,11 @@
 #define PARAM_AC_STOP			(3)
 #define PARAM_AC_QUERY_STATUS	(4)
 #define PARAM_AC_RESET			(5)
+
+// bluetooth
+#define PARAM_BT_BAUDRATE		(1)
+#define PARAM_BT_NAME			(2)
+#define PARAM_BT_KEY			(3)
 
 
 /////////////////////////////////////////////////////////////////////////////

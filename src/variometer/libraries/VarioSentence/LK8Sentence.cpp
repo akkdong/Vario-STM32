@@ -46,7 +46,7 @@ void LK8Sentence::begin(float height, float vel, float temp, float prs, float ba
 	temperature = temp;
 	voltage = bat;
 	
-	valueDigit.begin(prs, LK8_SENTENCE_PRESSURE_PRECISION);
+	valueDigit.begin(prs * 100.0, LK8_SENTENCE_PRESSURE_PRECISION);
 	
 	parity = '$';
 	tagPos = 0;

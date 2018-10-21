@@ -225,15 +225,16 @@ void setup_GlobalConfig()
 	//
 	Config.readAll();
 	
-	Serial.print("vario_volume = "), Serial.println((int)Config.volume/vario);
-	Serial.print("vario_sinkThreshold = "), Serial.println(Config.vario/sinkThreshold);
-	Serial.print("vario_climbThreshold = "), Serial.println(Config.vario/climbThreshold);
-	Serial.print("vario_sensitivity = "), Serial.println(Config.vario/sensitivity);
+	Serial.print("vario_volume = "), Serial.println((int)Config.volume.vario);
+	Serial.print("vario_sinkThreshold = "), Serial.println(Config.vario.sinkThreshold);
+	Serial.print("vario_climbThreshold = "), Serial.println(Config.vario.climbThreshold);
+	Serial.print("vario_sensitivity = "), Serial.println(Config.vario.sensitivity);
 	
-	Serial.print("vario_sentence = "), Serial.println(Config.vario/sentence);
+	Serial.print("vario_sentence = "), Serial.println(Config.vario.sentence);
+	Serial.print("vario_dampingFactor = "); Serial.println(Config.vario.dampingFactor);
 	
-	Serial.print("kalman_sigmaP = "), Serial.println(Config.kalman/sigmaP);
-	Serial.print("kalman_sigmaA = "), Serial.println(Config.kalman/sigmaA);
+	Serial.print("kalman_sigmaP = "), Serial.println(Config.kalman.sigmaP);
+	Serial.print("kalman_sigmaA = "), Serial.println(Config.kalman.sigmaA);
 	
 	Serial.print("accel[0] = "), Serial.println(Config.calData.accel[0]);
 	Serial.print("accel[1] = "), Serial.println(Config.calData.accel[1]);

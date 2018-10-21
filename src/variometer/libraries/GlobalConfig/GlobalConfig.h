@@ -74,7 +74,7 @@ enum EEPROM_BlockMask
 {
 	BLOCK_MASK_GLIDER_INFO 			= 0x5A10,
 	BLOCK_MASK_IGC_LOGGER			= 0x5A20,
-	BLOCK_MASK_VARIO_SETTINGS		= 0x5A30,
+	BLOCK_MASK_VARIO_SETTINGS		= 0x5A31,
 	BLOCK_MASK_VARIO_TONE_00		= 0x5A40,
 	BLOCK_MASK_VARIO_TONE_01		= 0x5A41,
 	BLOCK_MASK_VARIO_TONE_02		= 0x5A42,
@@ -163,6 +163,8 @@ typedef struct tagBLOCK_VarioSettings
 	
 	unsigned char	sentence;
 	unsigned char	baroOnly;
+
+	float			dampingFactor;
 
 } BLOCK_VarioSettings;
 
