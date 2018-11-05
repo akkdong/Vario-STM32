@@ -10,7 +10,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // class CommandParser
 
-CommandParser::CommandParser(uint8_t src, Stream & strm, CommandStack & stack) : StrmSouce(src), Strm(strm), Stack(stack)
+CommandParser::CommandParser(uint8_t src, Stream & strm, CommandStack & stack) : StrmSource(src), Strm(strm), Stack(stack), parseStep(-1)
 {
 }
 
@@ -165,7 +165,7 @@ void CommandParser::update()
 			if (parseStep == 6)
 			{
 				// parse field & enqueue command to stack
-				Command cmd(StrmSouce, cmdCode, cmdParam, cmdValue, valueLen);
+				Command cmd(StrmSource, cmdCode, cmdParam, cmdValue, valueLen);
 
 				Stack.enqueue(cmd);
 				

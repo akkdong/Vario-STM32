@@ -2,7 +2,7 @@
 //
 
 #include <DefaultSettings.h>
-#include <SerialEx.h>
+#include <SerialBluetooth.h>
 #include <I2CDevice.h>
 #include <EEPROMDriver.h>
 #include <GlobalConfig.h>
@@ -324,7 +324,7 @@ float beepVelocity;
 CommandStack cmdStack;
 
 CommandParser cmdParser1(CMD_FROM_USB, Serial, cmdStack); // USB serial parser
-CommandParser cmdParser2(CMD_FROM_BT, SerialEx1, cmdStack); // BT serial parser
+CommandParser cmdParser2(CMD_FROM_BT, SerialBT, cmdStack); // BT serial parser
 FuncKeyParser keyParser(keyFunc, cmdStack, tonePlayer);
 
 ResponseStack resStackUSB;
@@ -337,7 +337,7 @@ volatile int commandReceiveFlag = 0; // when any new command is occured, set thi
 //
 //
 
-BluetoothMan btMan(SerialEx1, nmeaParser, varioNmea, sensorReporter, resStackBT);
+BluetoothMan btMan(SerialBT, nmeaParser, varioNmea, sensorReporter, resStackBT);
 
 
 //
@@ -358,8 +358,8 @@ void board_init()
 	Serial.begin();
 	//while (! Serial);
 	
-	SerialEx1.begin(BAUDRATE_BT); 	// Serial1(USART1) : for BT
-	//while (! SerialEx1);
+	SerialBT.begin(BAUDRATE_BT); 	// Serial1(USART1) : for BT
+	//while (! SerialBT);
 	
 	SerialEx2.begin(BAUDRATE_GPS);	// Serial2(USART2) : for GPS
 	//while (! SerialEx2);
@@ -1650,8 +1650,8 @@ void commandAccelerometerCalibration(Command * cmd)
 
 int getBluetoothResponse(char * buf, int len)
 {
-	if (CommandParser::readLine(SerialEx1, buf, len) == 0)
-		return CommandParser::readLine(SerialEx1, buf, len);
+	if (CommandParser::readLine(SerialBT, buf, len) == 0)
+		return CommandParser::readLine(SerialBT, buf, len);
 
 	return -1;
 }
@@ -1668,21 +1668,21 @@ void commandQueryBluetooth(Command * cmd)
 	switch (cmd->param)
 	{
 	case PARAM_BT_BAUDRATE :
-		SerialEx1.print("AT+BTUART?\r");
+		SerialBT.print("AT+BTUART?\r");
 		if (getBluetoothResponse(data, sizeof(data)) > 0)
 			resStackUSB.push(cmd->code, RPARAM_BT_BAUDRATE, data);
 		else
 			resStackUSB.push(cmd->code, RPARAM_FAIL);
 		break;
 	case PARAM_BT_NAME :
-		SerialEx1.print("AT+BTNAME?\r");
+		SerialBT.print("AT+BTNAME?\r");
 		if (getBluetoothResponse(data, sizeof(data)) > 0)
 			resStackUSB.push(cmd->code, RPARAM_BT_NAME, data);
 		else
 			resStackUSB.push(cmd->code, RPARAM_FAIL);
 		break;
 	case PARAM_BT_KEY :
-		SerialEx1.print("AT+BTKEY?\r");
+		SerialBT.print("AT+BTKEY?\r");
 		if (getBluetoothResponse(data, sizeof(data)) > 0)
 			resStackUSB.push(cmd->code, RPARAM_BT_KEY, data);
 		else
@@ -1708,7 +1708,7 @@ void commandUpdateBluetooth(Command * cmd)
 	{
 	/*
 	case PARAM_BT_BAUDRATE :
-		SerialEx1.print("AT+BTUART="); SerialEx1.print(cmd->valData); SerialEx1.print("\r");
+		SerialBT.print("AT+BTUART="); SerialBT.print(cmd->valData); SerialBT.print("\r");
 		if (getBluetoothResponse(data, sizeof(data)) > 0)
 			resStackUSB.push(cmd->code, RPARAM_BT_BAUDRATE, data);
 		else
@@ -1716,10 +1716,10 @@ void commandUpdateBluetooth(Command * cmd)
 		break;
 	*/
 	case PARAM_BT_NAME :
-		SerialEx1.print("AT+BTNAME="); SerialEx1.print((char *)cmd->valData); SerialEx1.print("\r");
+		SerialBT.print("AT+BTNAME="); SerialBT.print((char *)cmd->valData); SerialBT.print("\r");
 		if (getBluetoothResponse(data, sizeof(data)) > 0)
 		{
-			SerialEx1.print("ATZ\r");
+			SerialBT.print("ATZ\r");
 			resStackUSB.push(cmd->code, RPARAM_BT_NAME, data);
 		}
 		else
@@ -1728,10 +1728,10 @@ void commandUpdateBluetooth(Command * cmd)
 		}
 		break;
 	case PARAM_BT_KEY :
-		SerialEx1.print("AT+BTKEY="); SerialEx1.print((char *)cmd->valData); SerialEx1.print("\r");
+		SerialBT.print("AT+BTKEY="); SerialBT.print((char *)cmd->valData); SerialBT.print("\r");
 		if (getBluetoothResponse(data, sizeof(data)) > 0)
 		{
-			SerialEx1.print("ATZ\r");
+			SerialBT.print("ATZ\r");
 			resStackUSB.push(cmd->code, RPARAM_BT_KEY, data);
 		}
 		else

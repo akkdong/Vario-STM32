@@ -28,7 +28,7 @@ private:
 
 private:
 	//
-	uint8_t			StrmSouce;
+	uint8_t			StrmSource;
 	Stream &		Strm;
 	
 	CommandStack & 	Stack;

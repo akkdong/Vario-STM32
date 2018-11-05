@@ -2,7 +2,7 @@
 //
 
 #include <Arduino.h>
-#include <SerialEx.h>
+#include <SerialBluetooth.h>
 #include <NmeaParserEx.h>
 #include <VarioSentence.h>
 #include <SensorReporter.h>
@@ -35,8 +35,8 @@ enum BTMAN_LOCK_STATE
 /////////////////////////////////////////////////////////////////////////////
 // class BluetoothMan
 
-BluetoothMan::BluetoothMan(SerialEx & serial, NmeaParserEx & nmea, VarioSentence & vario, SensorReporter & sensor, ResponseStack & resp) :
-	SerialBT(serial), nmeaParser(nmea), varioSentence(vario), sensorReporter(sensor), responseStack(resp),
+BluetoothMan::BluetoothMan(SerialBluetooth & serial, NmeaParserEx & nmea, VarioSentence & vario, SensorReporter & sensor, ResponseStack & resp) :
+	serialBT(serial), nmeaParser(nmea), varioSentence(vario), sensorReporter(sensor), responseStack(resp),
 	lockState(BTMAN_UNLOCKED)/*, blockTransfer(BTMAN_BLOCK_NONE)*/
 {
 }
@@ -44,6 +44,9 @@ BluetoothMan::BluetoothMan(SerialEx & serial, NmeaParserEx & nmea, VarioSentence
 
 void BluetoothMan::update()
 {
+	if (! serialBT.isConnected())
+		return;
+
 #if 0
 	if (lockState == BTMAN_LOCKED_BY_VARIO)
 	{
@@ -140,7 +143,7 @@ void BluetoothMan::update()
 
 void BluetoothMan::writeGPSSentence()
 {
-	while (SerialBT.availableForWrite())
+	while (serialBT.availableForWrite())
 	{
 		//
 		int c = nmeaParser.read();
@@ -148,7 +151,7 @@ void BluetoothMan::writeGPSSentence()
 			break;
 		
 		//
-		SerialBT.write(c);
+		serialBT.write(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'
 		{			
@@ -160,7 +163,7 @@ void BluetoothMan::writeGPSSentence()
 
 void BluetoothMan::writeVarioSentence()
 {
-	while (SerialBT.availableForWrite())
+	while (serialBT.availableForWrite())
 	{
 		//
 		int c = varioSentence.read();
@@ -168,7 +171,7 @@ void BluetoothMan::writeVarioSentence()
 			break;
 		
 		//
-		SerialBT.write(c);
+		serialBT.write(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'
 		{
@@ -180,7 +183,7 @@ void BluetoothMan::writeVarioSentence()
 
 void BluetoothMan::writeSensorData()
 {
-	while (SerialBT.availableForWrite())
+	while (serialBT.availableForWrite())
 	{
 		//
 		int c = sensorReporter.read();
@@ -188,7 +191,7 @@ void BluetoothMan::writeSensorData()
 			break;
 		
 		//
-		SerialBT.write(c);
+		serialBT.write(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'
 		{
@@ -200,7 +203,7 @@ void BluetoothMan::writeSensorData()
 
 void BluetoothMan::writeResponse()
 {
-	while (SerialBT.availableForWrite())
+	while (serialBT.availableForWrite())
 	{
 		//
 		int c = responseStack.read();
@@ -208,7 +211,7 @@ void BluetoothMan::writeResponse()
 			break;
 		
 		//
-		SerialBT.write(c);
+		serialBT.write(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'
 		{
@@ -236,10 +239,10 @@ void BluetoothMan::blockSensorData(uint8_t block)
 
 int BluetoothMan::available()
 {
-	return SerialBT.available();
+	return serialBT.available();
 }
 
 int BluetoothMan::read()
 {
-	return SerialBT.read();
+	return serialBT.read();
 }
