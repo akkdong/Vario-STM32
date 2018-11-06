@@ -79,7 +79,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 		{
 			mParseStep 	= 0;
 			mParseState	= 0;
-			mParity		= '*';	// '*' remove by twice xor
+			mParity		= '*';	// '*' removed by twice xor
 
 			UNSET_STATE(PARSE_RMC|PARSE_GGA|RMC_VALID|GGA_VALID);
 			SET_STATE(SEARCH_RMC_TAG);
@@ -129,7 +129,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 				//Serial.print("mParseStep = "); Serial.println((int)mParseStep);
 				//Serial.print("mParseState = "); Serial.println((int)mParseState);
 			}
-			else if (mParseStep == NMEA_TAG_SIZE) // start of data
+			else if (mParseStep == NMEA_TAG_SIZE) // 5, start of data
 			{
 				if (c != ',' || (! IS_SET(SEARCH_RMC_TAG) && ! IS_SET(SEARCH_GGA_TAG)))
 				{
@@ -162,7 +162,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 					{
 						SET_STATE(PARSE_GGA);
 						
-						// IGC sentence is unavailable if It's unlocked
+						// make unavailable the IGC sentence, if It's unlocked
 						if (! IS_SET(IGC_LOCKED))
 						{
 							mIGCSize = 0;
@@ -171,7 +171,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 					}
 				}
 			}
-			else if (mParseStep == NMEA_TAG_SIZE + 1) // data
+			else if (mParseStep == NMEA_TAG_SIZE + 1) // 6, data
 			{
 				if (c == ',' || c == '*') // field delimiter
 				{
@@ -201,7 +201,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 					mParseStep += 1;
 				}
 			}
-			else if (mParseStep == NMEA_TAG_SIZE + 3) // checksum low-nibble
+			else if (mParseStep == NMEA_TAG_SIZE + 3) // 7, checksum low-nibble
 			{
 				int n = (c >= 'A') ? (c - 'A' + 10) : (c - '0');
 				
@@ -215,7 +215,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 					mParseStep += 1;
 				}
 			}
-			else if (mParseStep == NMEA_TAG_SIZE + 4) // carrage-return
+			else if (mParseStep == NMEA_TAG_SIZE + 4) // 8, carrage-return
 			{
 				if (c != '\r')
 				{
@@ -227,7 +227,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 					mParseStep += 1;
 				}
 			}
-			else if (mParseStep == NMEA_TAG_SIZE + 5) // newline
+			else if (mParseStep == NMEA_TAG_SIZE + 5) // 9, newline
 			{
 				if (c != '\n')
 				{
@@ -297,7 +297,7 @@ int NmeaParserEx::availableIGC()
 
 int NmeaParserEx::readIGC()
 {
-	if (mIGCSize == MAX_IGC_SENTENCE && mIGCNext < MAX_IGC_SENTENCE)
+	if (mIGCSize == MAX_IGC_SENTENCE && mIGCNext < MAX_IGC_SENTENCE) // if available
 	{
 		// start reading... : lock state
 		if (mIGCNext == 0)

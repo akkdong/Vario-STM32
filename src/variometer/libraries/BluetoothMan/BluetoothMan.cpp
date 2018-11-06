@@ -44,8 +44,8 @@ BluetoothMan::BluetoothMan(SerialBluetooth & serial, NmeaParserEx & nmea, VarioS
 
 void BluetoothMan::update()
 {
-	if (! serialBT.isConnected())
-		return;
+	//if (! serialBT.isConnected())
+	//	return;
 
 #if 0
 	if (lockState == BTMAN_LOCKED_BY_VARIO)
@@ -151,7 +151,7 @@ void BluetoothMan::writeGPSSentence()
 			break;
 		
 		//
-		serialBT.write(c);
+		serialBT.writeEx(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'
 		{			
@@ -171,7 +171,7 @@ void BluetoothMan::writeVarioSentence()
 			break;
 		
 		//
-		serialBT.write(c);
+		serialBT.writeEx(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'
 		{
@@ -191,7 +191,7 @@ void BluetoothMan::writeSensorData()
 			break;
 		
 		//
-		serialBT.write(c);
+		serialBT.writeEx(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'
 		{
@@ -211,7 +211,7 @@ void BluetoothMan::writeResponse()
 			break;
 		
 		//
-		serialBT.write(c);
+		serialBT.writeEx(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'
 		{

@@ -701,7 +701,7 @@ void loop_vario()
 	// send any prepared sentence to BT
 	btMan.update();	
 
-	// IGC setence is available when it received a valid GGA. -> altitude is valid
+	// IGC sentence is available when it received a valid GGA. -> altitude is valid
 	if (varioMode == VARIO_MODE_INIT  && nmeaParser.availableIGC())
 	{
 		// do position calibration

@@ -132,114 +132,17 @@ int SerialBluetooth::read(void)
         state = 0; // reset
     }
 
-    /*
-    if (c == '\r')
-    {
-        if (state == 0)
-        {
-            state = 1; // wait linebreak prefix -> \n
-        }
-        else if (state == 3)
-        {
-            if (response_connect[index] == 0xFF)
-            {
-                state = 5; // wait connecting suffix -> \n
-            }
-            else
-            {
-                state = 0; // reset
-            }
-        }
-        else if (state == 4)
-        {
-            if (response_connect[index] == 0x00)
-            {
-                state = 6; // wait disconnecting suffix -> \n
-            }
-            else
-            {
-                state = 0; // reset
-            }
-        }
-        else
-        {
-            state = 0; // reset
-        }
-    }
-    else if (c == '\n')
-    {
-        if (state == 1)
-        {
-            state = 2;
-        }
-        else
-        {
-            if (state == 5)
-            {
-                connected = 1;
-            }
-            else if (state == 6)
-            {
-                connected = 0;
-            }
-
-            state = 0;
-        }
-    }
-    else
-    {
-        if (state == 2)
-        {
-            if (c == 'C')
-            {
-                state = 3;
-                index = 1;
-            }
-            else if (c == 'D')
-            {
-                state = 4;
-                index = 1;
-            }
-            else
-            {
-                state = 0;
-            }
-        }
-        else if (state == 5)
-        {
-            if (response_connect[index] == c)
-            {
-                index += 1;
-            }
-            else if (response_connect[index] == 0xFF)
-            {
-                // nop
-            }
-            else
-            {
-                state = 0;
-            }
-        }
-        else if (state == 6)
-        {
-            if (response_disconnect[index] == c)
-            {
-                index += 1;
-            }
-            else
-            {
-                state = 0;
-            }
-        }
-        else
-        {
-            state = 0; // reset
-        }
-    }
-    */
-
     return c;
 }
+
+size_t SerialBluetooth::writeEx(uint8_t data)
+{
+    if (connected)
+        return write(data);
+
+    return sizeof(data);
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////

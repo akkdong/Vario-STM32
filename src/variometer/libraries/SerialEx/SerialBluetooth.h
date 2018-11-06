@@ -18,6 +18,7 @@ public:
 public:
 	//
 	virtual int 		read(void);
+	virtual size_t		writeEx(uint8_t);
 
 	bool				isConnected();
 	
