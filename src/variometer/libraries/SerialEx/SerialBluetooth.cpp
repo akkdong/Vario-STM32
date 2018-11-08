@@ -119,7 +119,7 @@ int SerialBluetooth::read(void)
         }
 
         state = 0; // reset
-        Serial.println("Reset!");
+        //Serial.println("Reset!");
     }
     else if (state == 6)
     {

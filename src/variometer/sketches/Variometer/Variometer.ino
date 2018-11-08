@@ -1286,6 +1286,9 @@ void processCommand()
 		case CMD_BLUETOOTH_UPDATE :
 			commandUpdateBluetooth(&cmd);
 			break;
+		case CMD_ADJUST_BT_BAUDRATE :
+			commandAdjustBaudRate(&cmd);
+			break;
 			
 		default :
 			resStackBT.push(cmd.code, RPARAM_INVALID_COMMAND);		
@@ -1746,6 +1749,119 @@ void commandUpdateBluetooth(Command * cmd)
 	}		
 }
 
+
+static int testBaudRate[] =
+{
+	1200,
+	2400,
+	4800,
+	9600,
+	19200,
+	38400,
+	57600,
+	115200,
+};
+
+int findBaudRate()
+{
+	for (int i = 0; i < sizeof(testBaudRate) / sizeof(testBaudRate[0]); i++)
+	{
+		//
+		Serial.print("Try "); Serial.print(testBaudRate[i]); Serial.print("...");
+		SerialBT.begin(testBaudRate[i]);
+		SerialBT.print("AT\r");
+		
+		char buf[16];
+		int n = 0;
+		uint32_t tick = millis();
+		
+		while ((millis() - tick) < 5000)
+		{
+			if (SerialBT.available())
+			{
+				int c = SerialBT.read();
+				//Serial.write(c);
+				
+				if (c == '\r' || c == '\n')
+				{
+					if (c == '\n' && n > 0)
+						break;
+				}
+				else
+				{
+					buf[n] = c;
+					n++;
+					
+					if (n == sizeof(buf))
+						break;
+				}
+			}
+		}
+		
+		//
+		SerialBT.end();
+		delay(100);
+		
+		if ((n == 2 && buf[0] == 'O' && buf[1] == 'K') ||
+			(n == 5 && buf[0] == 'E' && buf[1] == 'R' && buf[2] == 'R' && buf[3] == 'O' && buf[4] == 'R'))
+		{
+			Serial.println("   OK!!!");
+			
+			return testBaudRate[i];
+		}
+		
+		Serial.println("   FAILED!");
+	}
+	
+	return 0;
+}
+
+
+void commandAdjustBaudRate(Command * cmd)
+{
+	// process command from usb-serial only
+	if (cmd->from != CMD_FROM_USB)
+		return;
+
+	// find Baudrate of BT
+	Serial.println("Find BT baud-rate....");
+	SerialBT.end();
+	int baudrate = findBaudRate();
+	Serial.print("    -> "); Serial.println(baudrate);
+	
+	if (baudrate) 
+	{
+		SerialBT.begin(baudrate);
+		
+		if (baudrate != BAUDRATE_BT)
+		{
+			Serial.print("Change BT baud-rate to "); Serial.println(BAUDRATE_BT);
+			Serial.print("AT+BTUART="); Serial.print(BAUDRATE_BT); Serial.print("\r");
+			SerialBT.print("AT+BTUART="); SerialBT.print(BAUDRATE_BT); SerialBT.print("\r");
+			delay(200);
+			
+			while (SerialBT.available())
+				Serial.write(SerialBT.read());
+			
+			SerialBT.end();
+			SerialBT.begin(BAUDRATE_BT);
+
+			// turn off & on
+			keyPowerBT.disable();
+			delay(100);
+			keyPowerBT.enable();
+		}
+		else
+		{
+			Serial.print("BT communicate with "); Serial.print(baudrate); Serial.println(" bps");
+		}
+	}
+	else
+	{
+		Serial.println("Fail to find baud-rate!!!");
+		//while(1);
+	}
+}
 
 int pushProperties(int start)
 {

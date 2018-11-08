@@ -61,6 +61,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 	{
 		//
 		int c = mStream.read();
+		//Serial.write(c);
 		
 		if (isFull())
 			break;

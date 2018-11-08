@@ -34,6 +34,7 @@
 #define CMD_RUN_BOOTLOADER		'RB'
 #define CMD_BLUETOOTH_QUERY		'BQ'
 #define CMD_BLUETOOTH_UPDATE	'BU'
+#define CMD_ADJUST_BT_BAUDRATE	'BB'
 
 
 // mode switch
