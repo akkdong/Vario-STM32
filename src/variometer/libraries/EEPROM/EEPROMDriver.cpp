@@ -6,12 +6,36 @@
 #define MAX_WRITE_BLOCK_SIZE	30
 #define MAX_READ_BLOCK_SIZE		32
 
+#define TIMEOUT_WAIT					500
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // class EEPROMDriver
 
 EEPROMDriver::EEPROMDriver(TwoWire & wire) : Wire(wire)
 {
+}
+
+int8_t EEPROMDriver::waitComplete(unsigned char devAddr, uint16_t timeout)
+{
+	uint32_t tick = millis();
+
+	while (1)
+	{
+		Wire.beginTransmission(devAddr);
+		if (Wire.endTransmission(true) ==0)
+			break;
+		
+		if ((millis() - tick) > timeout)
+			return -1;
+	}
+	
+	return 0;
+	
+	//do
+	//{
+	//	Wire.beginTransmission(devAddr);
+	//} while (Wire.endTransmission(true) != 0);
 }
 
 void EEPROMDriver::writeByte(unsigned char devAddr, unsigned short memAddr, unsigned char data)
@@ -25,10 +49,7 @@ void EEPROMDriver::writeByte(unsigned char devAddr, unsigned short memAddr, unsi
 	Wire.endTransmission();
 	
 	// wait write completion
-	do
-	{
-		Wire.beginTransmission(devAddr);
-	} while (Wire.endTransmission(true) != 0);
+	waitComplete(devAddr, TIMEOUT_WAIT);
 }
 
 // WARNING: address is a page address, 6-bit end will wrap around
@@ -70,10 +91,7 @@ void EEPROMDriver::writeBuffer(unsigned char devAddr, unsigned short memAddr, un
 		remainLen -= writeLen;
 	
 		// wait write completion
-		do
-		{
-			Wire.beginTransmission(devAddr);
-		} while (Wire.endTransmission(true) != 0);
+		waitComplete(devAddr, TIMEOUT_WAIT);
 	}
 }
 
@@ -86,7 +104,7 @@ unsigned char EEPROMDriver::readByte(unsigned char devAddr, unsigned short memAd
     Wire.write((int)(memAddr & 0xFF)); // LSB
     Wire.endTransmission();	
 	
-    Wire.requestFrom(devAddr, 1);
+    Wire.requestFrom(devAddr, (uint8_t)1);
     if (Wire.available()) 
 		rdata = Wire.read();
 	
@@ -112,7 +130,7 @@ void EEPROMDriver::readBuffer(unsigned char devAddr, unsigned short memAddr, uns
 		
 		readLen = remainLen < MAX_READ_BLOCK_SIZE ? remainLen : MAX_READ_BLOCK_SIZE;
 		
-		Wire.requestFrom(devAddr, readLen);
+		Wire.requestFrom(devAddr, (uint8_t)readLen);
 		//delay(1);
 		for (short c = 0; c < readLen; c++ )
 		{
@@ -128,9 +146,6 @@ void EEPROMDriver::readBuffer(unsigned char devAddr, unsigned short memAddr, uns
 		remainLen -= readLen;
 		
 		//
-		do
-		{
-			Wire.beginTransmission(devAddr);
-		} while (Wire.endTransmission(true) != 0);		
+		waitComplete(devAddr, TIMEOUT_WAIT);
 	}
 }
