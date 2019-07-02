@@ -16,9 +16,9 @@ class Sd2CardEx : public SdSpiCard
 {
 public:
 	Sd2CardEx() {
-		m_spi.setPort(1);
+		m_spi.setPort(nullptr);
 	}
-	Sd2CardEx(uint8_t spiPort) {
+	Sd2CardEx(SPIClass* spiPort) {
 		m_spi.setPort(spiPort);
 	}
 

@@ -196,6 +196,7 @@
 // SD-Card settings
 //
 
+#define SDCARD_SPICLASS							(SPI)
 #define SDCARD_CHANNEL							(1)			// SPI1
 #define SDCARD_CS								PIN_SD_CS	// SPI1_CS : PA4, SPI2_CS : PB12
 #define SDCARD_CLOCK							(36)		// 18MHz

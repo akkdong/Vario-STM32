@@ -33,6 +33,13 @@ const char tagRMC[] PROGMEM = {"GPRMC"};
 const char tagGGA[] PROGMEM = {"GPGGA"};
 
 
+float nmeaToDecimal(float nmea)
+{
+	int dd = (int)(nmea / 100);
+	float ss = nmea - (float)(dd * 100.0);
+
+	return (float)dd + ss / 60.0;
+}
 /////////////////////////////////////////////////////////////////////////////
 // class NmeaParserEx
 
@@ -439,7 +446,9 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			break;
 		case 1 : // Latitude (DDMM.mmm)
 			// save latitude
-			mLatitude = strToFloat(startPos);
+			{
+				float nmeaLatitude = strToFloat(startPos);
+				mLatitude = nmeaToDecimal(nmeaLatitude);
 			
 			// update IGC sentence if it's unlocked
 			if (! IS_SET(IGC_LOCKED))
@@ -457,10 +466,11 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 				#else
 				FixedLenDigit digit;
 			
-				digit.begin(floatToCoordi(mLatitude), IGC_SIZE_LATITUDE);
+					digit.begin(floatToCoordi(nmeaLatitude), IGC_SIZE_LATITUDE);
 				for (int i = 0; i < IGC_SIZE_LATITUDE /*digit.available()*/; i++)
 					mIGCSentence[IGC_OFFSET_LATITUDE+i] = digit.read();
 				#endif
+			}
 			}
 			break;
 		case 2 : // Latitude (N or S)
@@ -478,7 +488,9 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			break;
 		case 3 : // Longitude (DDDMM.mmmm)
 			// save longitude
-			mLongitude = strToFloat(startPos);
+			{
+				float nmeaLongitude = strToFloat(startPos);
+				mLongitude = nmeaToDecimal(nmeaLongitude);
 			
 			// update IGC sentence if it's unlocked
 			if (! IS_SET(IGC_LOCKED))
@@ -496,10 +508,11 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 				#else
 				FixedLenDigit digit;
 			
-				digit.begin(floatToCoordi(mLongitude), IGC_SIZE_LONGITUDE);
+					digit.begin(floatToCoordi(nmeaLongitude), IGC_SIZE_LONGITUDE);
 				for (int i = 0; i < IGC_SIZE_LONGITUDE /*digit.available()*/; i++)
 					mIGCSentence[IGC_OFFSET_LONGITUDE+i] = digit.read();
 				#endif
+			}			
 			}			
 			break;
 		case 4 : // Longitude (E or W)
@@ -630,8 +643,13 @@ long NmeaParserEx::strToNum(int startPos)
 long NmeaParserEx::floatToCoordi(float value)
 {
 	// DDDMM.mmmm -> DDDMMmmm (with round up)
+	#if 0
 	long coordi = (long)value;
-	float temp = (value - coordi) * 1000.0f + 0.5f;
+	float temp = (value - coordi) * 1000.0f;
 	
 	return coordi * 1000 + (long)temp;
+	#else
+	float temp = value * 1000.0f;
+	return (long)temp;
+	#endif
 }
