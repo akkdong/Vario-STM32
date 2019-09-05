@@ -151,7 +151,7 @@ void BluetoothMan::writeGPSSentence()
 			break;
 		
 		//
-		serialBT.writeEx(c);
+		serialBT.write(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'
 		{			
@@ -171,7 +171,7 @@ void BluetoothMan::writeVarioSentence()
 			break;
 		
 		//
-		serialBT.writeEx(c);
+		serialBT.write(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'
 		{
@@ -191,7 +191,7 @@ void BluetoothMan::writeSensorData()
 			break;
 		
 		//
-		serialBT.writeEx(c);
+		serialBT.write(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'
 		{
@@ -211,7 +211,7 @@ void BluetoothMan::writeResponse()
 			break;
 		
 		//
-		serialBT.writeEx(c);
+		serialBT.write(c);
 		
 		if (c == '\n') // last setence character : every sentence end with '\r\n'
 		{

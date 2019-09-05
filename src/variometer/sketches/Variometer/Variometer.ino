@@ -99,7 +99,7 @@ enum _CalibrationMode
 
 void board_init();
 
-void changeDeviceMode();
+void changeDeviceMode(int mode, bool first = false);
 
 void setup_vario();
 void loop_vario();
@@ -363,7 +363,7 @@ void board_init()
 	
 	SerialEx2.begin(BAUDRATE_GPS);	// Serial2(USART2) : for GPS
 	//while (! SerialEx2);
-	
+
 	// Initialize I2C
 	Wire1.begin();
 	Wire2.begin();
@@ -439,32 +439,35 @@ void board_reboot()
 //
 //
 
-void changeDeviceMode(int mode)
+void changeDeviceMode(int mode, bool first)
 {
 	// post process
-	switch (deviceMode)
+	if (! first)
 	{
-	case DEVICE_MODE_VARIO :
-		// clean-up something
-		vario.end();
-		// close logger file if is logging
-		logger.end(nmeaParser.getDateTime());
-		// turn-off SD & wait a moment
-		#if HW_VERSION == HW_VERSION_V1_REV2
-		keyPowerSD.disable();
-		delay(100);
-		#endif // HW_VERSION == HW_VERSION_V1_REV2
-		break;
-	case DEVICE_MODE_CALIBRATION :
-		// nop
-		break;
-	case DEVICE_MODE_UMS :
-		// turn-off SD & wait a moment
-		#if HW_VERSION == HW_VERSION_V1_REV2
-		keyPowerSD.disable();
-		delay(100);
-		#endif // HW_VERSION == HW_VERSION_V1_REV2
-		break;
+		switch (deviceMode)
+		{
+		case DEVICE_MODE_VARIO :
+			// clean-up something
+			vario.end();
+			// close logger file if is logging
+			logger.end(nmeaParser.getDateTime());
+			// turn-off SD & wait a moment
+			#if HW_VERSION == HW_VERSION_V1_REV2
+			keyPowerSD.disable();
+			delay(100);
+			#endif // HW_VERSION == HW_VERSION_V1_REV2
+			break;
+		case DEVICE_MODE_CALIBRATION :
+			// nop
+			break;
+		case DEVICE_MODE_UMS :
+			// turn-off SD & wait a moment
+			#if HW_VERSION == HW_VERSION_V1_REV2
+			keyPowerSD.disable();
+			delay(100);
+			#endif // HW_VERSION == HW_VERSION_V1_REV2
+			break;
+		}
 	}
 
 	// start new mode
@@ -515,7 +518,7 @@ void setup()
 	tonePlayer.setVolume(Config.volume.vario);	
 		
 	//
-	changeDeviceMode(DEVICE_MODE_VARIO);
+	changeDeviceMode(DEVICE_MODE_VARIO, true);
 	
 	//
 	//iwdg_init_ms(2 * 1000); // about 2.5s  : 40KHz /256 = 160Hz --> 2000 / 5 / 160 = 2.5

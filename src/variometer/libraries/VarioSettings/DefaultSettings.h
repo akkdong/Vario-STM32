@@ -96,9 +96,9 @@
 // Variometer default settings
 //
 
-#define VARIOMETER_TIME_ZONE					(9)	// GMT+9
-#define VARIOMETER_BEEP_VOLUME					(0)	// percentage (0 ~ 100)
-#define VARIOMETER_EFFECT_VOLUME				(3)
+#define VARIOMETER_TIME_ZONE					(9)		// GMT+9
+#define VARIOMETER_BEEP_VOLUME					(80)	// percentage (0 ~ 100)
+#define VARIOMETER_EFFECT_VOLUME				(5) 	//
 
 #define VARIOMETER_SINKING_THRESHOLD 			(-3.0)
 #define VARIOMETER_CLIMBING_THRESHOLD 			(0.2)
@@ -148,8 +148,8 @@
 #define ACCELERATION_MEASURE_STANDARD_DEVIATION (0.3)
 
 // KalmanFilter class configuration
-#define KF_ZMEAS_VARIANCE       				(400.0f)
-#define KF_ZACCEL_VARIANCE      				(1000.0f)
+#define KF_ZMEAS_VARIANCE       				(300.0f)
+#define KF_ZACCEL_VARIANCE      				(40000.0f)
 #define KF_ACCELBIAS_VARIANCE   				(1.0f)
 
 
