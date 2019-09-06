@@ -218,8 +218,13 @@ static Tone melodyLanding[] =
 // I2C2 is used by EEPROM
 //
 
+#if 0
+SoftWire Wire1(PB6, PB7, SOFT_FAST);
+SoftWire Wire2(PB10, PB11, SOFT_FAST);
+#else
 TwoWire Wire1(1, I2C_FAST_MODE);
 TwoWire Wire2(2, I2C_FAST_MODE);
+#endif
 
 // initialize some static member of I2CDevice(I2C1)
 //
@@ -503,6 +508,7 @@ void setup()
 	// ...
 	
 	//
+	delay(1000);
 	board_init();
 	
 	//

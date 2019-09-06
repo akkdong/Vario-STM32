@@ -25,8 +25,9 @@ int KalmanVario::begin(float zVariance, float zAccelVariance, float zAccelBiasVa
 	// read dummy data 10 times
 	// it may be stabilize data...
 	float prs, va;
+	uint32_t timeout = millis();
 	
-	for (int i = 0; i < 10;)
+	for (int i = 0; (i < 10) && (millis() - timeout < 5000);)
 	{
 		imu.update();
 		
