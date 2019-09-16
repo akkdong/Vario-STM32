@@ -8,6 +8,8 @@
 #include "VarioSettings.h"
 #include <list>
 
+#define MAX_SERIAL_BUFFER			(1024)
+
 
 struct VarioParameters
 {
@@ -28,9 +30,11 @@ struct VarioParameters
 	float			Vario_Sensitivity;
 	int				Vario_Sentece;
 	BOOL			Vario_BaroOnly;
+	float			Vario_DampingFactor;
 	// Volume Settings
 	int				Volume_Vario;
 	int				Volume_Effect;
+	int				Volume_AutoTurnOn;
 	// Threshold Settings
 	float			Threshold_LowBattery;
 	int				Threshold_ShutdownHoldtime;
@@ -65,10 +69,15 @@ public:
 protected:
 	virtual void		DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.
 
-private:
+
+	void				ParseReceivedMessage();
 	void				ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lpszData);
 
+	void				OpenSerial(LPCTSTR lpszDevice, CSerial::EBaudrate, CSerial::EDataBits, CSerial::EParity, CSerial::EStopBits, CSerial::EHandshake);
+	void				CloseSerial();
+
 	BOOL				UpdateData(BOOL bSaveAndValidate);
+	void				UpdateTitle();
 
 // 구현입니다.
 protected:
@@ -84,6 +93,22 @@ protected:
 	// imsi
 	std::list<CString>	m_RecvMsgs;
 	std::list<CString>	m_SendMsgs;
+	BOOL				m_bRecvVarioMsg;
+
+	//
+	CSerialWnd			m_Serial;
+	BOOL				m_bConnected;
+
+	CHAR				m_pSerialBuf[MAX_SERIAL_BUFFER];
+	int					m_nBufLen;
+
+
+	// Serial Settings
+	int					m_nPortNum;
+	CSerial::EBaudrate	m_nBaudRate;
+	CSerial::EDataBits	m_nDataBits;
+	CSerial::EParity	m_nParity;
+	CSerial::EStopBits	m_nStopBits;
 
 
 public:
@@ -92,7 +117,7 @@ public:
 	CString				m_strGliderManufacture;
 	CString				m_strGliderModel;
 	int					m_nLoggerTakeoffSpeed;
-	int					m_nLOggerLandingTimeout;
+	int					m_nLoggerLandingTimeout;
 	int					m_nLoggerLoggingInterval;
 	CString				m_strPilotName;
 	CComboBox			m_wndTimezone;
@@ -104,6 +129,7 @@ public:
 	CComboBox			m_wndVarioSentence;
 	int					m_nVarioSentence;
 	BOOL				m_bVarioUseBaroOnly;
+	float				m_fVarioDampingFactor;
 	float				m_fKalmanVarZmeas;
 	float				m_fKalmanVarZaccel;
 	float				m_fKalmanVarAccelbias;
@@ -113,6 +139,7 @@ public:
 	CSliderCtrl			m_wndVolumeEffect;
 	int					m_nVolumeEffect;
 	CString				m_strVolumeEffect;
+	int					m_nVolumeAutoTurnOn;
 	float				m_fThresholdLowBattery;
 	unsigned int		m_fThresholdShutdownHoldtime;
 	unsigned int		m_fThresholdAutoPoweroffVario;
@@ -133,10 +160,12 @@ protected:
 	afx_msg HCURSOR		OnQueryDragIcon();
 	afx_msg void		OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	afx_msg void		OnTimer(UINT nIDEvent);
+	afx_msg LRESULT		OnSerialMessage(WPARAM, LPARAM);
 	afx_msg void		OnEditToneTable();
 	afx_msg void		OnCalibration();
 	afx_msg void		OnViewSensorData();
 	afx_msg void		OnStore();
+	afx_msg void		OnConnect();
 	afx_msg void		OnReload();
 	afx_msg void		OnFactoryReset();
 	afx_msg void		OnSendMessage();

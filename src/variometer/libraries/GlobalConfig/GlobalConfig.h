@@ -184,6 +184,8 @@ typedef struct tagBLOCK_VolumeSettings
 	unsigned char	vario;
 	unsigned char	effect;
 
+	unsigned char	autoTurnOn;
+
 } BLOCK_VolumeSettings;
 
 

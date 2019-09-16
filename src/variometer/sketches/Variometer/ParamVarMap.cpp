@@ -79,6 +79,7 @@ PARAM_MappingInfo ParamMap[] =
 	// VolumeSettings
 	{ PARAM_VOLUME_VARIO					, PARAM_UINT8_T	, &Config.volume.vario					},
 	{ PARAM_VOLUME_EFFECT					, PARAM_UINT8_T	, &Config.volume.effect					},
+	{ PARAM_VOLUME_TURNON_AT_TAKEOFF		, PARAM_UINT8_T , &Config.volume.autoTurnOn				},
 	// ThresholdSettings
 	{ PARAM_THRESHOLD_LOW_BATTERY			, PARAM_FLOAT	, &Config.threshold.low_battery			},
 	{ PARAM_THRESHOLD_SHUTDOWN_HOLDTIME		, PARAM_UINT32_T, &Config.threshold.shutdown_holdtime	},

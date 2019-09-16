@@ -3,9 +3,10 @@
 //
 
 #include "stdafx.h"
+#include "afxdialogex.h"
 #include "wconsole.h"
 #include "VarioPreferenceDlg.h"
-#include "afxdialogex.h"
+#include "SerialPortSelectDlg.h"
 
 #include <strsafe.h>
 
@@ -13,6 +14,9 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+
+#define TIMER_CHECK_RESPONSE		(0x1001)
 
 
 // Parameter tables
@@ -162,7 +166,35 @@ static int GetVolume(int vol)
 	return 0;
 }
 
+static void ShowLastError(LPTSTR lpszFunction, DWORD dwLastError)
+{
+	// Retrieve the system error message for the last-error code
+	LPVOID lpMsgBuf;
+	LPVOID lpDisplayBuf;
 
+	FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		FORMAT_MESSAGE_FROM_SYSTEM |
+		FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		dwLastError,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPTSTR)&lpMsgBuf,
+		0, NULL);
+
+	// Display the error message and exit the process
+
+	lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT, (lstrlen((LPCTSTR)lpMsgBuf) + lstrlen((LPCTSTR)lpszFunction) + 40) * sizeof(TCHAR));
+	StringCchPrintf((LPTSTR)lpDisplayBuf,
+		LocalSize(lpDisplayBuf) / sizeof(TCHAR),
+		TEXT("%s failed with error %d: %s"),
+		lpszFunction, dwLastError, lpMsgBuf);
+
+	AfxMessageBox((LPCTSTR)lpDisplayBuf, MB_ICONERROR | MB_OK);
+
+	LocalFree(lpMsgBuf);
+	LocalFree(lpDisplayBuf);
+}
 
 static WORD PStrToCode(CString &str)
 {
@@ -194,7 +226,7 @@ CVarioPreferenceDlg::CVarioPreferenceDlg(CWnd* pParent /*=NULL*/)
 	, m_strGliderManufacture(_T(""))
 	, m_strGliderModel(_T(""))
 	, m_nLoggerTakeoffSpeed(10)
-	, m_nLOggerLandingTimeout(30000)
+	, m_nLoggerLandingTimeout(30000)
 	, m_nLoggerLoggingInterval(1000)
 	, m_strPilotName(_T(""))
 	, m_nTimezone(0)
@@ -222,6 +254,15 @@ CVarioPreferenceDlg::CVarioPreferenceDlg(CWnd* pParent /*=NULL*/)
 	, m_fCalDataGyroY(0.0f)
 	, m_fCalDataGyroZ(0.0f)
 	, m_nTimerID(0)
+	, m_bConnected(FALSE)
+	, m_nBufLen(0)
+	, m_bRecvVarioMsg(FALSE)
+	, m_nPortNum(0)
+	, m_nBaudRate(CSerial::EBaud115200)
+	, m_nDataBits(CSerial::EData8)
+	, m_nParity(CSerial::EParNone)
+	, m_nStopBits(CSerial::EStop1)
+
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
@@ -270,7 +311,7 @@ void CVarioPreferenceDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_GLIDER_MANUFACTURE, m_strGliderManufacture);
 	DDX_Text(pDX, IDC_GLIDER_MODEL, m_strGliderModel);
 	DDX_Text(pDX, IDC_LOGGER_TAKEOFF_SPEED, m_nLoggerTakeoffSpeed);
-	DDX_Text(pDX, IDC_LOGGER_LANDING_TIMEOUT, m_nLOggerLandingTimeout);
+	DDX_Text(pDX, IDC_LOGGER_LANDING_TIMEOUT, m_nLoggerLandingTimeout);
 	DDX_Text(pDX, IDC_LOGGER_LOGGING_INTERVAL, m_nLoggerLoggingInterval);
 	DDX_Text(pDX, IDC_LOGGER_PILOT_NAME, m_strPilotName);
 	DDX_Control(pDX, IDC_LOGGER_TIMEZONE, m_wndTimezone);
@@ -308,10 +349,12 @@ BEGIN_MESSAGE_MAP(CVarioPreferenceDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_WM_HSCROLL()
 	ON_WM_TIMER()
+	ON_REGISTERED_MESSAGE(CSerialWnd::mg_nDefaultComMsg, OnSerialMessage)
 	ON_BN_CLICKED(IDC_EDIT_TONE_TABLE, &CVarioPreferenceDlg::OnEditToneTable)
 	ON_BN_CLICKED(IDC_CALIBRATION, &CVarioPreferenceDlg::OnCalibration)
 	ON_BN_CLICKED(IDC_SENSOR_VIEWER, &CVarioPreferenceDlg::OnViewSensorData)
 	ON_BN_CLICKED(IDC_STORE, &CVarioPreferenceDlg::OnStore)
+	ON_BN_CLICKED(IDC_CONNECT, &CVarioPreferenceDlg::OnConnect)
 	ON_BN_CLICKED(IDC_RELOAD, &CVarioPreferenceDlg::OnReload)
 	ON_BN_CLICKED(IDC_FACTORY_RESET, &CVarioPreferenceDlg::OnFactoryReset)
 	ON_COMMAND(IDC_SEND_MESSAGE, &CVarioPreferenceDlg::OnSendMessage)
@@ -427,7 +470,13 @@ void CVarioPreferenceDlg::OnTimer(UINT nIDEvent)
 		KillTimer(m_nTimerID);
 		m_nTimerID = 0;
 
+		if (!m_bRecvVarioMsg)
+		{
+			CloseSerial();
+			UpdateTitle();
 
+			AfxMessageBox(_T("Device is not reponsding!"), MB_OK | MB_ICONEXCLAMATION);
+		}
 	}
 
 	CWnd::OnTimer(nIDEvent);
@@ -485,10 +534,14 @@ void CVarioPreferenceDlg::OnStore()
 	m_SendMsgs.push_back(str);
 	str.Format(_T("#UP,%d,%d\r\n"), PARAM_VARIO_BAROONLY, m_VarioParams.Vario_BaroOnly);
 	m_SendMsgs.push_back(str);
+	str.Format(_T("#UP,%d,%.4f\r\n"), PARAM_VARIO_DAMPING_FACTOR, m_VarioParams.Vario_DampingFactor);
+	m_SendMsgs.push_back(str);
 	// Volume Settings
 	str.Format(_T("#UP,%d,%d\r\n"), PARAM_VOLUME_VARIO, m_VarioParams.Volume_Vario);
 	m_SendMsgs.push_back(str);
 	str.Format(_T("#UP,%d,%d\r\n"), PARAM_VOLUME_EFFECT, m_VarioParams.Volume_Effect);
+	m_SendMsgs.push_back(str);
+	str.Format(_T("#UP,%d,%d\r\n"), PARAM_VOLUME_TURNON_AT_TAKEOFF, m_VarioParams.Volume_AutoTurnOn);
 	m_SendMsgs.push_back(str);
 	// Threshold Settings
 	str.Format(_T("#UP,%d,%.4f\r\n"), PARAM_THRESHOLD_LOW_BATTERY, m_VarioParams.Threshold_LowBattery);
@@ -513,9 +566,44 @@ void CVarioPreferenceDlg::OnStore()
 	PostMessage(WM_COMMAND, IDC_SEND_MESSAGE);
 }
 
+void CVarioPreferenceDlg::OnConnect()
+{
+	if (!m_bConnected)
+	{
+		CSerialPortSelectDlg dlg;
+
+		dlg.m_sPortNum = m_nPortNum;
+		dlg.m_sBaudRate = m_nBaudRate;
+		dlg.m_sDataBits = m_nDataBits;
+		dlg.m_sParity = m_nParity;
+		dlg.m_sStopBits = m_nStopBits;
+
+		if (dlg.DoModal() == IDOK)
+		{
+			//
+			m_nPortNum = dlg.m_sPortNum;
+			m_nBaudRate = dlg.m_sBaudRate;
+			m_nDataBits = dlg.m_sDataBits;
+			m_nParity = dlg.m_sParity;
+			m_nStopBits = dlg.m_sStopBits;
+
+			//
+			OpenSerial(dlg.m_sPortName, dlg.m_sBaudRate, dlg.m_sDataBits, dlg.m_sParity, dlg.m_sStopBits, dlg.m_sFlowControl);
+		}
+	}
+	else
+	{
+		//
+		CloseSerial();
+
+	}
+
+	UpdateTitle();
+}
+
 void CVarioPreferenceDlg::OnReload()
 {
-#if 0
+#if 1
 	//
 	if (!m_bConnected)
 		return;
@@ -553,7 +641,7 @@ void CVarioPreferenceDlg::OnSendMessage()
 		m_SendMsgs.pop_front();
 
 		USES_CONVERSION;
-		//m_Serial.Write(T2A(str));
+		m_Serial.Write(T2A(str));
 
 		//
 		PostMessage(WM_COMMAND, IDC_SEND_MESSAGE);
@@ -562,7 +650,7 @@ void CVarioPreferenceDlg::OnSendMessage()
 
 void CVarioPreferenceDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lpszData)
 {
-	if (code == RCODE_DUMP_PARAM || code == RCODE_QUERY_PARAM)
+	if (code == CMD_DUMP_PROPERTY || code == CMD_QUERY_PARAM)
 	{
 		switch (param)
 		{
@@ -611,7 +699,10 @@ void CVarioPreferenceDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR 
 		case PARAM_VARIO_BAROONLY					: // 0x1205
 			m_VarioParams.Vario_BaroOnly = _ttoi(lpszData);
 			break;
-			// ToneTables 
+		case PARAM_VARIO_DAMPING_FACTOR				: // 0x1206
+			m_VarioParams.Vario_DampingFactor = (float)_ttof(lpszData);
+			break;
+		// ToneTables 
 		case PARAM_TONETABLE_00_VELOCITY			: // 0x1301
 			m_VarioParams.ToneTable[0].velocity = (float)_ttof(lpszData);
 			break;
@@ -763,6 +854,9 @@ void CVarioPreferenceDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR 
 		case PARAM_VOLUME_EFFECT					: // 0x1402
 			m_VarioParams.Volume_Effect = _ttoi(lpszData);
 			break;
+		case PARAM_VOLUME_TURNON_AT_TAKEOFF			: // 0x1403
+			m_VarioParams.Volume_AutoTurnOn = _ttoi(lpszData);
+			break;
 		// ThresholdSettings
 		case PARAM_THRESHOLD_LOW_BATTERY			: // 0x1501
 			m_VarioParams.Threshold_LowBattery = (float)_ttof(lpszData);
@@ -819,7 +913,7 @@ void CVarioPreferenceDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR 
 			break;
 		}
 
-		if (code == RCODE_QUERY_PARAM)
+		if (code == CMD_QUERY_PARAM)
 			UpdateData(FALSE);
 	}
 }
@@ -835,7 +929,7 @@ BOOL CVarioPreferenceDlg::UpdateData(BOOL bSaveAndValidate)
 		// IGC-Logger
 		m_bLoggerEnable = m_VarioParams.Logger_Enable;
 		m_nLoggerTakeoffSpeed = m_VarioParams.Logger_TakeoffSpeed;
-		m_nLOggerLandingTimeout = m_VarioParams.Logger_LandingTimeout;
+		m_nLoggerLandingTimeout = m_VarioParams.Logger_LandingTimeout;
 		m_nLoggerLoggingInterval = m_VarioParams.Logger_LoggingInterval;
 		m_strPilotName = m_VarioParams.Logger_PilotName;
 		m_nTimezone = GetTimeZone(m_VarioParams.Logger_Timezone);
@@ -881,7 +975,7 @@ BOOL CVarioPreferenceDlg::UpdateData(BOOL bSaveAndValidate)
 		// IGC-Logger
 		m_VarioParams.Logger_Enable = m_bLoggerEnable;
 		m_VarioParams.Logger_TakeoffSpeed = m_nLoggerTakeoffSpeed;
-		m_VarioParams.Logger_LandingTimeout = m_nLOggerLandingTimeout;
+		m_VarioParams.Logger_LandingTimeout = m_nLoggerLandingTimeout;
 		m_VarioParams.Logger_LoggingInterval = m_nLoggerLoggingInterval;
 		m_VarioParams.Logger_PilotName = m_strPilotName;
 		m_VarioParams.Logger_Timezone = _TimezoneTable[m_nTimezone].offset;
@@ -906,4 +1000,218 @@ BOOL CVarioPreferenceDlg::UpdateData(BOOL bSaveAndValidate)
 	}
 
 	return bRet;
+}
+
+LRESULT CVarioPreferenceDlg::OnSerialMessage(WPARAM wParam, LPARAM lParam)
+{
+	CSerial::EEvent eEvent = CSerial::EEvent(LOWORD(wParam));
+	CSerial::EError eError = CSerial::EError(HIWORD(wParam));
+
+#if 0
+	if (eError)
+		AfxMessageBox(_T("An internal error occurred."), MB_OK);
+
+	if (eEvent & CSerial::EEventBreak)
+		AfxMessageBox(_T("Break detected on input."), MB_OK);
+
+	if (eEvent & CSerial::EEventError)
+		AfxMessageBox(_T("A line-status error occurred."), MB_OK);
+
+	if (eEvent & CSerial::EEventRcvEv)
+		AfxMessageBox(_T("Event character has been received."), MB_OK);
+
+	if (eEvent & CSerial::EEventRing)
+		AfxMessageBox(_T("Ring detected"), MB_OK);
+
+	if (eEvent & CSerial::EEventSend)
+		AfxMessageBox(_T("All data is send"), MB_OK);
+
+	if (eEvent & CSerial::EEventCTS)
+		AfxMessageBox(_T("CTS signal change"), MB_OK);
+
+	if (eEvent & CSerial::EEventDSR)
+		AfxMessageBox(_T("DSR signal change"), MB_OK);
+
+	if (eEvent & CSerial::EEventRLSD)
+		AfxMessageBox(_T("RLSD signal change"), MB_OK);
+#endif
+
+	if (eEvent & CSerial::EEventRecv)
+	{
+		CHAR ch;
+		DWORD dwRead;
+
+		while (m_Serial.Read(&ch, sizeof(ch), &dwRead) == ERROR_SUCCESS && dwRead == sizeof(ch))
+		{
+			if (ch != '\r' && ch != '\n')
+			{
+				m_pSerialBuf[m_nBufLen++] = ch;
+				m_pSerialBuf[m_nBufLen] = '\0';
+			}
+			else
+			{
+				if (m_nBufLen > 0)
+				{
+					USES_CONVERSION;
+					//TRACE("%s\n", m_pSerialBuf);
+					m_RecvMsgs.push_back(CString(A2T(m_pSerialBuf)));
+
+					m_pSerialBuf[0] = '\0';
+					m_nBufLen = 0;
+
+					ParseReceivedMessage();
+				}
+			}
+		}
+	}
+	else if (eEvent & CSerial::EEventSend)
+	{
+		TRACE("Last character on output was sent");
+	}
+
+	return 0;
+}
+
+void CVarioPreferenceDlg::ParseReceivedMessage()
+{
+	while (m_RecvMsgs.begin() != m_RecvMsgs.end())
+	{
+		CString strLine = m_RecvMsgs.front();
+		m_RecvMsgs.pop_front();
+
+		if (strLine.GetLength() == 0)
+			continue;
+
+		if (strLine.GetAt(0) == _T('%'))
+		{
+			// %XX,<param>,<data1>,<data2>,...
+			CString strCode, strParam, strData;
+			CString strToken = _T(",");
+			int nStart = 1;
+
+			strCode = strLine.Tokenize(strToken, nStart);
+			if (nStart > 0)
+				strParam = strLine.Tokenize(strToken, nStart);
+			if (nStart > 0)
+				strData = strLine.Tokenize(strToken, nStart);
+
+			if (strCode.GetLength() == 2)
+			{
+				TRACE(_T(">>> %s: %s, %s\n"), strCode, strParam, strData);
+				ProcessReceivedMessage(PStrToCode(strCode), _ttoi(strParam), strData);
+
+				m_bRecvVarioMsg = TRUE;
+			}
+		}
+		else if (strLine.GetAt(0) == _T('$'))
+		{
+			// processing NMEA setence
+			TRACE(_T(">>> %s\n"), strLine);
+
+			m_bRecvVarioMsg = TRUE;
+		}
+	}
+}
+
+void CVarioPreferenceDlg::UpdateTitle()
+{
+	CString strTitle;
+
+	if (m_bConnected)
+	{
+		int b = 0, d = 0;
+		TCHAR p = _T(' ');
+		TCHAR * s = _T("");
+
+		switch (m_nBaudRate)
+		{
+		case CSerial::EBaud9600: b = 9600;		break;
+		case CSerial::EBaud14400: b = 14400;	break;
+		case CSerial::EBaud19200: b = 19200;	break;
+		case CSerial::EBaud38400: b = 38400;	break;
+		case CSerial::EBaud56000: b = 56000;	break;
+		case CSerial::EBaud57600: b = 57600;	break;
+		case CSerial::EBaud115200: b = 115200;	break;
+		}
+
+		switch (m_nDataBits)
+		{
+		case CSerial::EData5: d = 5; break;
+		case CSerial::EData6: d = 6; break;
+		case CSerial::EData7: d = 7; break;
+		case CSerial::EData8: d = 8; break;
+		}
+
+		switch (m_nParity)
+		{
+		case CSerial::EParNone: p = _T('N'); break;
+		case CSerial::EParOdd: p = _T('O'); break;
+		case CSerial::EParEven: p = _T('E'); break;
+		case CSerial::EParMark: p = _T('M'); break;
+		case CSerial::EParSpace: p = _T('S'); break;
+		}
+
+		switch (m_nStopBits)
+		{
+		case CSerial::EStop1: s = _T("1");	break;
+		case CSerial::EStop1_5: s = _T("1.5"); break;
+		case CSerial::EStop2: s = _T("2");	break;
+
+		}
+
+		strTitle.Format(_T("Variometer - COM%d:%d,%d,%c,%s"), m_nPortNum, b, d, p, s);
+	}
+	else
+	{
+		strTitle.Format(_T("Variometer - Unconnected!"));
+	}
+
+	//
+	GetDlgItem(IDC_CONNECT)->SetWindowText((m_bConnected ? _T("Disconnect") : _T("Connect")));
+	//
+	SetWindowText(strTitle);
+}
+
+void CVarioPreferenceDlg::OpenSerial(LPCTSTR lpszDevice, CSerial::EBaudrate nBaudRate, CSerial::EDataBits nDataBits, CSerial::EParity nParity, CSerial::EStopBits nStopBits, CSerial::EHandshake nHandshake)
+{
+	CWaitCursor wait;
+	LONG lResult;
+
+	if ((lResult = m_Serial.Open(lpszDevice, m_hWnd)) == ERROR_SUCCESS)
+	{
+		//
+		m_Serial.Setup(nBaudRate, nDataBits, nParity, nStopBits);
+		m_Serial.SetupHandshaking(nHandshake);
+		m_Serial.SetupReadTimeouts(CSerial::EReadTimeoutNonblocking);
+
+		m_bConnected = TRUE;
+		m_bRecvVarioMsg = FALSE;
+
+
+		//
+		PostMessage(WM_COMMAND, MAKEWPARAM(IDC_RELOAD, BN_CLICKED), (LPARAM)GetDlgItem(IDC_RELOAD)->GetSafeHwnd());
+		//
+		m_nTimerID = SetTimer(TIMER_CHECK_RESPONSE, 2000, NULL);
+	}
+	else
+	{
+		ShowLastError(_T("Serial connection"), lResult);
+	}
+}
+
+void CVarioPreferenceDlg::CloseSerial()
+{
+	m_Serial.Close();
+
+	if (m_nTimerID)
+	{
+		KillTimer(m_nTimerID);
+		m_nTimerID = 0;
+	}
+
+	//
+	m_RecvMsgs.clear();
+	m_SendMsgs.clear();
+
+	m_bConnected = FALSE;
 }
