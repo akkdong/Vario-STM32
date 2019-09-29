@@ -48,10 +48,10 @@ void CommandParser::update()
 		// #XX[,PARAM[,VALUE]]\r\n
 		//
 		
-		if (parseStep < 0 && c != '#')
+		if (parseStep < 0 && c != '#' && c != '$')
 			continue;
 		
-		if (c == '#')
+		if (c == '#' || c == '$')
 		{
 			// leading character... start parsing
 			parseStep = 0;
@@ -139,6 +139,11 @@ void CommandParser::update()
 						parseStep = 5; // next is '\n'
 					else
 						parseStep = 6; // end of command string
+				}
+				else if (c == '*')
+				{
+					// NMEA format checksum : ignore & terminate parsing
+					parseStep = 6;
 				}
 				else
 				{
