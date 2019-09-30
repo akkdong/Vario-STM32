@@ -86,6 +86,8 @@ protected:
 	afx_msg void		OnCalibration();
 	afx_msg void		OnViewSensorData();
 	afx_msg void		OnConnect();
+	afx_msg void		OnReload();
+	afx_msg void		OnPreferences();
 	afx_msg void		OnSelectPort();
 	afx_msg void		OnSendMessage();
 

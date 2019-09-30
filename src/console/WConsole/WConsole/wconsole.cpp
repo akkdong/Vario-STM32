@@ -4,7 +4,11 @@
 
 #include "stdafx.h"
 #include "wconsole.h"
+#if 0
 #include "VarioConsoleDlg.h"
+#else
+#include "VarioPreferenceDlg.h"
+#endif
 #include "SerialEnum.h"
 
 #ifdef _DEBUG
@@ -77,7 +81,11 @@ BOOL CVarioConsoleApp::InitInstance()
 	//Beep(400, 500);
 	//Sleep(500);
 
+#if 0
 	CVarioConsoleDlg dlg;
+#else
+	CVarioPreferenceDlg dlg;
+#endif
 	m_pMainWnd = &dlg;
 	INT_PTR nResponse = dlg.DoModal();
 	if (nResponse == IDOK)

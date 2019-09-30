@@ -17,7 +17,8 @@
 #define CMD_SOUND_LEVEL			'SL'
 #define CMD_TONE_TEST			'TT'
 #define CMD_DUMP_SENSOR			'DS'
-#define CMD_DUMP_PARAMETERS		'DP'
+#define CMD_DUMP_PROPERTY		'DP'
+#define CMD_DUMP_CONFIG			'DC'
 #define CMD_BLOCK_GPS_NMEA		'BG'
 #define CMD_BLOCK_VARIO_NMEA	'BV'
 #define CMD_FACTORY_RESET		'FR'
@@ -25,8 +26,14 @@
 #define CMD_SAVE_PARAM			'SP'
 #define CMD_QUERY_PARAM			'QP'
 #define CMD_UPDATE_PARAM		'UP'
+#define CMD_ACCEL_CALIBRATION	'AC'
+#define CMD_RUN_BOOTLOADER		'RB'
+#define CMD_BLUETOOTH_QUERY		'BQ'
+#define CMD_BLUETOOTH_UPDATE	'BU'
+#define CMD_ADJUST_BT_BAUDRATE	'BB'
 
-// response code
+// response code <-- replaced by command code
+/*
 #define RCODE_RESULT			'RS'
 #define RCODE_OK				'OK'
 #define RCODE_FAIL				'FA'
@@ -36,20 +43,57 @@
 #define RCODE_DUMP_PARAM		'DP'
 #define RCODE_QUERY_PARAM		'QP'
 #define RCODE_UPDATE_PARAM		'UP'
+*/
+
+// PARAM : use in range 0x0000 ~ 0xFFFF, 0xFFFFFFFF(-1) means unused param
+//     -> result of command processing              : 0x0000 ~ 0x0100
+//     -> accelerometer calibration result/status   : 0x1000 ~ 0x1FFF
+//     -> mode switch return                        : 0x2000 ~ 0x2FFF
+//     -> id of property                            : 0x9000 ~ 0xFFFF
+
+#define RPARAM_SUCCESS				(0)
+#define RPARAM_OK					(0)
+
+#define RPARAM_FAIL					(1)
+#define RPARAM_INVALID_COMMAND		(2)
+#define RPARAM_INVALID_PROPERTY		(3)
+#define RPARAM_NOT_READY			(4)
+#define RPARAM_UNAVAILABLE			(5)
+#define RPARAM_NOT_ALLOWED			(6)
+#define RPARAM_INVALID_PARAMETER	(7)
+#define RPARAM_INVALID_DATA			(8)
+
+#define RPARAM_CAL_START			(0x1000)
+#define RPARAM_CAL_MODE_CHANGED		(0x1001)	// INIT->READY->MEASURE->CALIBATE->DONE or STOP
+#define RPARAM_CAL_MEASURED_RESULT	(0x1003)	// validation, orient, accel standard deviation
+#define RPARAM_CAL_DONE				(0x1002)	// calibration accel x/y/z
+#define RPARAM_CAL_ACCELEROMETER 	(0x1004)	// calibrated accel x/y/z
+
+#define RPARAM_SW_BASE				(0x2000)
+#define RPARAM_SW_VARIO				(0x2001)
+#define RPARAM_SW_UMS				(0x2002)
+#define RPARAM_SW_CALIBRATION		(0x2003)
+
+#define RPARAM_BT_BAUDRATE			(0x3001)
+#define RPARAM_BT_NAME				(0x3002)
+#define RPARAM_BT_KEY				(0x3003)
+
 
 
 // mode switch
-#define PARAM_SW_ICALIBRATION	(1)		// interactive
-#define PARAM_SW_CALIBRATION	(2)		// no-interactive
-#define PARAM_SW_UMS			(3)
-#define PARAM_SW_CONFIG			(4)
+#define PARAM_MS_QUERY			(0)	// response with current mode
+#define PARAM_MS_VARIO			(1)
+#define PARAM_MS_UMS			(2)
+#define PARAM_MS_CALIBRATION	(3)
 
 // device status
+/*
 #define PARAM_DS_ALL			(0)
 #define PARAM_DS_IMU			(1)
 #define PARAM_DS_SDCARD			(2)
 #define PARAM_DS_GPS			(3)
 #define PARAM_DS_VOLTAGE		(4)
+*/
 
 // sensor dump
 #define PARAM_DU_NONE			(0)
@@ -60,21 +104,41 @@
 #define PARAM_DU_ALL			(0x0F)
 
 // nmea sentence
+/*
 #define PARAM_NM_UNBLOCK		(0)
 #define PARAM_NM_BLOCK			(1)
+*/
 
 //  tone test
 #define PARAM_TT_STOP			(0)
 #define PARAM_TT_START			(1)
 
 // sound level
-#define PARAM_LV_MUTE			(0)
-#define PARAM_LV_MEDIUM			(1)
-#define PARAM_LV_LOUD			(2)
+#define PARAM_SL_ALL			(0)
+#define PARAM_SL_VARIO			(1)
+#define PARAM_SL_EFFECT			(2)
+
+#define PARAM_SL_MUTE			(0x1000)
+#define PARAM_SL_MEDIUM			(0x1001)
+#define PARAM_SL_LOUD			(0x1002)
+
 
 // device reset
 #define PARAM_RS_NOW			(0)
 #define PARAM_RS_AFTER_SAVE		(1)
+
+// accelerometer calibration
+#define PARAM_AC_MEASURE		(1)
+#define PARAM_AC_CALIBRATE		(2)
+#define PARAM_AC_STOP			(3)
+#define PARAM_AC_QUERY_STATUS	(4)
+#define PARAM_AC_RESET			(5)
+
+// bluetooth
+#define PARAM_BT_BAUDRATE		(1)
+#define PARAM_BT_NAME			(2)
+#define PARAM_BT_KEY			(3)
+
 
 #define MAX_PROFILE_SIZE		(16)
 #define MAX_STRING_SIZE			(16)
@@ -129,6 +193,7 @@ enum PARAM_Id
 	PARAM_VARIO_SENSITIVITY				= 0x9203,
 	PARAM_VARIO_SENTENCE				= 0x9204,
 	PARAM_VARIO_BAROONLY				= 0x9205,
+	PARAM_VARIO_DAMPING_FACTOR			= 0x9206,
 	// ToneTables 
 	PARAM_TONETABLE_00_VELOCITY			= 0x9301,
 	PARAM_TONETABLE_00_FREQ				= 0x9302,
@@ -181,6 +246,7 @@ enum PARAM_Id
 	// VolumeSettings
 	PARAM_VOLUME_VARIO					= 0x9401,
 	PARAM_VOLUME_EFFECT					= 0x9402,
+	PARAM_VOLUME_TURNON_AT_TAKEOFF		= 0x9403,
 	// ThresholdSettings
 	PARAM_THRESHOLD_LOW_BATTERY			= 0x9501,
 	PARAM_THRESHOLD_SHUTDOWN_HOLDTIME	= 0x9502,

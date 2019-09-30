@@ -111,6 +111,7 @@ void GlobalConfig::reset()
 	//
 	volume.vario = VARIOMETER_BEEP_VOLUME; // 0 ~ 80
 	volume.effect = VARIOMETER_EFFECT_VOLUME;
+	volume.autoTurnOn = true;
 	
 	//
 	threshold.low_battery = LOW_BATTERY_THRESHOLD;

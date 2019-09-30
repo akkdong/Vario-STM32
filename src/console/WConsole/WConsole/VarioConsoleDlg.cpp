@@ -7,6 +7,7 @@
 #include "VarioConsoleDlg.h"
 #include "afxdialogex.h"
 #include "SerialPortSelectDlg.h"
+#include "VarioPreferenceDlg.h"
 
 #include <strsafe.h>
 
@@ -106,6 +107,8 @@ BEGIN_MESSAGE_MAP(CVarioConsoleDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_CALIBRATION, &CVarioConsoleDlg::OnCalibration)
 	ON_BN_CLICKED(IDC_SENSOR_VIEWER, &CVarioConsoleDlg::OnViewSensorData)
 	ON_BN_CLICKED(IDC_CONNECT, &CVarioConsoleDlg::OnConnect)
+	ON_BN_CLICKED(IDC_RELOAD, &CVarioConsoleDlg::OnReload)
+	ON_BN_CLICKED(IDC_PREFERENCES, &CVarioConsoleDlg::OnPreferences)
 	ON_COMMAND(IDC_SELECT_PORT, &CVarioConsoleDlg::OnSelectPort)
 	ON_COMMAND(IDC_SEND_MESSAGE, &CVarioConsoleDlg::OnSendMessage)
 END_MESSAGE_MAP()
@@ -352,6 +355,30 @@ void CVarioConsoleDlg::OnConnect()
 	UpdateTitle();
 }
 
+void CVarioConsoleDlg::OnReload()
+{
+	//
+	if (!m_bConnected)
+		return;
+
+	//
+	m_SendMsgs.push_back(_T("#RP\r\n"));
+	m_SendMsgs.push_back(_T("#DP\r\n"));
+
+	//
+	PostMessage(WM_COMMAND, IDC_SEND_MESSAGE);
+}
+
+void CVarioConsoleDlg::CVarioConsoleDlg::OnPreferences()
+{
+	if (m_bConnected && m_bRecvVarioMsg)
+	{
+		CVarioPreferenceDlg dlg;
+
+		dlg.DoModal();
+	}
+}
+
 void CVarioConsoleDlg::OnSelectPort()
 {
 
@@ -415,7 +442,7 @@ void CVarioConsoleDlg::ParseReceivedMessage()
 
 void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lpszData)
 {
-	if (code == RCODE_DUMP_PARAM || code == RCODE_QUERY_PARAM)
+	if (code == CMD_DUMP_PROPERTY || code == CMD_QUERY_PARAM)
 	{
 		switch (param)
 		{
@@ -552,6 +579,8 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			break;
 		case PARAM_VOLUME_EFFECT					: // 0x1402
 			break;
+		case PARAM_VOLUME_TURNON_AT_TAKEOFF			: // 0x1403
+			break;
 		// ThresholdSettings
 		case PARAM_THRESHOLD_LOW_BATTERY			: // 0x1501
 			break;
@@ -595,7 +624,8 @@ void CVarioConsoleDlg::ProcessReceivedMessage(WORD code, UINT param, LPCTSTR lps
 			break;
 		}
 
-		if (code == RCODE_QUERY_PARAM)
+		//if (code == RCODE_QUERY_PARAM)
+		if (code == CMD_QUERY_PARAM)
 			UpdateData(FALSE);
 	}
 }

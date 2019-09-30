@@ -117,17 +117,17 @@ void processLowBattery();
 void processShutdownInterrupt();
 void processCommand();
 
-void commandModeSwitch(Command * cmd);
-void commandSoundLevel(Command * cmd);
-void commandToneTest(Command * cmd);
-void commandSendsorDump(Command * cmd);
-void commandQueryProperty(Command * cmd);
-void commandUpdateProperty(Command * cmd);
-void commandDumpProperties(Command * cmd);
-void commandAccelerometerCalibration(Command * cmd);
+void commandModeSwitch(Command * cmd, ResponseStack * res);
+void commandSoundLevel(Command * cmd, ResponseStack * res);
+void commandToneTest(Command * cmd, ResponseStack * res);
+void commandSendsorDump(Command * cmd, ResponseStack * res);
+void commandQueryProperty(Command * cmd, ResponseStack * res);
+void commandUpdateProperty(Command * cmd, ResponseStack * res);
+void commandDumpProperties(Command * cmd, ResponseStack * res);
+void commandAccelerometerCalibration(Command * cmd, ResponseStack * res);
 
-void commandQueryBluetooth(Command * cmd);
-void commandUpdateBluetooth(Command * cmd);
+void commandQueryBluetooth(Command * cmd, ResponseStack * res);
+void commandUpdateBluetooth(Command * cmd, ResponseStack * res);
 
 void calibration_changeMode(uint8_t mode);
 void calibration_readyMeasure(int beepType);
@@ -334,6 +334,7 @@ FuncKeyParser keyParser(keyFunc, cmdStack, tonePlayer);
 
 ResponseStack resStackUSB;
 ResponseStack resStackBT;
+ResponseStack * resActive = NULL;
 
 volatile int commandReceiveFlag = 0; // when any new command is occured, set this. 
 
@@ -393,7 +394,7 @@ void board_init()
 	//keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_ACTIVE);
 	#elif HW_VERSION == HW_VERSION_V1_REV2
 	keyPowerGPS.begin(PIN_GPS_EN, ACTIVE_HIGH, OUTPUT_INACTIVE);
-	keyPowerBT.begin(PIN_BT_EN, ACTIVE_HIGH, OUTPUT_ACTIVE);
+	keyPowerBT.begin(PIN_BT_EN, ACTIVE_HIGH, OUTPUT_INACTIVE);
 	//keyPowerDev.begin(PIN_KILL_PWR, ACTIVE_LOW, OUTPUT_ACTIVE);
 	//keyAccelFSync.begin(PIN_IMU_FSYNC, ACTIVE_HIGH, OUTPUT_INACTIVE);
 	keyPowerIMU.begin(PIN_IMU_EN, ACTIVE_HIGH, OUTPUT_INACTIVE);
@@ -586,10 +587,14 @@ void setup_vario()
 	// turn-on All : IMU, SD, GPS, BT
 	#if HW_VERSION == HW_VERSION_V1_REV2
 	keyPowerIMU.enable();
+	#if ! KOBO_SUPPORT
 	keyPowerSD.enable();
+	#endif
 	#endif // HW_VERSION == HW_VERSION_V1_REV2
 	keyPowerGPS.enable();
+	#if ! KOBO_SUPPORT
 	keyPowerBT.enable();
+	#endif
 	delay(100);
 	
 	//
@@ -662,13 +667,16 @@ void loop_vario()
 		}
 		else
 		{
-			varioBeeper.setVelocity(beepVelocity);
+			if (! Config.volume.autoTurnOn || varioMode == VARIO_MODE_FLYING)
+				varioBeeper.setVelocity(beepVelocity);
 			//Serial.println(velocity);
 		}
 
 		//
 		{
+			#if ! KOBO_SUPPORT // Kobo never go to auto shutdown --> update device tick always
 			if (beepVelocity < STABLE_SINKING_THRESHOLD || STABLE_CLIMBING_THRESHOLD < beepVelocity)
+			#endif 
 				deviceTick = millis(); // reset tick because it's not quiet.
 			
 			if (commandReceiveFlag)
@@ -1206,6 +1214,8 @@ void processCommand()
 	if(cmdStack.getSize())
 	{
 		Command cmd = cmdStack.dequeue();
+		ResponseStack & res = cmd.from == CMD_FROM_USB ? resStackUSB : resStackBT;
+
 		commandReceiveFlag = 1; //
 		
 		//Serial.print("dequeue command: ");
@@ -1216,7 +1226,7 @@ void processCommand()
 		switch(cmd.code)
 		{
 		case CMD_STATUS 	:
-			resStackBT.push(cmd.code, RPARAM_UNAVAILABLE);
+			res.push(cmd.code, RPARAM_UNAVAILABLE);
 			break;
 		case CMD_RESET 	:
 			// reset!!
@@ -1235,24 +1245,26 @@ void processCommand()
 		case CMD_FIRMWARE_VERSION :
 			{
 				uint32_t dbg = *(volatile uint32_t *)(0xE0042000);
-				resStackBT.push(cmd.code, 0x3001, dbg, 0x0100);
-				//resStackBT.push(cmd.code, RPARAM_UNAVAILABLE);
+				res.push(cmd.code, 0x3001, dbg, 0x0100);
+				//res.push(cmd.code, RPARAM_UNAVAILABLE);
 			}
 			break;
 		case CMD_MODE_SWITCH 	:
-			commandModeSwitch(&cmd);
+			#if ! KOBO_SUPPORT
+			commandModeSwitch(&cmd, &res);
+			#endif
 			break;
 		case CMD_SOUND_LEVEL 	:
-			commandSoundLevel(&cmd);
+			commandSoundLevel(&cmd, &res);
 			break;
 		case CMD_TONE_TEST 		:
-			commandToneTest(&cmd);
+			commandToneTest(&cmd, &res);
 			break;
 		case CMD_DUMP_SENSOR 	:
-			commandSendsorDump(&cmd);
+			commandSendsorDump(&cmd, &res);
 			break;
 		case CMD_DUMP_PROPERTY :
-			commandDumpProperties(&cmd);
+			commandDumpProperties(&cmd, &res);
 			break;
 //		case CMD_BLOCK_GPS_NMEA :
 //			btMan.blockNmeaSentence(cmd.param ? );
@@ -1261,24 +1273,24 @@ void processCommand()
 //			btMan.blockNmeaSentence(cmd.param ? );
 //			break;
 		case CMD_QUERY_PROPERTY 	:
-			commandQueryProperty(&cmd);
+			commandQueryProperty(&cmd, &res);
 			break;
 		case CMD_UPDATE_PROPERTY 	:
-			commandUpdateProperty(&cmd);
+			commandUpdateProperty(&cmd, &res);
 			break;
 		case CMD_SAVE_PROPERTY :
 			Config.writeAll();
-			resStackBT.push(cmd.code, RPARAM_SUCCESS);
+			res.push(cmd.code, RPARAM_SUCCESS);
 			break;
 		case CMD_RESTORE_PROPERTY :
 			Config.reset();
 			Config.readAll();
-			resStackBT.push(cmd.code, RPARAM_SUCCESS);
+			res.push(cmd.code, RPARAM_SUCCESS);
 			break;
 		case CMD_FACTORY_RESET :
 			Config.reset();
 			Config.writeAll();
-			resStackBT.push(cmd.code, RPARAM_SUCCESS);
+			res.push(cmd.code, RPARAM_SUCCESS);
 			break;
 		#if CONFIG_DEBUG_DUMP
 		case CMD_DUMP_CONFIG :
@@ -1286,33 +1298,33 @@ void processCommand()
 			break;
 		#endif // CONFIG_DEBUG_DUMP
 		case CMD_ACCEL_CALIBRATION :
-			commandAccelerometerCalibration(&cmd);
+			commandAccelerometerCalibration(&cmd, &res);
 			break;
 
 		case CMD_BLUETOOTH_QUERY :
-			commandQueryBluetooth(&cmd);
+			commandQueryBluetooth(&cmd, &res);
 			break;
 		case CMD_BLUETOOTH_UPDATE :
-			commandUpdateBluetooth(&cmd);
+			commandUpdateBluetooth(&cmd, &res);
 			break;
 		case CMD_ADJUST_BT_BAUDRATE :
-			commandAdjustBaudRate(&cmd);
+			commandAdjustBaudRate(&cmd, &res);
 			break;
 			
 		default :
-			resStackBT.push(cmd.code, RPARAM_INVALID_COMMAND);		
+			res.push(cmd.code, RPARAM_INVALID_COMMAND);		
 			break;
 		}
 	}	
 }
 
 // CMD_MODE_SWITCH
-void commandModeSwitch(Command * cmd)
+void commandModeSwitch(Command * cmd, ResponseStack * res)
 {
 	// return current device-mode
 	if (cmd->param == PARAM_MS_QUERY)
 	{
-		resStackBT.push(cmd->code, RPARAM_SW_BASE + deviceMode);
+		res->push(cmd->code, RPARAM_SW_BASE + deviceMode);
 		return;
 	}
 	
@@ -1325,14 +1337,14 @@ void commandModeSwitch(Command * cmd)
 			changeDeviceMode(DEVICE_MODE_VARIO);
 			
 			if (cmd->from != CMD_FROM_KEY)
-				resStackBT.push(cmd->code, RPARAM_SUCCESS);
+				res->push(cmd->code, RPARAM_SUCCESS);
 			break;
 		case PARAM_MS_CALIBRATION :
 			calInteractive = (cmd->from == CMD_FROM_KEY ? 0 : 1);
 			changeDeviceMode(DEVICE_MODE_CALIBRATION);
 			
 			if (cmd->from != CMD_FROM_KEY)
-				resStackBT.push(cmd->code, RPARAM_SUCCESS);
+				res->push(cmd->code, RPARAM_SUCCESS);
 			break;
 		case PARAM_MS_UMS :
 			if (/*keyUSB.read() == INPUT_ACTIVE &&*/ logger.isInitialized())
@@ -1340,7 +1352,7 @@ void commandModeSwitch(Command * cmd)
 				changeDeviceMode(DEVICE_MODE_UMS);			
 				
 				if (cmd->from != CMD_FROM_KEY)
-					resStackBT.push(cmd->code, RPARAM_SUCCESS);
+					res->push(cmd->code, RPARAM_SUCCESS);
 			}
 			else
 			{
@@ -1348,25 +1360,25 @@ void commandModeSwitch(Command * cmd)
 				tonePlayer.beep(NOTE_C3, 200, 4, Config.volume.effect);
 				
 				if (cmd->from != CMD_FROM_KEY)
-					resStackBT.push(cmd->code, RPARAM_FAIL);
+					res->push(cmd->code, RPARAM_FAIL);
 			}
 			break;
 
 		default :
 			if (cmd->from != CMD_FROM_KEY)
-				resStackBT.push(cmd->code, RPARAM_INVALID_COMMAND);
+				res->push(cmd->code, RPARAM_INVALID_COMMAND);
 			break;
 		}
 	}
 	else
 	{
 		if (cmd->from != CMD_FROM_KEY)
-			resStackBT.push(cmd->code, RPARAM_NOT_ALLOWED);
+			res->push(cmd->code, RPARAM_NOT_ALLOWED);
 	}
 }
 
 // CMD_SOUND_LEVEL
-void commandSoundLevel(Command * cmd)
+void commandSoundLevel(Command * cmd, ResponseStack * res)
 {
 	int volume = -1;
 	
@@ -1418,12 +1430,12 @@ void commandSoundLevel(Command * cmd)
 		tonePlayer.setBeep(460, 800, 400, 3, volume);
 		// report success
 		if (cmd->from != CMD_FROM_KEY)
-			resStackBT.push(cmd->code, RPARAM_SUCCESS);
+			res->push(cmd->code, RPARAM_SUCCESS);
 	}
 	else
 	{
 		if (cmd->from != CMD_FROM_KEY)
-			resStackBT.push(cmd->code, RPARAM_INVALID_COMMAND);
+			res->push(cmd->code, RPARAM_INVALID_COMMAND);
 	}	
 }
 
@@ -1434,7 +1446,7 @@ void commandSoundLevel(Command * cmd)
 //     0 : stop
 //     1 : start
 
-void commandToneTest(Command * cmd)
+void commandToneTest(Command * cmd, ResponseStack * res)
 {
 	if (cmd->param)
 	{
@@ -1448,7 +1460,7 @@ void commandToneTest(Command * cmd)
 		toneTestFlag = false;
 	}
 	
-	resStackBT.push(cmd->code, RPARAM_SUCCESS);
+	res->push(cmd->code, RPARAM_SUCCESS);
 }
 
 
@@ -1463,7 +1475,7 @@ void commandToneTest(Command * cmd)
 // response
 //     $SENSOR,ax,ay,az,gx,gy,gz,p,t*XX\r\n
 
-void commandSendsorDump(Command * cmd)
+void commandSendsorDump(Command * cmd, ResponseStack * res)
 {
 	if (cmd->param)
 	{
@@ -1489,7 +1501,7 @@ void commandSendsorDump(Command * cmd)
 	//btMan.blockSensorData(cmd.param);		
 }
 
-void commandQueryProperty(Command * cmd)
+void commandQueryProperty(Command * cmd, ResponseStack * res)
 {
 	for (int i = 0; ParamMap[i].id != PARAM_EOF; i++)
 	{
@@ -1504,35 +1516,35 @@ void commandQueryProperty(Command * cmd)
 			switch (info->type)
 			{
 			case PARAM_INT8_T	:
-				resStackBT.push(cmd->code, cmd->param, *((int8_t *)info->ref));
+				res->push(cmd->code, cmd->param, *((int8_t *)info->ref));
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((int8_t *)info->ref));	
 				break;
 			case PARAM_INT16_T	:
-				resStackBT.push(cmd->code, cmd->param, *((int16_t *)info->ref));
+				res->push(cmd->code, cmd->param, *((int16_t *)info->ref));
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((int16_t *)info->ref));	
 				break;
 			case PARAM_INT32_T	:
-				resStackBT.push(cmd->code, cmd->param, *((int32_t *)info->ref));
+				res->push(cmd->code, cmd->param, *((int32_t *)info->ref));
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((int32_t *)info->ref));	
 				break;
 			case PARAM_UINT8_T	:
-				resStackBT.push(cmd->code, cmd->param, *((uint8_t *)info->ref));
+				res->push(cmd->code, cmd->param, *((uint8_t *)info->ref));
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((uint8_t *)info->ref));	
 				break;
 			case PARAM_UINT16_T	:
-				resStackBT.push(cmd->code, cmd->param, *((uint16_t *)info->ref));
+				res->push(cmd->code, cmd->param, *((uint16_t *)info->ref));
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((uint16_t *)info->ref));	
 				break;
 			case PARAM_UINT32_T	:
-				resStackBT.push(cmd->code, cmd->param, *((uint32_t *)info->ref));
+				res->push(cmd->code, cmd->param, *((uint32_t *)info->ref));
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((uint32_t *)info->ref));	
 				break;
 			case PARAM_FLOAT	:
-				resStackBT.push(cmd->code, cmd->param, *((float *)info->ref));
+				res->push(cmd->code, cmd->param, *((float *)info->ref));
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); Serial.println(*((float *)info->ref), MAX_FLOAT_PRECISION);	
 				break;
 			case PARAM_STRING	:
-				resStackBT.push(cmd->code, cmd->param, (char *)info->ref);
+				res->push(cmd->code, cmd->param, (char *)info->ref);
 				//Serial.print("QP:"); Serial.print(cmd->param); Serial.print(" -> "); 
 				//{
 				//	char * ptr = (char *)info->ref;
@@ -1548,11 +1560,11 @@ void commandQueryProperty(Command * cmd)
 		}
 	}
 	
-	resStackBT.push(cmd->code, RPARAM_INVALID_PROPERTY/*, error code*/);
+	res->push(cmd->code, RPARAM_INVALID_PROPERTY/*, error code*/);
 	//Serial.println("%ER");
 }	
 
-void commandUpdateProperty(Command * cmd)
+void commandUpdateProperty(Command * cmd, ResponseStack * res)
 {
 	//Serial.print("commandUpdateParam(");
 	//Serial.print("code:"); Serial.print(cmd->code);
@@ -1569,38 +1581,38 @@ void commandUpdateProperty(Command * cmd)
 			{
 			case PARAM_INT8_T	:
 				*((int8_t *)info->ref) = atoi((char *)cmd->valData);
-				resStackBT.push(cmd->code, cmd->param, *((int8_t *)info->ref));
+				res->push(cmd->code, cmd->param, *((int8_t *)info->ref));
 				break;
 			case PARAM_INT16_T	:
 				*((int16_t *)info->ref) = atoi((char *)cmd->valData);
-				resStackBT.push(cmd->code, cmd->param, *((int16_t *)info->ref));
+				res->push(cmd->code, cmd->param, *((int16_t *)info->ref));
 				break;
 			case PARAM_INT32_T	:
 				*((int32_t *)info->ref) = atoi((char *)cmd->valData);
-				resStackBT.push(cmd->code, cmd->param, *((int32_t *)info->ref));
+				res->push(cmd->code, cmd->param, *((int32_t *)info->ref));
 				break;
 			case PARAM_UINT8_T	:
 				*((uint8_t *)info->ref) = atoi((char *)cmd->valData);
-				resStackBT.push(cmd->code, cmd->param, *((uint8_t *)info->ref));
+				res->push(cmd->code, cmd->param, *((uint8_t *)info->ref));
 				break;
 			case PARAM_UINT16_T	:
 				*((uint16_t *)info->ref) = atoi((char *)cmd->valData);
-				resStackBT.push(cmd->code, cmd->param, *((uint16_t *)info->ref));
+				res->push(cmd->code, cmd->param, *((uint16_t *)info->ref));
 				break;
 			case PARAM_UINT32_T	:
 				*((uint32_t *)info->ref) = atoi((char *)cmd->valData);
-				resStackBT.push(cmd->code, cmd->param, *((uint32_t *)info->ref));
+				res->push(cmd->code, cmd->param, *((uint32_t *)info->ref));
 				break;
 			case PARAM_FLOAT	:
 				//Serial.print("UP:"); Serial.print(cmd->param, HEX); Serial.print(" -> "); Serial.println((char *)cmd->valData);
 				*((float *)info->ref) = atof((char *)cmd->valData);
-				resStackBT.push(cmd->code, cmd->param, *((float *)info->ref));
+				res->push(cmd->code, cmd->param, *((float *)info->ref));
 				break;
 			case PARAM_STRING	:
 				int len = cmd->valLen < MAX_STRING_SIZE ? cmd->valLen : MAX_STRING_SIZE;
 				memset((char *)info->ref, 0, MAX_STRING_SIZE);
 				memcpy((char *)info->ref, (char *)cmd->valData, len);
-				resStackBT.push(cmd->code, cmd->param, (char *)info->ref);
+				res->push(cmd->code, cmd->param, (char *)info->ref);
 				break;
 			}
 			
@@ -1609,18 +1621,20 @@ void commandUpdateProperty(Command * cmd)
 	}
 	
 	//Serial.println("  -> unmatched command");
-	resStackBT.push(cmd->code, RPARAM_INVALID_PROPERTY/*, error code*/);
+	res->push(cmd->code, RPARAM_INVALID_PROPERTY/*, error code*/);
 }
 
-void commandDumpProperties(Command * cmd)
+void commandDumpProperties(Command * cmd, ResponseStack * res)
 {
 	//Serial.print("commandDumpProperties: "); Serial.println(dumpProp);
+
+	resActive = res;
 	
 	if (dumpProp < 0)
 		dumpProp = pushProperties(0);
 }
 
-void commandAccelerometerCalibration(Command * cmd)
+void commandAccelerometerCalibration(Command * cmd, ResponseStack * res)
 {
 	if (deviceMode == DEVICE_MODE_CALIBRATION && calInteractive != 0)
 	{
@@ -1630,14 +1644,14 @@ void commandAccelerometerCalibration(Command * cmd)
 			if (calibMode == CAL_MODE_MEASURE_READY || calibMode == CAL_MODE_CALIBATE_READY || calibMode == CAL_MODE_DONE)
 				calibration_startMeasure();
 			else
-				resStackBT.push(cmd->code, RPARAM_NOT_ALLOWED);
+				res->push(cmd->code, RPARAM_NOT_ALLOWED);
 			break;
 			
 		case PARAM_AC_CALIBRATE :
 			if (calibMode == CAL_MODE_CALIBATE_READY)
 				calibration_startCalibrate();
 			else
-				resStackBT.push(cmd->code, RPARAM_NOT_ALLOWED);
+				res->push(cmd->code, RPARAM_NOT_ALLOWED);
 			break;
 			
 		case PARAM_AC_STOP :
@@ -1655,7 +1669,7 @@ void commandAccelerometerCalibration(Command * cmd)
 	}
 	else
 	{
-		resStackBT.push(cmd->code, RPARAM_INVALID_COMMAND);
+		res->push(cmd->code, RPARAM_INVALID_COMMAND);
 		return;
 	}
 }
@@ -1668,7 +1682,7 @@ int getBluetoothResponse(char * buf, int len)
 	return -1;
 }
 
-void commandQueryBluetooth(Command * cmd)
+void commandQueryBluetooth(Command * cmd, ResponseStack * res)
 {
 	// process command from usb-serial only
 	if (cmd->from != CMD_FROM_USB)
@@ -1682,32 +1696,32 @@ void commandQueryBluetooth(Command * cmd)
 	case PARAM_BT_BAUDRATE :
 		SerialBT.print("AT+BTUART?\r");
 		if (getBluetoothResponse(data, sizeof(data)) > 0)
-			resStackUSB.push(cmd->code, RPARAM_BT_BAUDRATE, data);
+			res->push(cmd->code, RPARAM_BT_BAUDRATE, data);
 		else
-			resStackUSB.push(cmd->code, RPARAM_FAIL);
+			res->push(cmd->code, RPARAM_FAIL);
 		break;
 	case PARAM_BT_NAME :
 		SerialBT.print("AT+BTNAME?\r");
 		if (getBluetoothResponse(data, sizeof(data)) > 0)
-			resStackUSB.push(cmd->code, RPARAM_BT_NAME, data);
+			res->push(cmd->code, RPARAM_BT_NAME, data);
 		else
-			resStackUSB.push(cmd->code, RPARAM_FAIL);
+			res->push(cmd->code, RPARAM_FAIL);
 		break;
 	case PARAM_BT_KEY :
 		SerialBT.print("AT+BTKEY?\r");
 		if (getBluetoothResponse(data, sizeof(data)) > 0)
-			resStackUSB.push(cmd->code, RPARAM_BT_KEY, data);
+			res->push(cmd->code, RPARAM_BT_KEY, data);
 		else
-			resStackUSB.push(cmd->code, RPARAM_FAIL);
+			res->push(cmd->code, RPARAM_FAIL);
 		break;
 
 	default :
-		resStackUSB.push(cmd->code, RPARAM_INVALID_PROPERTY);
+		res->push(cmd->code, RPARAM_INVALID_PROPERTY);
 		break;
 	}
 }
 
-void commandUpdateBluetooth(Command * cmd)
+void commandUpdateBluetooth(Command * cmd, ResponseStack * res)
 {
 	// process command from usb-serial only
 	if (cmd->from != CMD_FROM_USB)
@@ -1722,9 +1736,9 @@ void commandUpdateBluetooth(Command * cmd)
 	case PARAM_BT_BAUDRATE :
 		SerialBT.print("AT+BTUART="); SerialBT.print(cmd->valData); SerialBT.print("\r");
 		if (getBluetoothResponse(data, sizeof(data)) > 0)
-			resStackUSB.push(cmd->code, RPARAM_BT_BAUDRATE, data);
+			res->push(cmd->code, RPARAM_BT_BAUDRATE, data);
 		else
-			resStackUSB.push(cmd->code, RPARAM_FAIL);
+			res->push(cmd->code, RPARAM_FAIL);
 		break;
 	*/
 	case PARAM_BT_NAME :
@@ -1732,11 +1746,11 @@ void commandUpdateBluetooth(Command * cmd)
 		if (getBluetoothResponse(data, sizeof(data)) > 0)
 		{
 			SerialBT.print("ATZ\r");
-			resStackUSB.push(cmd->code, RPARAM_BT_NAME, data);
+			res->push(cmd->code, RPARAM_BT_NAME, data);
 		}
 		else
 		{
-			resStackUSB.push(cmd->code, RPARAM_FAIL);
+			res->push(cmd->code, RPARAM_FAIL);
 		}
 		break;
 	case PARAM_BT_KEY :
@@ -1744,16 +1758,16 @@ void commandUpdateBluetooth(Command * cmd)
 		if (getBluetoothResponse(data, sizeof(data)) > 0)
 		{
 			SerialBT.print("ATZ\r");
-			resStackUSB.push(cmd->code, RPARAM_BT_KEY, data);
+			res->push(cmd->code, RPARAM_BT_KEY, data);
 		}
 		else
 		{
-			resStackUSB.push(cmd->code, RPARAM_FAIL);
+			res->push(cmd->code, RPARAM_FAIL);
 		}
 		break;
 
 	default :
-		resStackUSB.push(cmd->code, RPARAM_INVALID_PROPERTY);
+		res->push(cmd->code, RPARAM_INVALID_PROPERTY);
 		break;
 	}		
 }
@@ -1826,7 +1840,7 @@ int findBaudRate()
 }
 
 
-void commandAdjustBaudRate(Command * cmd)
+void commandAdjustBaudRate(Command * cmd, ResponseStack * res)
 {
 	// process command from usb-serial only
 	if (cmd->from != CMD_FROM_USB)
@@ -1874,46 +1888,52 @@ void commandAdjustBaudRate(Command * cmd)
 
 int pushProperties(int start)
 {
+	if (! resActive)
+		return -1;
+	
+	//
 	int i;
 	
 	//Serial.print("push from "); Serial.println(start);
 	
-	for (i = start; ParamMap[i].id != PARAM_EOF && ! resStackBT.isFull(); i++)
+	for (i = start; ParamMap[i].id != PARAM_EOF && ! resActive->isFull(); i++)
 	{
 		//Serial.print("push QP,0x"); Serial.println(ParamMap[i].id, HEX);
 		
 		switch (ParamMap[i].type)
 		{
 		case PARAM_INT8_T	:
-			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((int8_t *)ParamMap[i].ref));
+			resActive->push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((int8_t *)ParamMap[i].ref));
 			break;
 		case PARAM_INT16_T	:
-			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((int16_t *)ParamMap[i].ref));
+			resActive->push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((int16_t *)ParamMap[i].ref));
 			break;
 		case PARAM_INT32_T	:
-			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((int32_t *)ParamMap[i].ref));
+			resActive->push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((int32_t *)ParamMap[i].ref));
 			break;
 		case PARAM_UINT8_T	:
-			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((uint8_t *)ParamMap[i].ref));
+			resActive->push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((uint8_t *)ParamMap[i].ref));
 			break;
 		case PARAM_UINT16_T	:
-			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((uint16_t *)ParamMap[i].ref));
+			resActive->push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((uint16_t *)ParamMap[i].ref));
 			break;
 		case PARAM_UINT32_T	:
-			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((uint32_t *)ParamMap[i].ref));
+			resActive->push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((uint32_t *)ParamMap[i].ref));
 			break;
 		case PARAM_FLOAT	:
-			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((float *)ParamMap[i].ref));
+			resActive->push(CMD_DUMP_PROPERTY, ParamMap[i].id, *((float *)ParamMap[i].ref));
 			break;
 		case PARAM_STRING	:
-			resStackBT.push(CMD_DUMP_PROPERTY, ParamMap[i].id, (char *)ParamMap[i].ref);
+			resActive->push(CMD_DUMP_PROPERTY, ParamMap[i].id, (char *)ParamMap[i].ref);
 			break;
 		} 
 	}
 	
-	if (ParamMap[i].id == PARAM_EOF && ! resStackBT.isFull())
+	if (ParamMap[i].id == PARAM_EOF && ! resActive->isFull())
 	{
-		resStackBT.push(CMD_DUMP_PROPERTY, PARAM_EOF);
+		resActive->push(CMD_DUMP_PROPERTY, PARAM_EOF);
+		resActive = NULL;
+
 		i = -1;
 	}
 
