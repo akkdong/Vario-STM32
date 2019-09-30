@@ -81,7 +81,7 @@ void CommandParser::update()
 			}
 			else if (parseStep == 2)
 			{
-				if (c == ',' || c == '\r' || c == '\r')
+				if (c == ',' || c == '\r' || c == '\r' || c == '*')
 				{
 					if (c == ',')
 						parseStep = 3; // next is param field
@@ -99,7 +99,7 @@ void CommandParser::update()
 			else if (parseStep == 3)
 			{
 				// param field
-				if (c == '\r' || c == '\n' || c == ',')
+				if (c == ',' || c == '\r' || c == '\n' || c == '*')
 				{
 					cmdParam = toNum(fieldData);
 
