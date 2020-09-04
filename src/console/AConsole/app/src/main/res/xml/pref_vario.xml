@@ -97,11 +97,18 @@
             android:defaultValue="true"
             android:key="@string/pref_key_vario_baro_only"
             android:title="@string/pref_title_vario_baro_only" />
+        <EditTextPreference
+            android:defaultValue="0.5"
+            android:inputType="numberSigned|numberDecimal"
+            android:key="@string/pref_key_vario_damping_factor"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_vario_damping_factor" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/pref_category_volume_threshold">
         <ListPreference
-            android:defaultValue="100"
+            android:defaultValue="80"
             android:entries="@array/pref_volume_titles"
             android:entryValues="@array/pref_volume_values"
             android:key="@string/pref_key_volume_vario"

@@ -26,6 +26,7 @@ PARAM_MappingInfo ParamMap[] =
 	{ PARAM_VARIO_SENSITIVITY				, PARAM_FLOAT	, &Config.vario.sensitivity				},
 	{ PARAM_VARIO_SENTENCE					, PARAM_UINT8_T	, &Config.vario.sentence				},
 	{ PARAM_VARIO_BAROONLY					, PARAM_UINT8_T	, &Config.vario.baroOnly				},
+	{ PARAM_VARIO_DAMPING_FACTOR			, PARAM_FLOAT	, &Config.vario.dampingFactor			},
 	// ToneTables
 	{ PARAM_TONETABLE_00_VELOCITY			, PARAM_FLOAT	, &Config.toneTable[0x00].velocity		},
 	{ PARAM_TONETABLE_00_FREQ				, PARAM_UINT16_T, &Config.toneTable[0x00].freq			},

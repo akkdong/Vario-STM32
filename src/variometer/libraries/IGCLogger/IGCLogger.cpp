@@ -58,7 +58,7 @@ const char * igcHeader[] =
 /////////////////////////////////////////////////////////////////////////////
 // class IGCLogger
 
-IGCLogger::IGCLogger() : sdCard(SDCARD_CHANNEL)
+IGCLogger::IGCLogger() : sdCard(&SDCARD_SPICLASS)
 {
 	reset();
 }

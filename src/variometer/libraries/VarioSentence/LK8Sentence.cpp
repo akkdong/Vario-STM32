@@ -39,6 +39,19 @@ void LK8Sentence::begin(float height, float vel, float temp, float bat)
 	tagPos = 0;
 }
 
+void LK8Sentence::begin(float height, float vel, float temp, float prs, float bat)
+{
+	altimeter = height;
+	vario = vel * 100.0; // cm/s
+	temperature = temp;
+	voltage = bat;
+	
+	valueDigit.begin(prs * 100.0, LK8_SENTENCE_PRESSURE_PRECISION);
+	
+	parity = '$';
+	tagPos = 0;
+}
+
 int LK8Sentence::available()
 {
 	if (tagPos < LK8_SENTENCE_TAG_SIZE)

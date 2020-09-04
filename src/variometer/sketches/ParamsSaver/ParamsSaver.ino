@@ -101,6 +101,7 @@ void printParams()
 	Serial.print("  sensitivity : "); Serial.println(Config.vario.sensitivity);
 	Serial.print("  sentence : "); Serial.println(Config.vario.sentence == VARIOMETER_LK8_SENTENCE ? "LK8" : "LxNav");
 	Serial.print("  baroOnly: "); Serial.println(Config.vario.baroOnly ? "Yes" : "No");
+	Serial.print("  damping Factor: "); Serial.println(Config.vario.dampingFactor);
 	Serial.println("");
 	
 	// Tone Table

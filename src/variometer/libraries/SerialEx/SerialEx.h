@@ -37,7 +37,6 @@ private:
 extern SerialEx SerialEx1;
 extern SerialEx SerialEx2;
 extern SerialEx SerialEx3;
-extern SerialEx SerialEx4;
 
 
 #endif // __SERIALEX_H__

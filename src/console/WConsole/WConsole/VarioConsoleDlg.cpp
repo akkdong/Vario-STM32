@@ -80,6 +80,8 @@ CVarioConsoleDlg::CVarioConsoleDlg(CWnd* pParent /*=NULL*/)
 	, m_nDataBits(CSerial::EData8)
 	, m_nParity(CSerial::EParNone)
 	, m_nStopBits(CSerial::EStop1)
+	, m_strLatitude(_T("37.452329 E"))
+	, m_strLongitude(_T("126.360923 N"))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
@@ -88,7 +90,11 @@ CVarioConsoleDlg::CVarioConsoleDlg(CWnd* pParent /*=NULL*/)
 void CVarioConsoleDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	
+
+	DDX_Control(pDX, IDC_LATITUDE, m_wndLatitude);
+	DDX_Control(pDX, IDC_LONGITUDE, m_wndLongitude);
+	DDX_Text(pDX, IDC_LATITUDE, m_strLatitude);
+	DDX_Text(pDX, IDC_LONGITUDE, m_strLongitude);
 }
 
 BEGIN_MESSAGE_MAP(CVarioConsoleDlg, CDialogEx)
@@ -115,6 +121,21 @@ BOOL CVarioConsoleDlg::OnInitDialog()
 	//  프레임워크가 이 작업을 자동으로 수행합니다.
 	SetIcon(m_hIcon, TRUE);			// 큰 아이콘을 설정합니다.
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
+
+	//
+	m_wndLatitude.SetNumberOfLines(1);
+	m_wndLatitude.SetXCharsPerLine(11); // 37.234234 E
+	m_wndLatitude.SetSize(CMatrixStatic::SMALL);
+	m_wndLatitude.SetDisplayColors(RGB(0, 0, 0), RGB(255, 60, 0), RGB(103, 30, 0));
+	m_wndLatitude.AdjustClientXToSize(11);
+	m_wndLatitude.AdjustClientYToSize(1);
+
+	m_wndLongitude.SetNumberOfLines(1);
+	m_wndLongitude.SetXCharsPerLine(12); // 37.234234 E
+	m_wndLongitude.SetSize(CMatrixStatic::SMALL);
+	m_wndLongitude.SetDisplayColors(RGB(0, 0, 0), RGB(255, 60, 0), RGB(103, 30, 0));
+	m_wndLongitude.AdjustClientXToSize(12);
+	m_wndLongitude.AdjustClientYToSize(1);
 
 	//
 	UpdateData(FALSE);
@@ -268,10 +289,14 @@ LRESULT CVarioConsoleDlg::OnSerialMessage(WPARAM wParam, LPARAM lParam)
 void CVarioConsoleDlg::OnEditToneTable()
 {
 	//
-	if (!m_bConnected)
-		return;
+	//if (!m_bConnected)
+	//	return;
 
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	Beep(1200, 500);
+	Sleep(500);
+	Beep(1200, 500);
+	Sleep(500);
+	Beep(1200, 500);
 }
 
 void CVarioConsoleDlg::OnCalibration()
@@ -579,6 +604,8 @@ BOOL CVarioConsoleDlg::UpdateData(BOOL bSaveAndValidate)
 {
 	if (!bSaveAndValidate)
 	{
+		m_wndLatitude.SetText(m_strLatitude);
+		m_wndLongitude.SetText(m_strLongitude);
 	}
 
 	BOOL bRet = CDialog::UpdateData(bSaveAndValidate);

@@ -52,18 +52,18 @@ BLOCK_VarioTone GlobalConfig::defaultTone[TONE_TABLE_COUNT] =
 	{  7.73, 1570,  91,  50 },
 	{ 10.00, 1800,  78,  50 },
 	*/
-	{ -10.0,  200, 200, 100 },
-	{  -3.0,  293, 200, 100 },
-	{  -2.0,  369, 200, 100 },
-	{  -1.0,  440, 200, 100 },
-	{  0.09,  400, 600,  50 },
-	{  0.10,  400, 600,  50 },
-	{  1.98,  499, 552,  50 },
-	{  3.14,  868, 347,  50 },
-	{  4.57, 1084, 262,  50 },
-	{  6.28, 1354, 185,  50 },
-	{  8.15, 1593, 168,  50 },
-	{ 10.00, 1800, 150,  50 },
+	{ -10.00,   200, 200, 100 },
+	{   -3.00,   290, 200, 100 },
+	{   -2.00,   369, 200, 100 },
+	{   -1.00,   440, 200, 100 },
+	{   -0.50,   470, 600, 100 },
+	{    0.00,   490, 600,   30 },
+	{    0.50,   740, 460,   50 },
+	{    1.00,   860, 350,   60 },
+	{    2.00, 1100, 320,   60 },
+	{    3.00, 1200, 300,   60 },
+	{    5.00, 1400, 250,   60 },
+	{  10.00, 1570, 200,   60 },
 };
 
 
@@ -97,17 +97,19 @@ void GlobalConfig::reset()
 	//
 	vario.sinkThreshold = VARIOMETER_SINKING_THRESHOLD; // -3.0
 	vario.climbThreshold = VARIOMETER_CLIMBING_THRESHOLD; // 0.2
-	vario.sensitivity = VARIOMETER_SENSITIVITY; // 0.1
+	vario.sensitivity = VARIOMETER_SENSITIVITY; // 0.3
 	
 	vario.sentence = VARIOMETER_DEFAULT_NMEA_SENTENCE;
 	vario.baroOnly = true;
+
+	vario.dampingFactor	= VARIOMETER_DEFAULT_DAMPING_FACTOR; // 0.5
 
 	// vario_tone_table 
 	memcpy(&toneTable[0], &defaultTone[0], sizeof(defaultTone));
 	
 	
 	//
-	volume.vario = VARIOMETER_BEEP_VOLUME; // 0 ~ 100
+	volume.vario = VARIOMETER_BEEP_VOLUME; // 0 ~ 80
 	volume.effect = VARIOMETER_EFFECT_VOLUME;
 	
 	//
@@ -232,6 +234,7 @@ void GlobalConfig::dump()
 	Serial.print("Vario.sensitivity = "); Serial.println(vario.sensitivity);
 	Serial.print("Vario.sentence = "); Serial.println(vario.sentence);
 	Serial.print("Vario.baroOnly = "); Serial.println(vario.baroOnly);
+	Serial.print("Vario.dampingFactor = "); Serial.println(vario.dampingFactor);
 	
 	Serial.print("Volume.vario = "); Serial.println(volume.vario);
 	Serial.print("Volume.effect = "); Serial.println(volume.effect);

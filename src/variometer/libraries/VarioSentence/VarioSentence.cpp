@@ -20,6 +20,11 @@ void VarioSentence::begin(float height, float vel, float temp, float bat)
 {
 	varioSentence->begin(height, vel, temp, bat);
 }
+
+void VarioSentence::begin(float height, float vel, float temp, float prs, float bat)
+{
+	varioSentence->begin(height, vel, temp, prs, bat);
+}
 	
 int VarioSentence::available()
 {

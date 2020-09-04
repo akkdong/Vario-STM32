@@ -2,7 +2,7 @@
 //
 
 #include <DefaultSettings.h>
-#include <SerialEx.h>
+#include <SerialBluetooth.h>
 #include <I2CDevice.h>
 #include <EEPROMDriver.h>
 #include <GlobalConfig.h>
@@ -33,7 +33,11 @@
 #include "ParamVarMap.h"
 #include "Sd2CardEx.h"
 #include "UMS_mal.h"
+
 #include <libmaple/bkp.h>
+#include <libmaple/iwdg.h>
+
+#define iwdg_init_ms(N)	iwdg_init(IWDG_PRE_256, ((N) / 5))
 
 #define RESET_FOR_BOOTLOADER		(0x4501)
 
@@ -50,7 +54,15 @@
 
 #define TT_UPDATE_DELTA		(VARIOMETER_MAX_VELOCITY / (TT_HALF_PERIOD / (1000.0 / TT_UPDATE_FREQ)))
 
+//
+//
+//
 
+#define TONE_VELOCITY_DAMPING		(0.4)
+
+//
+//
+//
 
 enum _DeviceMode
 {
@@ -113,6 +125,9 @@ void commandQueryProperty(Command * cmd);
 void commandUpdateProperty(Command * cmd);
 void commandDumpProperties(Command * cmd);
 void commandAccelerometerCalibration(Command * cmd);
+
+void commandQueryBluetooth(Command * cmd);
+void commandUpdateBluetooth(Command * cmd);
 
 void calibration_changeMode(uint8_t mode);
 void calibration_readyMeasure(int beepType);
@@ -298,6 +313,9 @@ TonePlayer tonePlayer(toneGen);
 
 VarioBeeper varioBeeper(tonePlayer);
 
+//
+float beepVelocity;
+
 
 //
 //
@@ -306,10 +324,10 @@ VarioBeeper varioBeeper(tonePlayer);
 CommandStack cmdStack;
 
 CommandParser cmdParser1(CMD_FROM_USB, Serial, cmdStack); // USB serial parser
-CommandParser cmdParser2(CMD_FROM_BT, SerialEx1, cmdStack); // BT serial parser
+CommandParser cmdParser2(CMD_FROM_BT, SerialBT, cmdStack); // BT serial parser
 FuncKeyParser keyParser(keyFunc, cmdStack, tonePlayer);
 
-//ResponseStack resStackUSB;
+ResponseStack resStackUSB;
 ResponseStack resStackBT;
 
 volatile int commandReceiveFlag = 0; // when any new command is occured, set this. 
@@ -319,7 +337,7 @@ volatile int commandReceiveFlag = 0; // when any new command is occured, set thi
 //
 //
 
-BluetoothMan btMan(SerialEx1, nmeaParser, varioNmea, sensorReporter, resStackBT);
+BluetoothMan btMan(SerialBT, nmeaParser, varioNmea, sensorReporter, resStackBT);
 
 
 //
@@ -340,8 +358,8 @@ void board_init()
 	Serial.begin();
 	//while (! Serial);
 	
-	SerialEx1.begin(BAUDRATE_BT); 	// Serial1(USART1) : for BT
-	//while (! SerialEx1);
+	SerialBT.begin(BAUDRATE_BT); 	// Serial1(USART1) : for BT
+	//while (! SerialBT);
 	
 	SerialEx2.begin(BAUDRATE_GPS);	// Serial2(USART2) : for GPS
 	//while (! SerialEx2);
@@ -498,6 +516,9 @@ void setup()
 		
 	//
 	changeDeviceMode(DEVICE_MODE_VARIO);
+	
+	//
+	//iwdg_init_ms(2 * 1000); // about 2.5s  : 40KHz /256 = 160Hz --> 2000 / 5 / 160 = 2.5
 }
 
 
@@ -534,6 +555,13 @@ void loop()
 	//
 	if (dumpProp >= 0)
 		dumpProp = pushProperties(dumpProp);	
+
+	//
+	while (resStackUSB.available())
+		Serial.write(resStackUSB.read());	
+	
+	//
+	//iwdg_feed();
 }
 
 
@@ -593,6 +621,7 @@ void setup_vario()
 	
 	//
 	deviceTick = millis();
+	beepVelocity = 0.0;
 }
 
 void loop_vario()
@@ -604,6 +633,7 @@ void loop_vario()
 	{
 		//
 		float velocity = vario.getVelocity();
+		beepVelocity = beepVelocity + (velocity - beepVelocity) * Config.vario.dampingFactor; 	// beepVelocity * (1 - DAMPING_FACTOR) + velocity * DAMPING_FACTOR
 		
 		if (toneTestFlag)
 		{
@@ -623,13 +653,13 @@ void loop_vario()
 		}
 		else
 		{
-			varioBeeper.setVelocity(velocity);
+			varioBeeper.setVelocity(beepVelocity);
 			//Serial.println(velocity);
 		}
 
 		//
 		{
-			if (velocity < STABLE_SINKING_THRESHOLD || STABLE_CLIMBING_THRESHOLD < velocity)
+			if (beepVelocity < STABLE_SINKING_THRESHOLD || STABLE_CLIMBING_THRESHOLD < beepVelocity)
 				deviceTick = millis(); // reset tick because it's not quiet.
 			
 			if (commandReceiveFlag)
@@ -658,7 +688,8 @@ void loop_vario()
 		
 		// update vario sentence periodically
 		if (varioNmea.checkInterval())
-			varioNmea.begin(altitude/*vario.getCalibratedAltitude()*/, vario.getVelocity(), vario.getTemperature(), batVolt.getVoltage());
+//			varioNmea.begin(altitude, vario.getVelocity(), vario.getTemperature(), batVolt.getVoltage());
+			varioNmea.begin(altitude, vario.getVelocity(), vario.getTemperature(), vario.getPressure(), batVolt.getVoltage());
 		
 		//
 		vario.flush();
@@ -670,7 +701,7 @@ void loop_vario()
 	// send any prepared sentence to BT
 	btMan.update();	
 
-	// IGC setence is available when it received a valid GGA. -> altitude is valid
+	// IGC sentence is available when it received a valid GGA. -> altitude is valid
 	if (varioMode == VARIO_MODE_INIT  && nmeaParser.availableIGC())
 	{
 		// do position calibration
@@ -742,10 +773,6 @@ void loop_vario()
 				logger.write(nmeaParser.readIGC());
 		}
 	}
-
-	//
-	//while (resStackUSB.available())
-	//	Serial.write(resStackUSB.read());	
 }
 
 
@@ -1243,6 +1270,7 @@ void processCommand()
 			Config.reset();
 			Config.writeAll();
 			resStackBT.push(cmd.code, RPARAM_SUCCESS);
+			break;
 		#if CONFIG_DEBUG_DUMP
 		case CMD_DUMP_CONFIG :
 			Config.dump();
@@ -1250,6 +1278,16 @@ void processCommand()
 		#endif // CONFIG_DEBUG_DUMP
 		case CMD_ACCEL_CALIBRATION :
 			commandAccelerometerCalibration(&cmd);
+			break;
+
+		case CMD_BLUETOOTH_QUERY :
+			commandQueryBluetooth(&cmd);
+			break;
+		case CMD_BLUETOOTH_UPDATE :
+			commandUpdateBluetooth(&cmd);
+			break;
+		case CMD_ADJUST_BT_BAUDRATE :
+			commandAdjustBaudRate(&cmd);
 			break;
 			
 		default :
@@ -1610,6 +1648,218 @@ void commandAccelerometerCalibration(Command * cmd)
 	{
 		resStackBT.push(cmd->code, RPARAM_INVALID_COMMAND);
 		return;
+	}
+}
+
+int getBluetoothResponse(char * buf, int len)
+{
+	if (CommandParser::readLine(SerialBT, buf, len) == 0)
+		return CommandParser::readLine(SerialBT, buf, len);
+
+	return -1;
+}
+
+void commandQueryBluetooth(Command * cmd)
+{
+	// process command from usb-serial only
+	if (cmd->from != CMD_FROM_USB)
+		return;
+
+	//
+	char data[16];
+
+	switch (cmd->param)
+	{
+	case PARAM_BT_BAUDRATE :
+		SerialBT.print("AT+BTUART?\r");
+		if (getBluetoothResponse(data, sizeof(data)) > 0)
+			resStackUSB.push(cmd->code, RPARAM_BT_BAUDRATE, data);
+		else
+			resStackUSB.push(cmd->code, RPARAM_FAIL);
+		break;
+	case PARAM_BT_NAME :
+		SerialBT.print("AT+BTNAME?\r");
+		if (getBluetoothResponse(data, sizeof(data)) > 0)
+			resStackUSB.push(cmd->code, RPARAM_BT_NAME, data);
+		else
+			resStackUSB.push(cmd->code, RPARAM_FAIL);
+		break;
+	case PARAM_BT_KEY :
+		SerialBT.print("AT+BTKEY?\r");
+		if (getBluetoothResponse(data, sizeof(data)) > 0)
+			resStackUSB.push(cmd->code, RPARAM_BT_KEY, data);
+		else
+			resStackUSB.push(cmd->code, RPARAM_FAIL);
+		break;
+
+	default :
+		resStackUSB.push(cmd->code, RPARAM_INVALID_PROPERTY);
+		break;
+	}
+}
+
+void commandUpdateBluetooth(Command * cmd)
+{
+	// process command from usb-serial only
+	if (cmd->from != CMD_FROM_USB)
+		return;
+
+	//
+	char data[16];
+
+	switch (cmd->param)
+	{
+	/*
+	case PARAM_BT_BAUDRATE :
+		SerialBT.print("AT+BTUART="); SerialBT.print(cmd->valData); SerialBT.print("\r");
+		if (getBluetoothResponse(data, sizeof(data)) > 0)
+			resStackUSB.push(cmd->code, RPARAM_BT_BAUDRATE, data);
+		else
+			resStackUSB.push(cmd->code, RPARAM_FAIL);
+		break;
+	*/
+	case PARAM_BT_NAME :
+		SerialBT.print("AT+BTNAME="); SerialBT.print((char *)cmd->valData); SerialBT.print("\r");
+		if (getBluetoothResponse(data, sizeof(data)) > 0)
+		{
+			SerialBT.print("ATZ\r");
+			resStackUSB.push(cmd->code, RPARAM_BT_NAME, data);
+		}
+		else
+		{
+			resStackUSB.push(cmd->code, RPARAM_FAIL);
+		}
+		break;
+	case PARAM_BT_KEY :
+		SerialBT.print("AT+BTKEY="); SerialBT.print((char *)cmd->valData); SerialBT.print("\r");
+		if (getBluetoothResponse(data, sizeof(data)) > 0)
+		{
+			SerialBT.print("ATZ\r");
+			resStackUSB.push(cmd->code, RPARAM_BT_KEY, data);
+		}
+		else
+		{
+			resStackUSB.push(cmd->code, RPARAM_FAIL);
+		}
+		break;
+
+	default :
+		resStackUSB.push(cmd->code, RPARAM_INVALID_PROPERTY);
+		break;
+	}		
+}
+
+
+static int testBaudRate[] =
+{
+	1200,
+	2400,
+	4800,
+	9600,
+	19200,
+	38400,
+	57600,
+	115200,
+};
+
+int findBaudRate()
+{
+	for (int i = 0; i < sizeof(testBaudRate) / sizeof(testBaudRate[0]); i++)
+	{
+		//
+		Serial.print("Try "); Serial.print(testBaudRate[i]); Serial.print("...");
+		SerialBT.begin(testBaudRate[i]);
+		SerialBT.print("AT\r");
+		
+		char buf[16];
+		int n = 0;
+		uint32_t tick = millis();
+		
+		while ((millis() - tick) < 5000)
+		{
+			if (SerialBT.available())
+			{
+				int c = SerialBT.read();
+				//Serial.write(c);
+				
+				if (c == '\r' || c == '\n')
+				{
+					if (c == '\n' && n > 0)
+						break;
+				}
+				else
+				{
+					buf[n] = c;
+					n++;
+					
+					if (n == sizeof(buf))
+						break;
+				}
+			}
+		}
+		
+		//
+		SerialBT.end();
+		delay(100);
+		
+		if ((n == 2 && buf[0] == 'O' && buf[1] == 'K') ||
+			(n == 5 && buf[0] == 'E' && buf[1] == 'R' && buf[2] == 'R' && buf[3] == 'O' && buf[4] == 'R'))
+		{
+			Serial.println("   OK!!!");
+			
+			return testBaudRate[i];
+		}
+		
+		Serial.println("   FAILED!");
+	}
+	
+	return 0;
+}
+
+
+void commandAdjustBaudRate(Command * cmd)
+{
+	// process command from usb-serial only
+	if (cmd->from != CMD_FROM_USB)
+		return;
+
+	// find Baudrate of BT
+	Serial.println("Find BT baud-rate....");
+	SerialBT.end();
+	int baudrate = findBaudRate();
+	Serial.print("    -> "); Serial.println(baudrate);
+	
+	if (baudrate) 
+	{
+		SerialBT.begin(baudrate);
+		
+		if (baudrate != BAUDRATE_BT)
+		{
+			Serial.print("Change BT baud-rate to "); Serial.println(BAUDRATE_BT);
+			Serial.print("AT+BTUART="); Serial.print(BAUDRATE_BT); Serial.print("\r");
+			SerialBT.print("AT+BTUART="); SerialBT.print(BAUDRATE_BT); SerialBT.print("\r");
+			delay(200);
+			
+			while (SerialBT.available())
+				Serial.write(SerialBT.read());
+			
+			SerialBT.end();
+			SerialBT.begin(BAUDRATE_BT);
+
+			// turn off & on
+			keyPowerBT.disable();
+			delay(100);
+			keyPowerBT.enable();
+		}
+		else
+		{
+			Serial.print("BT communicate with "); Serial.print(baudrate); Serial.println(" bps");
+		}
+	}
+	else
+	{
+		Serial.println("Fail to find baud-rate!!!");
+		//while(1);
 	}
 }
 

@@ -8,5 +8,5 @@
 // class Sd2CardEx
 
 
-Sd2CardEx SdCard(SDCARD_CHANNEL);
+Sd2CardEx SdCard(&SDCARD_SPICLASS);
 

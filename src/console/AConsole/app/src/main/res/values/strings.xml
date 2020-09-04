@@ -45,6 +45,7 @@
     <string name="pref_key_vario_sensitivity">key_vario_sensitivity</string>
     <string name="pref_key_vario_sentence">key_vario_sentence</string>
     <string name="pref_key_vario_baro_only">key_vario_baro_only</string>
+    <string name="pref_key_vario_damping_factor">key_vario_damping_factor</string>
     <string name="pref_key_tone_00_velocity">key_tone_00_velocity</string>
     <string name="pref_key_tone_00_freq">key_tone_00_freq</string>
     <string name="pref_key_tone_00_period">key_tone_00_period</string>
@@ -125,6 +126,7 @@
     <string name="pref_title_vario_sensivitiy">Sensitivity (m/s)</string>
     <string name="pref_title_vario_sentence">Vario Sentence Format</string>
     <string name="pref_title_vario_baro_only">Use Barometer Only</string>
+    <string name="pref_title_vario_damping_factor">Damping Factor(0.0 ~ 1.0)</string>
     <string name="pref_title_volume_vario">Vario Volume Level</string>
     <string name="pref_title_volume_effect">Effect Volume Level</string>
     <string name="pref_title_tone_editor">Tone Editor&#8230;</string>

@@ -23,6 +23,9 @@ public:
 	unsigned char		readByte(unsigned char devAddr, unsigned short memAddr);
 	void				readBuffer(unsigned char devAddr, unsigned short memAddr, unsigned char * buf, short bufLen);
 	
+protected:
+	int8_t			waitComplete(unsigned char devAddr, uint16_t timeout);
+
 private:
 	TwoWire &			Wire;
 };

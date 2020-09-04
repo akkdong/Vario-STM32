@@ -33,6 +33,13 @@ const char tagRMC[] PROGMEM = {"GPRMC"};
 const char tagGGA[] PROGMEM = {"GPGGA"};
 
 
+float nmeaToDecimal(float nmea)
+{
+	int dd = (int)(nmea / 100);
+	float ss = nmea - (float)(dd * 100.0);
+
+	return (float)dd + ss / 60.0;
+}
 /////////////////////////////////////////////////////////////////////////////
 // class NmeaParserEx
 
@@ -61,6 +68,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 	{
 		//
 		int c = mStream.read();
+		//Serial.write(c);
 		
 		if (isFull())
 			break;
@@ -79,7 +87,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 		{
 			mParseStep 	= 0;
 			mParseState	= 0;
-			mParity		= '*';	// '*' remove by twice xor
+			mParity		= '*';	// '*' removed by twice xor
 
 			UNSET_STATE(PARSE_RMC|PARSE_GGA|RMC_VALID|GGA_VALID);
 			SET_STATE(SEARCH_RMC_TAG);
@@ -129,7 +137,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 				//Serial.print("mParseStep = "); Serial.println((int)mParseStep);
 				//Serial.print("mParseState = "); Serial.println((int)mParseState);
 			}
-			else if (mParseStep == NMEA_TAG_SIZE) // start of data
+			else if (mParseStep == NMEA_TAG_SIZE) // 5, start of data
 			{
 				if (c != ',' || (! IS_SET(SEARCH_RMC_TAG) && ! IS_SET(SEARCH_GGA_TAG)))
 				{
@@ -162,7 +170,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 					{
 						SET_STATE(PARSE_GGA);
 						
-						// IGC sentence is unavailable if It's unlocked
+						// make unavailable the IGC sentence, if It's unlocked
 						if (! IS_SET(IGC_LOCKED))
 						{
 							mIGCSize = 0;
@@ -171,7 +179,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 					}
 				}
 			}
-			else if (mParseStep == NMEA_TAG_SIZE + 1) // data
+			else if (mParseStep == NMEA_TAG_SIZE + 1) // 6, data
 			{
 				if (c == ',' || c == '*') // field delimiter
 				{
@@ -201,7 +209,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 					mParseStep += 1;
 				}
 			}
-			else if (mParseStep == NMEA_TAG_SIZE + 3) // checksum low-nibble
+			else if (mParseStep == NMEA_TAG_SIZE + 3) // 7, checksum low-nibble
 			{
 				int n = (c >= 'A') ? (c - 'A' + 10) : (c - '0');
 				
@@ -215,7 +223,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 					mParseStep += 1;
 				}
 			}
-			else if (mParseStep == NMEA_TAG_SIZE + 4) // carrage-return
+			else if (mParseStep == NMEA_TAG_SIZE + 4) // 8, carrage-return
 			{
 				if (c != '\r')
 				{
@@ -227,7 +235,7 @@ void NmeaParserEx::update(/*float baroAlt*/)
 					mParseStep += 1;
 				}
 			}
-			else if (mParseStep == NMEA_TAG_SIZE + 5) // newline
+			else if (mParseStep == NMEA_TAG_SIZE + 5) // 9, newline
 			{
 				if (c != '\n')
 				{
@@ -297,7 +305,7 @@ int NmeaParserEx::availableIGC()
 
 int NmeaParserEx::readIGC()
 {
-	if (mIGCSize == MAX_IGC_SENTENCE && mIGCNext < MAX_IGC_SENTENCE)
+	if (mIGCSize == MAX_IGC_SENTENCE && mIGCNext < MAX_IGC_SENTENCE) // if available
 	{
 		// start reading... : lock state
 		if (mIGCNext == 0)
@@ -305,7 +313,7 @@ int NmeaParserEx::readIGC()
 		
 		int ch = mIGCSentence[mIGCNext++];
 
-		// if it reachs end of sentence, state & buffer must be cleared.
+		// if it reaches end of sentence, state & buffer must be cleared.
 		// however, if it's parsing state, let the parser clear it.
 		if (mIGCNext == MAX_IGC_SENTENCE && ! IS_SET(PARSE_GGA)) // end of sentence
 		{
@@ -438,7 +446,9 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			break;
 		case 1 : // Latitude (DDMM.mmm)
 			// save latitude
-			mLatitude = strToFloat(startPos);
+			{
+				float nmeaLatitude = strToFloat(startPos);
+				mLatitude = nmeaToDecimal(nmeaLatitude);
 			
 			// update IGC sentence if it's unlocked
 			if (! IS_SET(IGC_LOCKED))
@@ -456,10 +466,11 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 				#else
 				FixedLenDigit digit;
 			
-				digit.begin(floatToCoordi(mLatitude), IGC_SIZE_LATITUDE);
+					digit.begin(floatToCoordi(nmeaLatitude), IGC_SIZE_LATITUDE);
 				for (int i = 0; i < IGC_SIZE_LATITUDE /*digit.available()*/; i++)
 					mIGCSentence[IGC_OFFSET_LATITUDE+i] = digit.read();
 				#endif
+			}
 			}
 			break;
 		case 2 : // Latitude (N or S)
@@ -477,7 +488,9 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 			break;
 		case 3 : // Longitude (DDDMM.mmmm)
 			// save longitude
-			mLongitude = strToFloat(startPos);
+			{
+				float nmeaLongitude = strToFloat(startPos);
+				mLongitude = nmeaToDecimal(nmeaLongitude);
 			
 			// update IGC sentence if it's unlocked
 			if (! IS_SET(IGC_LOCKED))
@@ -495,10 +508,11 @@ void NmeaParserEx::parseField(int fieldIndex, int startPos)
 				#else
 				FixedLenDigit digit;
 			
-				digit.begin(floatToCoordi(mLongitude), IGC_SIZE_LONGITUDE);
+					digit.begin(floatToCoordi(nmeaLongitude), IGC_SIZE_LONGITUDE);
 				for (int i = 0; i < IGC_SIZE_LONGITUDE /*digit.available()*/; i++)
 					mIGCSentence[IGC_OFFSET_LONGITUDE+i] = digit.read();
 				#endif
+			}			
 			}			
 			break;
 		case 4 : // Longitude (E or W)
@@ -629,8 +643,13 @@ long NmeaParserEx::strToNum(int startPos)
 long NmeaParserEx::floatToCoordi(float value)
 {
 	// DDDMM.mmmm -> DDDMMmmm (with round up)
+	#if 0
 	long coordi = (long)value;
-	float temp = (value - coordi) * 1000.0f + 0.5f;
+	float temp = (value - coordi) * 1000.0f;
 	
 	return coordi * 1000 + (long)temp;
+	#else
+	float temp = value * 1000.0f;
+	return (long)temp;
+	#endif
 }

@@ -24,6 +24,7 @@ public class VarioParam {
     public static final int VARIO_SENSITIVITY				= 0x9203;
     public static final int VARIO_SENTENCE				    = 0x9204;
     public static final int VARIO_BAROONLY				    = 0x9205;
+    public static final int VARIO_DAMPING_FACTOR         = 0x9206;
 
     // ToneTables
     public static final int TONETABLE_00_VELOCITY			= 0x9301;
