@@ -92,7 +92,6 @@ enum _CalibrationMode
 	CAL_MODE_RESET,
 };
 
-
 //
 //
 //
@@ -390,6 +389,9 @@ void board_init()
 	Wire1.begin();
 	Wire2.begin();
 	
+	//Wire1.setClock(400000);
+	//Wire2.setClock(120000);
+	
 	// input pins
 	//keyMode.begin(PIN_MODE_SELECT, ACTIVE_LOW); // not used
 	keyShutdown.begin(PIN_SHDN_INT, ACTIVE_LOW);
@@ -525,21 +527,20 @@ void setup()
 	// ...
 	
 	//
-	delay(1000);
 	board_init();
+	
+	// ToneGenerator uses PIN_PWM_H(PA8 : Timer1, Channel1)
+	toneGen.begin(PIN_PWM_H);
+	tonePlayer.setVolume(Config.volume.vario);	
+	
 	
 	//
 	Config.reset();
 	Config.readAll();
 	delay(100);
 	Config.readAll();
+	tonePlayer.setTone(0);
 	
-	// ToneGenerator uses PIN_PWM_H(PA8 : Timer1, Channel1)
-	toneGen.begin(PIN_PWM_H);
-	
-	//
-	tonePlayer.setVolume(Config.volume.vario);	
-		
 	//
 	changeDeviceMode(DEVICE_MODE_VARIO, true);
 	
@@ -600,18 +601,67 @@ void setup_vario()
 	//
 	varioMode = VARIO_MODE_INIT;
 	
+	tonePlayer.setTone(NOTE_G3, Config.volume.effect);	
+	delay(500);
+	tonePlayer.setTone(0);
+	delay(200);
+	tonePlayer.setTone(NOTE_G3, Config.volume.effect);
+	delay(200);
+	tonePlayer.setTone(0);
+	delay(200);
+	tonePlayer.setTone(NOTE_G3, Config.volume.effect);
+	delay(200);
+	tonePlayer.setTone(0);
+	delay(1000);
+	
+	
 	// turn-on All : IMU, SD, GPS, BT
 	#if HW_VERSION == HW_VERSION_V1_REV2
 	keyPowerIMU.enable();
+	delay(200);
 	#if ! KOBO_SUPPORT
 	keyPowerSD.enable();
+	delay(200);
 	#endif
 	#endif // HW_VERSION == HW_VERSION_V1_REV2
+	//tonePlayer.setTone(NOTE_C4, Config.volume.effect);
 	keyPowerGPS.enable();
+	//delay(200);
 	#if ! KOBO_SUPPORT
+	//tonePlayer.setTone(NOTE_F4, Config.volume.effect);
 	keyPowerBT.enable();
+	//delay(200);
 	#endif
-	delay(100);
+
+	for (int i = 0; i < 10; i++)
+	{
+		ledFlasher.turnOff();
+		delay(100);
+		ledFlasher.turnOn();
+		delay(100);
+	}
+	
+	Wire.setClock(400000);
+	for (int i = 0; i < 10; i++)
+	{
+		tonePlayer.setTone(NOTE_C4, Config.volume.effect);
+		delay(200);
+		tonePlayer.setTone(0);
+
+		Wire.beginTransmission(0x77);
+		byte error = Wire.endTransmission();
+		
+		if (error == 0)
+			break;
+		
+		ledFlasher.turnOff();
+		delay(1000);
+		ledFlasher.turnOn();
+	}
+
+	tonePlayer.setTone(NOTE_C3, Config.volume.effect);
+	delay(200);
+	tonePlayer.setTone(0);
 	
 	//
 	logger.init();
@@ -1418,6 +1468,13 @@ void commandSoundLevel(Command * cmd, ResponseStack * res)
 	case PARAM_SL_MUTE	:
 		volume = MIN_VOLUME;
 		break;
+		
+	case PARAM_SL_TOGGLE_AUTOON:
+		Config.volume.autoTurnOn = !Config.volume.autoTurnOn;
+		// report success
+		if (cmd->from != CMD_FROM_KEY)
+			res->push(cmd->code, RPARAM_SUCCESS);
+		return;
 	}
 
 	if (MIN_VOLUME <= volume && volume <= MAX_VOLUME)

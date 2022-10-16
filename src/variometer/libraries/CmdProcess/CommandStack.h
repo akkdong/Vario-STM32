@@ -78,7 +78,7 @@
 #define PARAM_SL_MUTE			(0x1000)
 #define PARAM_SL_MEDIUM			(0x1001)
 #define PARAM_SL_LOUD			(0x1002)
-
+#define PARAM_SL_TOGGLE_AUTOON	(0x1003)
 
 // device reset
 #define PARAM_RS_NOW			(0)

@@ -14,7 +14,7 @@
 #define HW_VERSION_V1_REV2						(0x0102)
 
 #define HW_VERSION								HW_VERSION_V1_REV2
-#define KOBO_SUPPORT							(1)
+#define KOBO_SUPPORT							(0)
 
 // you can use one of KalmanVario and Variometer class
 #define CLASS_KALMANVARIO						(1)
@@ -34,7 +34,11 @@
 //
 
 #define BAUDRATE_DEBUG							(115200)
+#if KOBO_SUPPORT
 #define BAUDRATE_BT								(57600)
+#else
+#define BAUDRATE_BT								(57600)
+#endif // KOBO_SUPPORT
 #define BAUDRATE_GPS							(9600)
 
 
@@ -108,9 +112,9 @@
 
 #define VARIOMETER_LXNAV_SENTENCE				(1)
 #define VARIOMETER_LK8_SENTENCE					(2)
-#define VARIOMETER_DEFAULT_NMEA_SENTENCE		VARIOMETER_LXNAV_SENTENCE
+#define VARIOMETER_DEFAULT_NMEA_SENTENCE		VARIOMETER_LK8_SENTENCE
 
-#define VARIOMETER_SENTENCE_DELAY				(990)
+#define VARIOMETER_SENTENCE_DELAY				(500)
 
 #define VARIOMETER_DEFAULT_DAMPING_FACTOR 		(0.5)
 

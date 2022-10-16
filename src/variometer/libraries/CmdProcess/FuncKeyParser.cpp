@@ -60,6 +60,11 @@ void FuncKeyParser::update()
 			inputTick = millis();
 			break;
 
+		case 0x4005 : // count: 4, code; SLSL	// 
+			inputCmd = CMD_SOUND_LEVEL;
+			inputParam = PARAM_SL_TOGGLE_AUTOON;
+			inputTick = millis();		
+			break;
 		case 0x4007 : // count: 4, code: SLLL	// volume : loud
 			inputCmd = CMD_SOUND_LEVEL;
 			inputParam = PARAM_SL_LOUD;
