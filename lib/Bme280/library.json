@@ -1,0 +1,34 @@
+{
+  "name": "arduino-bme280",
+  "version": "1.0.4",
+  "description": "Arduino library for Bosch Sensortec BME280 – combined temperature, pressure, humidity sensor. The library allows using the sensor over I2C or SPI on any board that supports Arduino.",
+  "keywords": [
+    "arduino",
+    "bosch",
+    "bme280",
+    "i2c",
+    "spi",
+    "temperature",
+    "pressure",
+    "humidity"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Eduard Malokhvii",
+      "email": "malokhvii.ee@gmail.com",
+      "url": "https://github.com/malokhvii-eduard"
+    }
+  ],
+  "homepage": "https://github.com/malokhvii-eduard/arduino-bme280",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/malokhvii-eduard/arduino-bme280.git"
+  },
+  "frameworks": "arduino",
+  "platforms": "*",
+  "dependencies": {},
+  "export": {
+    "include": ["LICENSE", "include", "src", "examples/**/*.ino"]
+  }
+}
